@@ -22,6 +22,10 @@
 //   --allow-duplicates upload a track even if one with that name exists (default: skipped)
 //   --insecure         accept the certificate of https://127.0.0.1 or localhost (a tunnel's)
 //   --dry-run          show what would happen; convert and upload nothing
+//   --file-names       name tracks after their file names (default: the title tag inside the file,
+//                      else the file name)
+//   --file-names       name tracks after their file names (default: the title tag inside the file,
+//                      else the file name)
 //   --list             show the uploaded tracks (id and name) and stop
 //   --rename ID NAME   give uploaded track ID another name and stop (find ids with --list);
 //                      NAME is up to 40 letters, numbers, spaces and simple punctuation
@@ -71,6 +75,7 @@ const parse = argv => {
       case "--allow-duplicates": options.duplicates = true; break;
       case "--insecure": options.insecure = true; break;
       case "--dry-run": options.dryRun = true; break;
+      case "--file-names": options.fileNames = true; break;
       case "--list": options.list = true; break;
       case "--rename":
         if (i + 2 >= argv.length) {
@@ -134,6 +139,25 @@ const collect = (inputs, recursive) => {
 const nameOf = file => {
   const base = path.basename(file, path.extname(file)).replace(/[_]+/g, " ");
   return base.replace(NAME_ALLOWED, "").replace(/\s+/g, " ").trim().slice(0, MAX_NAME).trim();
+};
+
+// the title tag inside the file (needs ffprobe, which comes with ffmpeg); "" if there is none
+const tagTitleOf = file => {
+  const result = spawnSync("ffprobe", ["-v", "error", "-show_entries", "format_tags=title", "-of", "default=nw=1:nk=1", file],
+    {encoding: "utf8", timeout: 20000});
+  return result.status === 0 ? String(result.stdout).split("\n")[0].trim() : "";
+};
+
+// what to call a track: its title tag, else its file name
+const trackName = (file, fileNames) => {
+  if (fileNames) {
+    return nameOf(file);
+  }
+  const tagged = tagTitleOf(file).replace(/[_]+/g, " ").replace(NAME_ALLOWED, "").replace(/\s+/g, " ").trim().slice(0, MAX_NAME).trim();
+  // a cut-off "(Original mix" reads badly: drop the unfinished bracket
+  const open = tagged.lastIndexOf("(");
+  const tidy = open > 0 && !tagged.includes(")", open) ? tagged.slice(0, open).trim() : tagged;
+  return tidy || nameOf(file);
 };
 
 const haveFfmpeg = () => {
@@ -328,7 +352,7 @@ const main = async () => {
   try {
     for (const [i, file] of files.entries()) {
       const label = `[${i + 1}/${files.length}] ${path.basename(file)}`;
-      const name = nameOf(file);
+      const name = trackName(file, options.fileNames);
       if (!name) {
         console.log(`${label}: skipped (no usable name; rename the file)`);
         tally.skipped++;

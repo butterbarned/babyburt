@@ -56,6 +56,7 @@ anything but `127.0.0.1` or `localhost`. Alternatively, copy the music to the se
 | `--allow-duplicates` | Upload a track even if one with that name exists. |
 | `--insecure` | Accept the certificate of `https://127.0.0.1` / `localhost` (a tunnel's). |
 | `--dry-run` | Show what would happen; convert and upload nothing. |
+| `--file-names` | Name tracks after their file names instead of the title tag. |
 | `--list` | Show the uploaded tracks (id and name) and stop. |
 | `--rename ID NAME` | Give an uploaded track another name and stop. Find ids with `--list`. |
 
@@ -91,10 +92,12 @@ ffmpeg -i song.flac -vn -map_metadata -1 -ar 44100 -ac 2 -codec:a libmp3lame -b:
 
 ## What it does with each file
 
-- **Name.** The track name is the file name without its extension; underscores become spaces, characters the
-  server does not allow are removed, and it is cut to 40 characters. Rename a file if the name is wrong.
+- **Name.** The track name is the **title tag** stored in the file (read with `ffprobe`, which comes with ffmpeg).
+  A file with no title tag uses its file name without the extension, and `--file-names` always does. Underscores
+  become spaces, characters the server does not allow are removed, and the name is cut to 40 characters (an
+  unfinished bracket at the cut is dropped). Fix a wrong tag in your music player, or use `--file-names`.
 - **Conversion.** Non-MP3 files (FLAC, WAV, OGG, Opus, M4A, AAC, WMA, AIFF) are converted to 44.1 kHz stereo MP3
-  (what the game's Flash plays best). Cover art and tags are dropped, since the track name comes from the file.
+  (what the game's Flash plays best). Cover art and tags are dropped from the MP3 (the name is taken from the original file's tag first).
 - **Size limit.** The server accepts MP3s from 4 KB to 15 MB. If a converted track is over 15 MB the script
   retries at lower bitrates (down to 64k) until it fits. At 96k that is about 20 minutes of audio; a longer track
   fails and says so. An MP3 that is already over 15 MB is re-encoded the same way.
