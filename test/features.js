@@ -677,7 +677,7 @@ const run = async () => {
   const popupCards = await b.nextXt("el");
   // sender, message (not starting with a number), type 9 = diamonds, amount, sender type 2 = opens as a popup
   assert.deepStrictEqual([popupCards[2], popupCards[4], popupCards[8], popupCards[9], popupCards[10], popupCards[16]],
-    ["1", "Flight HQ", "Gift: 7 for you", "9", "7", "2"]);
+    ["1", "Dusklight HQ", "Gift: 7 for you", "9", "7", "2"]);
   b.xt("eg", annDen, popupCards[3], 1);
   assert.deepStrictEqual((await b.nextXt("cu")).slice(2), ["3", String(benLogin.params.diamondsCount + 7), "0"]);
   assert.deepStrictEqual((await b.nextXt("eg")).slice(2), [popupCards[3], "1"]);

@@ -1,4 +1,4 @@
-# How Flight fits together
+# How Dusklight fits together
 
 The big picture: the pieces, how a player gets from the launcher into a
 room, where things are kept, and where to look to change something. The
@@ -120,4 +120,4 @@ action is recorded in the mod log (`lib/modlog.js`).
 | **user var** | a counter or set of flags the client keeps per player (achievements, Journey Book facts) |
 | **the CDN** | the official content server the game's files come from, `ajcontent.akamaized.net` |
 | **build** | a release of the game's files, by number (1830 is the current one) |
-| **Burrow** | the server Flight is built on; "Burrow:" in a comment marks a change from the original client |
+| **Burrow** | the server Dusklight is built on; "Burrow:" in a comment marks a change from the original client |

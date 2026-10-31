@@ -1,6 +1,6 @@
-# Contributing to Flight
+# Contributing to Dusklight
 
-Thanks for helping make Flight safer, kinder, and more reliable. Keep changes small, explain the player-facing effect, and open a pull request against the repository's default branch.
+Thanks for helping make Dusklight safer, kinder, and more reliable. Keep changes small, explain the player-facing effect, and open a pull request against the repository's default branch.
 
 ## Local setup
 
@@ -33,7 +33,7 @@ Use Conventional Commit messages; the pull-request workflow checks them. Keep th
 
 ## Security requirements
 
-Flight handles account credentials, 2FA, game sessions, player reports, and moderation records. Treat every browser, game, and Discord input as untrusted.
+Dusklight handles account credentials, 2FA, game sessions, player reports, and moderation records. Treat every browser, game, and Discord input as untrusted.
 
 - Never log, display, or commit passwords, session tokens, recovery links, IP addresses, device identifiers, private keys, or bot tokens.
 - Do not add web hosts, execute programs from server code, evaluate generated text, or add dependencies without updating and explaining the invariant checks.
@@ -44,7 +44,7 @@ The CI security workflow parses all server JavaScript, checks allowed external h
 
 ## Discord bot changes
 
-The optional Discord staff bot is enabled only with `AJ_DISCORD_BOT_TOKEN` and `AJ_DISCORD_GUILD_ID`. It trusts a Discord user only after the user has linked that identity to an active Flight staff account with 2FA. Do not create an alternate Discord-only permission system.
+The optional Discord staff bot is enabled only with `AJ_DISCORD_BOT_TOKEN` and `AJ_DISCORD_GUILD_ID`. It trusts a Discord user only after the user has linked that identity to an active Dusklight staff account with 2FA. Do not create an alternate Discord-only permission system.
 
 All visible bot messages, including errors, status cards, reports, audit logs, and interaction updates, must use Discord Components V2: set `MessageFlags.IsComponentsV2` and use containers/text displays rather than `content` or embeds. Keep player-supplied text safe from mentions and avoid relaying chat, addresses, device data, or tokens to Discord.
 

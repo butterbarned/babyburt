@@ -1,6 +1,6 @@
-# Running Flight on Oracle Cloud (Always Free)
+# Running Dusklight on Oracle Cloud (Always Free)
 
-Placeholders: `flight.example.com` = your domain, `YOUR_IP` = your home IP, `VM_IP` = the VM's public IP.
+Placeholders: `dusklight.example.com` = your domain, `YOUR_IP` = your home IP, `VM_IP` = the VM's public IP.
 Assumes Ubuntu 24.04. Commands are run on the VM unless marked **[local]**.
 
 ## 0. Before you start
@@ -16,10 +16,10 @@ Assumes Ubuntu 24.04. Commands are run on the VM unless marked **[local]**.
 If the VM already runs something else (for example a Caddy-fronted site), skip step 1 and read this first.
 - **Do not delete an Ampere A1 VM to start over.** Free A1 capacity is often unavailable, so you may not get it back.
 - Move anything else off the VM first and confirm it works elsewhere. If Caddy owns ports 80/443, stop and disable it
-  (`sudo systemctl disable --now caddy`) before step 5, because certbot standalone and Flight both need those ports.
+  (`sudo systemctl disable --now caddy`) before step 5, because certbot standalone and Dusklight both need those ports.
 - Ports 80 and 443 may already be open in both firewalls; add only 9339 (step 3) and avoid duplicate rules.
 - Free disk space and RAM are shared: check `df -h` and `free -h`.
-- Anything else that serves the same hostname must be turned off before Flight starts, or the bind on 443 fails.
+- Anything else that serves the same hostname must be turned off before Dusklight starts, or the bind on 443 fails.
 
 ## 1. Create the VM
 1. Console > Compute > Instances > **Create instance**.
@@ -31,7 +31,7 @@ If the VM already runs something else (for example a Caddy-fronted site), skip s
 7. **[local]** connect with the downloaded key (`chmod 600` it first on Linux/macOS): `ssh -i /path/to/ssh-key.key ubuntu@VM_IP`. With PuTTY, convert the key to `.ppk` using PuTTYgen (Load, then Save private key) and select it under Connection > SSH > Auth > Credentials. Later `ssh` and `rsync` commands in this guide need the same `-i /path/to/ssh-key.key` option. (Optional: Networking > IP management > Reserved public IPs, so the IP survives re-creating the VM.)
 
 ## 2. DNS
-Add an `A` record: `flight.example.com` -> `VM_IP`. Check with `dig +short flight.example.com` before step 5.
+Add an `A` record: `dusklight.example.com` -> `VM_IP`. Check with `dig +short dusklight.example.com` before step 5.
 
 ## 3. Open the ports (Oracle needs two layers)
 **Cloud firewall.** Networking > Virtual cloud networks > your VCN > Security Lists > Default > **Add ingress rules**, one each, source `0.0.0.0/0`, protocol TCP, destination port: `80`, `443`, `9339`.
@@ -59,7 +59,7 @@ node -v        # must be >= 22.5
 ## 5. TLS certificate
 Port 80 must be free and open (step 3).
 ```sh
-sudo certbot certonly --standalone -d flight.example.com
+sudo certbot certonly --standalone -d dusklight.example.com
 ```
 Create the `flight` user that will run the server, and let it read the certs:
 ```sh
@@ -68,7 +68,7 @@ sudo setfacl -R -m u:flight:rX /etc/letsencrypt/live /etc/letsencrypt/archive
 ```
 Restart on renewal:
 ```sh
-echo 'renew_hook = systemctl restart flight' | sudo tee -a /etc/letsencrypt/renewal/flight.example.com.conf
+echo 'renew_hook = systemctl restart flight' | sudo tee -a /etc/letsencrypt/renewal/dusklight.example.com.conf
 sudo certbot renew --dry-run
 ```
 (New renewed files stay readable because the ACL on `archive` is inherited via a default ACL: also run
@@ -105,7 +105,7 @@ AJ_ADMIN_EMAIL=admin@example.com
 Service file `/etc/systemd/system/flight.service`:
 ```ini
 [Unit]
-Description=Flight server
+Description=Dusklight server
 After=network-online.target
 Wants=network-online.target
 
@@ -117,12 +117,12 @@ Restart=always
 RestartSec=3
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 EnvironmentFile=/etc/flight.env
-Environment=AJ_PUBLIC_URL=https://flight.example.com
+Environment=AJ_PUBLIC_URL=https://dusklight.example.com
 Environment=AJ_BIND=0.0.0.0
 Environment=AJ_HTTP_PORT=443
 Environment=AJ_GAME_PORT=9339
-Environment=AJ_TLS_CERT=/etc/letsencrypt/live/flight.example.com/fullchain.pem
-Environment=AJ_TLS_KEY=/etc/letsencrypt/live/flight.example.com/privkey.pem
+Environment=AJ_TLS_CERT=/etc/letsencrypt/live/dusklight.example.com/fullchain.pem
+Environment=AJ_TLS_KEY=/etc/letsencrypt/live/dusklight.example.com/privkey.pem
 
 [Install]
 WantedBy=multi-user.target
@@ -145,12 +145,12 @@ In PuTTY instead: Connection > SSH > Tunnels, source port `8443`, destination `l
 Keep that connection open and browse to `https://localhost:8443/admin` (accept the certificate-name warning: the cert is for your domain). Alternatively add `AJ_ADMIN_ALLOW=YOUR_IP` to `/etc/flight.env` and restart; only do that with a fixed IP.
 
 1. Enter the setup code from `journalctl -u flight | grep setup` if asked, and choose the admin password.
-2. Make an account (or sign up at `https://flight.example.com/register`) and promote it to staff in the panel.
+2. Make an account (or sign up at `https://dusklight.example.com/register`) and promote it to staff in the panel.
 3. Open the **Invites** page, switch on **invite only**, and make codes. Do this before announcing the server.
-4. Visit `https://flight.example.com/` and `/register` to check the site works with HTTPS.
+4. Visit `https://dusklight.example.com/` and `/register` to check the site works with HTTPS.
 
 ## 9. Connect a game client
-The game client (launcher) must point at `https://flight.example.com` with game port `9339`. The server turns away clients that don't send device IDs (`AJ_REQUIRE_DEVICE`), so use your own Flight launcher build rather than an old or official one. Set `AJ_DOWNLOAD_URL` in `/etc/flight.env` to show a download link on the home page.
+The game client (launcher) must point at `https://dusklight.example.com` with game port `9339`. The server turns away clients that don't send device IDs (`AJ_REQUIRE_DEVICE`), so use your own Dusklight launcher build rather than an old or official one. Set `AJ_DOWNLOAD_URL` in `/etc/flight.env` to show a download link on the home page.
 
 ## 10. Updates
 Manual:

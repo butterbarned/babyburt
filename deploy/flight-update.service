@@ -1,5 +1,5 @@
 [Unit]
-Description=Update the Flight server from GitHub
+Description=Update the Dusklight server from GitHub
 After=network-online.target
 
 [Service]

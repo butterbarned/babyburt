@@ -105,8 +105,8 @@ Then restart the server. The log shows the bot signing in. The bot's commands ar
 
 ## Handing out invite codes through a Discord bot (optional)
 
-The separate **loveflight-bot** can give out invite codes: members agree to the rules in Discord and are sent
-one code by DM. The server does not need it. To connect it, set these on the Flight server and restart:
+The separate **FireFly-bot** can give out invite codes: members agree to the rules in Discord and are sent
+one code by DM. The server does not need it. To connect it, set these on the Dusklight server and restart:
 
 | Variable | What it does |
 |---|---|

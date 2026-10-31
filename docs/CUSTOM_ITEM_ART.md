@@ -41,7 +41,7 @@ same thing somewhere else.
 
 ---
 
-This describes how Flight draws an item that has a picture of its own (a PNG uploaded by the item's maker), for
+This describes how Dusklight draws an item that has a picture of its own (a PNG uploaded by the item's maker), for
 **clothing** (worn on an avatar, in two looks: *sticker* and *texture*) and for **den items**. It is written so
 you can reproduce the behaviour in another client or renderer, and so that people making items know which quirks
 to design around.

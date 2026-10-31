@@ -478,7 +478,7 @@ const run = async () => {
   const oldMod = await fetch(`${BASE}/mod`, {redirect: "manual"});
   assert.strictEqual(oldMod.status, 302);
   assert.strictEqual(oldMod.headers.get("location"), "/dashboard/staff");
-  assert.match(await (await fetch(`${BASE}/dashboard`)).text(), /Flight dashboard/);
+  assert.match(await (await fetch(`${BASE}/dashboard`)).text(), /Dusklight dashboard/);
   const dashboardSlash = await fetch(`${BASE}/dashboard/`, {redirect: "manual"});
   assert.strictEqual(dashboardSlash.status, 302);
   assert.strictEqual(dashboardSlash.headers.get("location"), "/dashboard");

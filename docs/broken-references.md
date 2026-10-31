@@ -27,7 +27,7 @@ shows the first kind of problem (defs naming defs that don't exist).
 
 ### Notes that were never part of this repository
 
-Flight is built on the Burrow server. Burrow's `tools/publish-public.sh`
+Dusklight is built on the Burrow server. Burrow's `tools/publish-public.sh`
 kept its working notes private when it published the code, so the comments
 that point at them lead nowhere:
 
