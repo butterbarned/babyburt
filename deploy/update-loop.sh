@@ -19,6 +19,6 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
 while :; do
   # A failed fetch or rejected update should not stop future update attempts.
-  "$script_dir/update.sh" || echo "flight update failed; will retry in $interval seconds" >&2
+  "$script_dir/update.sh" || echo "dusklight update failed; will retry in $interval seconds" >&2
   sleep "$interval"
 done

@@ -411,7 +411,7 @@
       <aside id="side">
         <div class="brand">
           <img class="mark" src="/logo.png" alt="">
-          <div><h1>Flight dashboard</h1><span class="hint" id="updated">Owner controls</span></div>
+          <div><h1>Dusklight dashboard</h1><span class="hint" id="updated">Owner controls</span></div>
         </div>
         <nav role="tablist" aria-orientation="vertical">
           <button role="tab" data-tab="overview" aria-selected="true"><span class="icon" aria-hidden="true">&#9673;</span>Overview</button>
@@ -509,7 +509,7 @@
           <p class="hint">This Components V2 card is updated every five minutes. Save changes, then publish immediately when the bot and public-status channel are configured.</p>
           <form id="discord-status-form">
             <label for="discord-status-title">Title</label>
-            <input id="discord-status-title" maxlength="80" placeholder="Flight status" aria-label="Discord public status-card title">
+            <input id="discord-status-title" maxlength="80" placeholder="Dusklight status" aria-label="Discord public status-card title">
             <label for="discord-status-note">Status message</label>
             <textarea id="discord-status-note" rows="3" maxlength="500" placeholder="Optional message shown above the live player and moderation counts." aria-label="Discord public status-card message"></textarea>
             <div class="send-row">
@@ -569,7 +569,7 @@
         </section>
         <section>
           <h2>Discord server moderation</h2>
-          <p class="hint">The consolidated bot also provides `/discord timeout`, `/discord untimeout`, `/discord kick`, `/discord ban`, `/discord unban`, and `/discord purge`. Give its Discord role the matching server permissions (Moderate Members, Kick Members, Ban Members, and Manage Messages) and keep that role above members it should moderate. Flight staff permissions remain the first check.</p>
+          <p class="hint">The consolidated bot also provides `/discord timeout`, `/discord untimeout`, `/discord kick`, `/discord ban`, `/discord unban`, and `/discord purge`. Give its Discord role the matching server permissions (Moderate Members, Kick Members, Ban Members, and Manage Messages) and keep that role above members it should moderate. Dusklight staff permissions remain the first check.</p>
         </section>
       </div>
 
@@ -1453,11 +1453,11 @@
         }));
         $("discord-bot-status").textContent = configured
           ? "Credentials and webhook secrets are intentionally never shown in this dashboard."
-          : "Add the missing environment variables to the service that starts Flight; dashboard settings cannot store bot secrets.";
+          : "Add the missing environment variables to the service that starts Dusklight; dashboard settings cannot store bot secrets.";
         $("discord-bot-status").classList.toggle("bad", !configured || !data.connected);
         const editingStatusCard = ["discord-status-title", "discord-status-note"].includes(document.activeElement && document.activeElement.id);
         if (!editingStatusCard) {
-          $("discord-status-title").value = data.statusCard && data.statusCard.title || "Flight status";
+          $("discord-status-title").value = data.statusCard && data.statusCard.title || "Dusklight status";
           $("discord-status-note").value = data.statusCard && data.statusCard.note || "";
         }
         const editingRouting = document.activeElement && (document.activeElement.dataset.discordChannel || document.activeElement.id === "discord-github-repository");

@@ -110,7 +110,7 @@ module.exports = {
     ? {url: env.AJ_RECOVERY_MAIL_URL, token: env.AJ_RECOVERY_MAIL_TOKEN} : null,
 
   // optional: hand newly made invite codes to an outside service (the
-  // loveflight-bot Discord bot) that gives them out. Both values must be set;
+  // FireFly-bot Discord bot) that gives them out. Both values must be set;
   // with either missing nothing is sent and the server works as before. The
   // panel still shows every code, whether or not the service is reachable.
   inviteHook: env.AJ_INVITE_HOOK_URL && env.AJ_INVITE_HOOK_TOKEN
@@ -133,7 +133,7 @@ module.exports = {
   // sign in to /dashboard/admin (OAuth2 redirects:
   // <siteUrl>account/discord/callback,
   // <siteUrl>dashboard/admin/discord/callback, and
-  // <siteUrl>dashboard/staff/discord/callback), and a bot in Flight's Discord
+  // <siteUrl>dashboard/staff/discord/callback), and a bot in Dusklight's Discord
   // server for the booster badge. linking is off without the first two, the
   // booster badge left alone without the last two.
   discord: {
@@ -170,7 +170,7 @@ module.exports = {
   // 39: chat drawn as text and never as markup, the chat filter, and the
   // game no longer open to SWFs from other addresses.
   // 40: the chat filter's window laid out again.
-  // 41: the game's text says "Flight" where it said Animal Jam.
+  // 41: the game's text says "Dusklight" where it said Animal Jam.
   // 48: the item giver (the item finder renamed) with previews and hex colours;
   // 49 and 50: its link to a colour picker.
   // 61: the Owner, Moderator, Developer and Verified name tag badges seen by everyone.
@@ -207,11 +207,11 @@ module.exports = {
   // it when either text changes in a way that matters. the values under it
   // are written into both pages. the emails and the host's country are
   // placeholders until set; the operator is, at the owner's word, said to
-  // be in the EU without a name or a country.
-  termsVersion: "2026-10-21",
+  // be in the United States without a name or a state.
+  termsVersion: "2026-10-31",
   legalEmail: env.AJ_LEGAL_EMAIL || "legal@burrow.moe",
   adminEmail: env.AJ_ADMIN_EMAIL || "admin@burrow.moe",
-  operator: env.AJ_OPERATOR || "an individual based in the European Union",
+  operator: env.AJ_OPERATOR || "an individual based in the United States",
   hostedIn: env.AJ_HOSTED_IN || "[country of the hosting provider]",
 
   // links on the home page; an empty download reads "Soon"

@@ -1,10 +1,10 @@
-# Flight
+# Dusklight
 
 A private server for the AJ Classic desktop client, written in Node.js with no framework. It handles
 accounts and sign-up (with optional invite codes), the game server itself, an owner dashboard, a moderator
 panel, an optional Discord staff bot, and the public website (home, sign-up, account, terms and privacy).
 
-> Flight is an unofficial fan project. It is not affiliated with, endorsed by or connected to WildWorks, Inc.
+> Dusklight is an unofficial fan project. It is not affiliated with, endorsed by or connected to WildWorks, Inc.
 > or Animal Jam. Animal Jam and Animal Jam Classic are trademarks of WildWorks, Inc. Game content belongs to
 > its owners. Requests for removal can be sent to the contact address you set in `AJ_LEGAL_EMAIL`.
 
@@ -13,8 +13,8 @@ panel, an optional Discord staff bot, and the public website (home, sign-up, acc
 You need Node.js 22.5 or later and Git.
 
 ```sh
-git clone https://github.com/butterbarned/babyburt flight
-cd flight
+git clone https://github.com/butterbarned/babyburt dusklight
+cd dusklight
 npm ci
 npm start
 ```

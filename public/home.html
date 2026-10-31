@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Flight</title>
-    <meta name="description" content="Flight, an AJ Classic private server.">
+    <title>Dusklight</title>
+    <meta name="description" content="Dusklight, an 18+ hangout for all sorts of critters- even those who prefer the dark.">
     <link rel="icon" type="image/png" href="/logo-square.png">
     <style>
       @font-face { font-family: "DigitalDelivery"; font-weight: 400; font-display: swap; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
@@ -141,7 +141,7 @@
       #name span:nth-of-type(1) { transform: translateY(11%); opacity: 0.5; }
       #name span:nth-of-type(2) { transform: translateY(22%); opacity: 0.26; }
       #name span:nth-of-type(3) { transform: translateY(33%); opacity: 0.1; }
-      #bunny {
+      #firefly {
         position: relative;
         z-index: 3;
         height: auto;
@@ -190,6 +190,10 @@
       #list h3 { font-size: 21px; font-weight: 700; line-height: 1.15; white-space: nowrap; }
       #list p { color: var(--muted); font-size: 15px; text-align: right; }
       #list li:hover p { color: var(--text); }
+
+      #policy { max-width: 760px; border-top: 1px solid var(--line); padding-top: 18px; }
+      #policy p { margin: 0 0 14px; font-size: clamp(17px, 2vw, 21px); line-height: 1.45; color: var(--muted); }
+      #policy p:first-child { color: var(--text); }
 
       #get {
         position: relative;
@@ -250,7 +254,7 @@
       @media (max-width: 720px) {
         #nav a.link { display: none; }
         #name h1, #name span { font-size: 21vw; }
-        #bunny { width: 30vw; margin-bottom: -5vw; }
+        #firefly { width: 30vw; margin-bottom: -5vw; }
         #line { margin-top: 11vw; }
         section { padding: 60px 0; }
         #list { grid-template-columns: 1fr; }
@@ -268,8 +272,9 @@
   </head>
   <body data-download="{{downloadUrl}}" data-github="{{githubUrl}}" data-discord="{{discordUrl}}">
     <nav id="nav" aria-label="Main">
-      <a class="brand" href="#top"><img src="/logo.png" alt=""><span>Flight</span></a>
+      <a class="brand" href="#top"><img src="/logo.png" alt=""><span>Dusklight</span></a>
       <a class="link" href="#here">Features</a>
+      <a class="link" href="#stance">Our stance</a>
       <a class="link" href="/commands">Commands</a>
       <a class="link" href="/account">Account</a>
       <a class="link icon" data-link="github" href="#" aria-label="GitHub" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.1c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.47.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.42.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></a>
@@ -282,12 +287,12 @@
       <div class="dots" aria-hidden="true"></div>
       <div class="fade" aria-hidden="true"></div>
       <div class="in" id="top">
-        <img id="bunny" src="/logo.png" alt="" width="300" height="244">
+        <img id="firefly" src="/logo.png" alt="" width="548" height="488">
         <div id="name">
-          <h1>Flight</h1>
-          <span aria-hidden="true">Flight</span><span aria-hidden="true">Flight</span><span aria-hidden="true">Flight</span>
+          <h1>Dusklight</h1>
+          <span aria-hidden="true">Dusklight</span><span aria-hidden="true">Dusklight</span><span aria-hidden="true">Dusklight</span>
         </div>
-        <p id="line">an AJ Classic private server</p>
+        <p id="line">an 18+ hangout for all sorts of critters- even those who prefer the dark</p>
         <div class="buttons">
           <a class="pill main big" href="#download">Download</a>
           <a class="pill big" href="/register">Create account</a>
@@ -304,7 +309,7 @@
       <section id="here">
         <div class="wrap">
           <div class="head rise">
-            <h2>Everything <em>unlocked</em></h2>
+            <h2>Make your own <em>light</em></h2>
           </div>
           <ul id="list" class="rise">
             <li><h3>Item giver</h3><p>any item in custom colours</p></li>
@@ -323,11 +328,24 @@
         </div>
       </section>
 
+      <section id="stance">
+        <div class="wrap">
+          <div class="head rise">
+            <h2>Our stance on <em>fiction</em></h2>
+          </div>
+          <div id="policy" class="rise">
+            <p>Dusklight is against censorship. You are free to join whatever your stance on fiction is.</p>
+            <p>We will not accept bigotry. Hate aimed at real people, for who they are, gets you removed.</p>
+            <p>All we ask is that everyone respects each other's boundaries.</p>
+          </div>
+        </div>
+      </section>
+
       <section id="download">
         <div class="wrap">
           <div id="get" class="rise">
             <div>
-              <h2>Get Flight</h2>
+              <h2>Get Dusklight</h2>
               <p>Windows, Linux, macOS</p>
             </div>
             <div class="side">
@@ -342,16 +360,17 @@
     <footer>
       <div class="wrap">
         <div class="row">
-          <a class="brand" href="#top"><img src="/logo.png" alt="">Flight</a>
+          <a class="brand" href="#top"><img src="/logo.png" alt="">Dusklight</a>
           <a href="/register">Create account</a>
           <a href="/account">Account</a>
           <a href="/commands">Commands</a>
+          <a href="#stance">Our stance</a>
           <a data-link="github" href="#" hidden>GitHub</a>
           <a data-link="discord" href="#" hidden>Discord</a>
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy</a>
         </div>
-        <p>Flight is an unofficial fan project, not affiliated with or endorsed by WildWorks. Animal Jam is a trademark of WildWorks, Inc.</p>
+        <p>Dusklight is an unofficial fan project, not affiliated with or endorsed by WildWorks. Animal Jam is a trademark of WildWorks, Inc.</p>
       </div>
     </footer>
 

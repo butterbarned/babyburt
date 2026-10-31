@@ -1,6 +1,6 @@
-# Running Flight on your own computer
+# Running Dusklight on your own computer
 
-This sets up a Flight server on your own computer. By default it is private: only your machine can reach it.
+This sets up a Dusklight server on your own computer. By default it is private: only your machine can reach it.
 Step 10 shows how to let friends in from home. For a server that runs all the time, use
 [deploy/ORACLE.md](deploy/ORACLE.md) instead.
 
@@ -13,8 +13,8 @@ Step 10 shows how to let friends in from home. For a server that runs all the ti
 
 ## 2. Get the code and install
 ```sh
-git clone https://github.com/butterbarned/babyburt flight
-cd flight
+git clone https://github.com/butterbarned/babyburt dusklight
+cd dusklight
 npm ci
 ```
 `npm ci` installs one dependency (`discord.js`), used only by the optional Discord bot. The game does not need it.
@@ -34,7 +34,7 @@ see step 10).
 
 **Seeing errors.** Everything the server prints appears in this terminal, including errors, so keep the window
 visible while you test. Packet logging (one line for each message between game and server) is on by default for a
-local server. To also save the output to a file, run `npm start 2>&1 | tee ~/flight.log` (the `2>&1` includes
+local server. To also save the output to a file, run `npm start 2>&1 | tee ~/dusklight.log` (the `2>&1` includes
 error messages).
 
 **Setting an environment variable** (used throughout this guide) depends on your shell:
@@ -122,7 +122,7 @@ Ports used: **8080** (website and sign-up) and **9339** (the game). Both are TCP
 3. **Allow the ports through your computer's firewall:**
    - Linux with ufw: `sudo ufw allow 8080/tcp && sudo ufw allow 9339/tcp`
    - Linux with firewalld (e.g. Fedora): `sudo firewall-cmd --add-port=8080/tcp --add-port=9339/tcp --permanent && sudo firewall-cmd --reload`
-   - Windows (admin PowerShell): `New-NetFirewallRule -DisplayName "Flight" -Direction Inbound -Protocol TCP -LocalPort 8080,9339 -Action Allow`
+   - Windows (admin PowerShell): `New-NetFirewallRule -DisplayName "Dusklight" -Direction Inbound -Protocol TCP -LocalPort 8080,9339 -Action Allow`
    - If you have no firewall running, skip this.
 4. **Forward the ports on your router.** In the router's admin page (often `192.168.0.1` or `192.168.1.1`), find
    "Port forwarding" / "Virtual server" and forward TCP **8080** and **9339** to your computer's local IP. Give
@@ -192,7 +192,7 @@ restore your accounts if something goes wrong.
 - **Port already in use:** change `AJ_HTTP_PORT` / `AJ_GAME_PORT`, or stop the other program.
 - **The client says it cannot connect:** make sure the server is running and the client's address is exactly
   `http://127.0.0.1:8080`, not `https` (there is no certificate locally).
-- **The client says it is outdated or is refused at login:** only a Flight client that sends device IDs is
+- **The client says it is outdated or is refused at login:** only a Dusklight client that sends device IDs is
   accepted. For quick local experiments you can start the server with `AJ_REQUIRE_DEVICE=0`.
 - **Friends can't connect (step 10):** test from outside your network first. Check that the server was started
   with `AJ_BIND=0.0.0.0` and an `AJ_PUBLIC_URL` that matches the address friends use, that both ports (8080 and

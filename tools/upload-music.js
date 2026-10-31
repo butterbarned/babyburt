@@ -322,7 +322,7 @@ const main = async () => {
     await client.login(password);
     existing = new Set((await client.tracks()).map(track => track.name.toLowerCase()));
   }
-  const temp = options.keep ? path.resolve(options.keep) : fs.mkdtempSync(path.join(os.tmpdir(), "flight-music-"));
+  const temp = options.keep ? path.resolve(options.keep) : fs.mkdtempSync(path.join(os.tmpdir(), "dusklight-music-"));
   fs.mkdirSync(temp, {recursive: true});
   const tally = {uploaded: 0, skipped: 0, failed: 0};
   try {

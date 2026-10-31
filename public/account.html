@@ -368,7 +368,7 @@
           <h2>Discord</h2>
           <p id="badges" hidden></p>
           <p id="discord-shown"></p>
-          <p class="hint" id="discord-about">Shown on your card in the game. Sign in to Discord to link your account; boosting Flight's Discord server gives you the Server Booster badge while you boost.</p>
+          <p class="hint" id="discord-about">Shown on your card in the game. Sign in to Discord to link your account; boosting Dusklight's Discord server gives you the Server Booster badge while you boost.</p>
           <div class="row"><button class="primary" id="discord-link" type="button">Link Discord</button>
             <button id="discord-remove" type="button">Unlink</button></div>
           <p class="status" id="discord-status" role="status"></p>
@@ -484,7 +484,7 @@
           <div id="feedback-sent"></div>
         </section>
       </div>
-      <p class="hint" style="text-align:center;margin:20px 0 0">Flight is an unofficial fan project, not affiliated with WildWorks or Animal Jam. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+      <p class="hint" style="text-align:center;margin:20px 0 0">Dusklight is an unofficial fan project, not affiliated with WildWorks or Animal Jam. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
     </div>
 
     <script src="/captcha.js"></script>
@@ -1367,7 +1367,7 @@
         linked: "Discord linked.",
         cancelled: "Linking was cancelled.",
         expired: "That took too long, or was started in another browser. Try again.",
-        taken: "That Discord account is linked to another Flight account.",
+        taken: "That Discord account is linked to another Dusklight account.",
         discord: "Discord did not answer. Try again later.",
         off: "Linking Discord is not available right now.",
       };
@@ -1484,7 +1484,7 @@
           }
           const link = document.createElement("a");
           link.href = URL.createObjectURL(await response.blob());
-          link.download = `flight-data-${account.username}.json`;
+          link.download = `dusklight-data-${account.username}.json`;
           link.click();
           URL.revokeObjectURL(link.href);
           setStatus("export-status", "Downloaded.");

@@ -1,14 +1,14 @@
 #!/sbin/openrc-run
 # Install as /etc/init.d/flight-update (see deploy/README.md).
 
-description="Update the Flight server from GitHub"
+description="Update the Dusklight server from GitHub"
 supervisor=supervise-daemon
 command=/bin/bash
 command_args="${FLIGHT_DIR:-/home/aj/ajc-private-server}/deploy/update-loop.sh"
 pidfile="/run/${RC_SVCNAME}.pid"
 stopgroup=yes
 
-# update.sh uses this to choose rc-service when it restarts Flight.
+# update.sh uses this to choose rc-service when it restarts Dusklight.
 : "${FLIGHT_INIT:=openrc}"
 export FLIGHT_INIT
 

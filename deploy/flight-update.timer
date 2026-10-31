@@ -1,5 +1,5 @@
 [Unit]
-Description=Look for a new Flight server every two minutes
+Description=Look for a new Dusklight server every two minutes
 
 [Timer]
 OnBootSec=2min

@@ -325,9 +325,9 @@ and the names of the Epic Dens, which are how a showcase den is asked for.
 
 **Linking a Discord account; the Server Booster badge; Discord sign-in to the dashboards.**
 
-a player's Discord account, linked on the account page by signing in to Discord (OAuth2, scope "identify"): the only way a Discord username gets onto a player's card, so the name shown is theirs. one Discord account for one Flight account, or a single boost would badge a player's every account.
+a player's Discord account, linked on the account page by signing in to Discord (OAuth2, scope "identify"): the only way a Discord username gets onto a player's card, so the name shown is theirs. one Discord account for one Dusklight account, or a single boost would badge a player's every account.
 
-the Discord Server Booster badge follows the linked account: given while it boosts Flight's Discord server, taken off when it stops, checked when the account is linked and again every RECHECK_HOURS. Flight's bot asks Discord (GET /guilds/<id>/members/<user id>, which needs no privileged intent: the bot only has to be in the server). an account that is not linked keeps whatever badges the admin gave it.
+the Discord Server Booster badge follows the linked account: given while it boosts Dusklight's Discord server, taken off when it stops, checked when the account is linked and again every RECHECK_HOURS. Dusklight's bot asks Discord (GET /guilds/<id>/members/<user id>, which needs no privileged intent: the bot only has to be in the server). an account that is not linked keeps whatever badges the admin gave it.
 
 with AJ_DISCORD_CLIENT_ID and AJ_DISCORD_CLIENT_SECRET unset, linking is off; without AJ_DISCORD_BOT_TOKEN and AJ_DISCORD_GUILD_ID, the booster badge is left alone.
 
@@ -346,7 +346,7 @@ with AJ_DISCORD_CLIENT_ID and AJ_DISCORD_CLIENT_SECRET unset, linking is off; wi
 
 **Hands invite codes to an outside bot, when one is set up.**
 
-optional link to an outside service (the loveflight-bot) that gives invite codes out. with AJ_INVITE_HOOK_URL / AJ_INVITE_HOOK_TOKEN unset, none of this does anything. a failure here never stops codes being made.
+optional link to an outside service (the FireFly-bot) that gives invite codes out. with AJ_INVITE_HOOK_URL / AJ_INVITE_HOOK_TOKEN unset, none of this does anything. a failure here never stops codes being made.
 
 - 37 lines
 - **Used by** [`lib/panel.js`](#lib-panel-js)
@@ -1047,7 +1047,7 @@ a role is a list of permissions, and every staff action checks the one it needs,
 
 **The Discord bot: staff commands and the status board.**
 
-Flight's Discord control surface. It is intentionally a thin client over lib/modpanel.js: Discord proves who clicked a command, and the panel then proves that their linked Flight account is still active staff and applies its usual permission and rank rules. There is no Discord-only staff list.
+Dusklight's Discord control surface. It is intentionally a thin client over lib/modpanel.js: Discord proves who clicked a command, and the panel then proves that their linked Dusklight account is still active staff and applies its usual permission and rank rules. There is no Discord-only staff list.
 
 - 879 lines
 - **Uses** [`lib/accounts.js`](#lib-accounts-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/modlog.js`](#lib-modlog-js), [`lib/reports.js`](#lib-reports-js), [`lib/world.js`](#lib-world-js)

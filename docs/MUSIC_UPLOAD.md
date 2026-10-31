@@ -11,7 +11,7 @@ Windows: `winget install ffmpeg`). It has no other dependencies.
 ## Quick start (local server)
 
 ```sh
-node tools/upload-music.js ~/Music/flight
+node tools/upload-music.js ~/Music/dusklight
 ```
 
 It asks for the admin password (typing is hidden), signs in to `http://127.0.0.1:8080`, and goes through the
@@ -33,7 +33,7 @@ The admin panel only answers from the server itself, so use an SSH tunnel (see t
 open, and point the script at the tunnel:
 
 ```sh
-node tools/upload-music.js --server https://127.0.0.1:8443 --insecure ~/Music/flight
+node tools/upload-music.js --server https://127.0.0.1:8443 --insecure ~/Music/dusklight
 ```
 
 `--insecure` is needed because the certificate is for your domain, not `127.0.0.1`. The script refuses it for
@@ -80,7 +80,7 @@ tracks uploaded this way can be renamed. A rename is written to the staff action
 To turn a folder of FLACs into MP3s you can check or edit first:
 
 ```sh
-node tools/upload-music.js --convert-only ./mp3s ~/Music/flight
+node tools/upload-music.js --convert-only ./mp3s ~/Music/dusklight
 ```
 
 Or by hand with ffmpeg, using the same settings the script uses:
