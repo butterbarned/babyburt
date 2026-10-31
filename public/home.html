@@ -5,31 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Dusklight</title>
     <meta name="description" content="Dusklight, an 18+ hangout for all sorts of critters- even those who prefer the dark.">
-    <link rel="icon" type="image/png" href="/logo-square.png">
+    <link rel="icon" type="image/png" href="/logo-square.png?v=firefly">
     <style>
       @font-face { font-family: "DigitalDelivery"; font-weight: 400; font-display: swap; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
       @font-face { font-family: "DigitalDelivery"; font-weight: 700; font-display: swap; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
       :root {
         color-scheme: dark;
-        --bg: #000;
-        --panel: #0d0d0d;
-        --raised: #1a1a1a;
-        --line: #2e2e2e;
-        --text: #fff;
-        --muted: #8c8c8c;
+        --bg: #0b0a1f;
+        --panel: #131335;
+        --raised: #1d1d47;
+        --line: #2e2e5e;
+        --text: #fbf6dd;
+        --muted: #9a9cc8;
+        --glow: #f6ec7c;
+        --glow-hover: #fff6a6;
+        --ink: #17142e;
+        --leaf: #c9e8a6;
+        --sky: #45bdff;
         --wide: 1160px;
         --paws: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cg fill='%23fff'%3E%3Cg transform='translate(34 38) rotate(-20)'%3E%3Cellipse cy='8' rx='10' ry='8'/%3E%3Ccircle cx='-12' cy='-3' r='4'/%3E%3Ccircle cx='-4.5' cy='-10' r='4.2'/%3E%3Ccircle cx='4.5' cy='-10' r='4.2'/%3E%3Ccircle cx='12' cy='-3' r='4'/%3E%3C/g%3E%3Cg transform='translate(108 112) rotate(24)'%3E%3Cellipse cy='8' rx='10' ry='8'/%3E%3Ccircle cx='-12' cy='-3' r='4'/%3E%3Ccircle cx='-4.5' cy='-10' r='4.2'/%3E%3Ccircle cx='4.5' cy='-10' r='4.2'/%3E%3Ccircle cx='12' cy='-3' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
       }
       * { box-sizing: border-box; }
       [hidden] { display: none !important; }
-      ::selection { background: #fff; color: #000; }
+      ::selection { background: var(--glow); color: var(--ink); }
       ::-webkit-scrollbar { width: 10px; height: 10px; }
       ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; border: 3px solid var(--bg); }
       html { scroll-behavior: smooth; scroll-padding-top: 76px; }
       body {
         margin: 0;
         overflow-x: hidden;
-        background: var(--bg);
+        background:
+          radial-gradient(1400px 760px at 50% -8%, #2b2168 0%, transparent 62%),
+          radial-gradient(1000px 600px at 100% 70%, #0f2f4d 0%, transparent 62%),
+          var(--bg);
         color: var(--text);
         font: 16px/1.45 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
         -webkit-font-smoothing: antialiased;
@@ -53,12 +61,12 @@
         cursor: pointer;
         transition: background 0.14s, border-color 0.14s, color 0.14s, transform 0.14s, box-shadow 0.14s;
       }
-      .pill:hover { background: var(--raised); border-color: #555; }
-      .pill.main { color: #000; background: var(--text); border-color: var(--text); }
-      .pill.main:hover { background: #fff; transform: translate(-2px, -2px); box-shadow: 4px 4px 0 #000, 5px 5px 0 var(--text); }
+      .pill:hover { background: var(--raised); border-color: #4b4d85; }
+      .pill.main { color: var(--ink); background: var(--glow); border-color: var(--glow); box-shadow: 0 0 18px rgba(246, 236, 124, 0.25); }
+      .pill.main:hover { background: var(--glow-hover); border-color: var(--glow-hover); transform: translateY(-2px); box-shadow: 0 0 34px rgba(246, 236, 124, 0.55); }
       .pill.main:active { transform: none; box-shadow: none; }
       .pill.big { padding: 14px 30px 15px; font-size: 18px; }
-      .pill.soon, .pill.soon:hover { color: var(--muted); background: none; border: 1px dashed #555; cursor: default; transform: none; box-shadow: none; }
+      .pill.soon, .pill.soon:hover { color: var(--muted); background: none; border: 1px dashed #4b4d85; cursor: default; transform: none; box-shadow: none; }
       .pill svg { width: 18px; height: 18px; flex: none; }
 
       #nav {
@@ -75,7 +83,7 @@
         padding: 7px 8px 7px 16px;
         border: 1px solid var(--line);
         border-radius: 999px;
-        background: rgba(0, 0, 0, 0.72);
+        background: rgba(11, 10, 31, 0.72);
         -webkit-backdrop-filter: blur(14px);
         backdrop-filter: blur(14px);
       }
@@ -111,12 +119,33 @@
       #hero .dots {
         position: absolute;
         top: 0; right: 0; bottom: 0; left: 0;
-        background: radial-gradient(#fff 1.3px, transparent 1.8px) 0 0 / 22px 22px;
+        background: radial-gradient(rgba(246, 236, 124, 0.85) 1.3px, transparent 1.8px) 0 0 / 22px 22px;
         opacity: 0.55;
         -webkit-mask-image: radial-gradient(420px circle at var(--mx) var(--my), #000 0, transparent 100%);
         mask-image: radial-gradient(420px circle at var(--mx) var(--my), #000 0, transparent 100%);
       }
-      #hero .fade { position: absolute; right: 0; bottom: 0; left: 0; height: 160px; background: linear-gradient(transparent, #000); }
+      #hero .fade { position: absolute; right: 0; bottom: 0; left: 0; height: 160px; background: linear-gradient(transparent, var(--bg)); }
+      /* fireflies drifting over the hero */
+      #hero .flies { position: absolute; inset: 0; pointer-events: none; }
+      #hero .flies i {
+        position: absolute;
+        left: var(--x);
+        top: var(--y);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--glow);
+        box-shadow: 0 0 10px 3px rgba(246, 236, 124, 0.7), 0 0 26px 8px rgba(201, 232, 166, 0.25);
+        opacity: 0;
+        animation: fly 9s ease-in-out var(--d) infinite;
+      }
+      @keyframes fly {
+        0% { opacity: 0; transform: translate(0, 0); }
+        25% { opacity: 1; }
+        50% { opacity: 0.35; transform: translate(26px, -34px); }
+        75% { opacity: 1; }
+        100% { opacity: 0; transform: translate(-12px, -70px); }
+      }
       @keyframes drift { to { transform: translate(150px, 150px); } }
       #hero > .in { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; }
 
@@ -129,7 +158,7 @@
         line-height: 0.8;
         text-transform: uppercase;
       }
-      #name h1 { position: relative; z-index: 2; }
+      #name h1 { position: relative; z-index: 2; text-shadow: 0 0 60px rgba(246, 236, 124, 0.22); }
       #name span {
         position: absolute;
         top: 0; left: 0; right: 0;
@@ -147,7 +176,7 @@
         height: auto;
         width: clamp(140px, 21vw, 260px);
         margin-bottom: calc(clamp(140px, 21vw, 260px) * -0.2);
-        filter: drop-shadow(0 10px 0 rgba(0, 0, 0, 0.55));
+        filter: drop-shadow(0 0 30px rgba(246, 236, 124, 0.45));
         animation: breathe 5s ease-in-out infinite;
         transform-origin: 50% 100%;
       }
@@ -173,7 +202,7 @@
       section { position: relative; padding: 84px 0; }
       .head { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; margin-bottom: 38px; }
       .head h2 { font-size: clamp(38px, 6.4vw, 78px); font-weight: 700; line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase; }
-      .head h2 em { font-style: normal; color: transparent; -webkit-text-stroke: 1.5px #fff; }
+      .head h2 em { font-style: normal; color: transparent; -webkit-text-stroke: 1.5px var(--glow); }
       .head.mid { align-items: center; text-align: center; }
 
       #list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 56px; margin: 0; padding: 0; list-style: none; }
@@ -191,10 +220,6 @@
       #list p { color: var(--muted); font-size: 15px; text-align: right; }
       #list li:hover p { color: var(--text); }
 
-      #policy { max-width: 760px; border-top: 1px solid var(--line); padding-top: 18px; }
-      #policy p { margin: 0 0 14px; font-size: clamp(17px, 2vw, 21px); line-height: 1.45; color: var(--muted); }
-      #policy p:first-child { color: var(--text); }
-
       #get {
         position: relative;
         display: grid;
@@ -203,8 +228,9 @@
         gap: 30px;
         padding: clamp(30px, 6vw, 70px);
         border-radius: 36px;
-        color: #000;
-        background: var(--text);
+        color: var(--ink);
+        background: linear-gradient(135deg, var(--glow) 0%, var(--leaf) 100%);
+        box-shadow: 0 0 90px rgba(246, 236, 124, 0.18);
         overflow: hidden;
       }
       #get::before {
@@ -221,20 +247,20 @@
         position: absolute;
         top: 0; right: 0; bottom: 0;
         width: 55%;
-        background: radial-gradient(#000 2px, transparent 2.6px) 0 0 / 16px 16px;
+        background: radial-gradient(var(--ink) 2px, transparent 2.6px) 0 0 / 16px 16px;
         opacity: 0.5;
         -webkit-mask-image: linear-gradient(90deg, transparent, #000);
         mask-image: linear-gradient(90deg, transparent, #000);
       }
       #get > * { position: relative; z-index: 1; }
       #get h2 { font-size: clamp(40px, 7vw, 92px); font-weight: 700; line-height: 0.9; letter-spacing: -0.03em; text-transform: uppercase; }
-      #get p { margin-top: 14px; font-size: 17px; color: #333; }
+      #get p { margin-top: 14px; font-size: 17px; color: #3a3560; }
       #get .side { display: flex; flex-direction: column; align-items: center; gap: 18px; }
-      #get .hole { display: flex; align-items: center; justify-content: center; width: clamp(170px, 21vw, 250px); height: clamp(170px, 21vw, 250px); border-radius: 50%; background: #000; box-shadow: 0 0 0 10px #fff, 0 0 0 11.5px #000; }
+      #get .hole { display: flex; align-items: center; justify-content: center; width: clamp(170px, 21vw, 250px); height: clamp(170px, 21vw, 250px); border-radius: 50%; background: radial-gradient(circle at 50% 40%, #2b2168, var(--ink) 70%); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.5), 0 0 0 11.5px var(--ink); }
       #get .hole img { width: 82%; margin-top: 8%; }
-      #get .pill { color: #fff; background: #000; border-color: #000; }
-      #get .pill:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 #fff, 5px 5px 0 #000; }
-      #get .pill.soon, #get .pill.soon:hover { color: #555; background: none; border: 1px dashed #555; transform: none; box-shadow: none; }
+      #get .pill { color: var(--glow); background: var(--ink); border-color: var(--ink); }
+      #get .pill:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(23, 20, 46, 0.35); }
+      #get .pill.soon, #get .pill.soon:hover { color: #4a4570; background: none; border: 1px dashed #4a4570; transform: none; box-shadow: none; }
 
       footer { margin-top: 30px; padding: 40px 0 44px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
       footer .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; }
@@ -272,9 +298,8 @@
   </head>
   <body data-download="{{downloadUrl}}" data-github="{{githubUrl}}" data-discord="{{discordUrl}}">
     <nav id="nav" aria-label="Main">
-      <a class="brand" href="#top"><img src="/logo.png" alt=""><span>Dusklight</span></a>
+      <a class="brand" href="#top"><img src="/logo.png?v=firefly" alt=""><span>Dusklight</span></a>
       <a class="link" href="#here">Features</a>
-      <a class="link" href="#stance">Our stance</a>
       <a class="link" href="/commands">Commands</a>
       <a class="link" href="/account">Account</a>
       <a class="link icon" data-link="github" href="#" aria-label="GitHub" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.1c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.47.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.42.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></a>
@@ -285,9 +310,15 @@
     <header id="hero">
       <div class="paws" aria-hidden="true"></div>
       <div class="dots" aria-hidden="true"></div>
+      <div class="flies" aria-hidden="true">
+        <i style="--x: 14%; --y: 30%; --d: 0s"></i><i style="--x: 24%; --y: 66%; --d: 2.4s"></i>
+        <i style="--x: 36%; --y: 20%; --d: 5.1s"></i><i style="--x: 62%; --y: 72%; --d: 1.2s"></i>
+        <i style="--x: 74%; --y: 26%; --d: 3.6s"></i><i style="--x: 86%; --y: 58%; --d: 6.3s"></i>
+        <i style="--x: 8%; --y: 82%; --d: 4.4s"></i><i style="--x: 92%; --y: 16%; --d: 7.2s"></i>
+      </div>
       <div class="fade" aria-hidden="true"></div>
       <div class="in" id="top">
-        <img id="firefly" src="/logo.png" alt="" width="548" height="488">
+        <img id="firefly" src="/logo.png?v=firefly" alt="" width="548" height="488">
         <div id="name">
           <h1>Dusklight</h1>
           <span aria-hidden="true">Dusklight</span><span aria-hidden="true">Dusklight</span><span aria-hidden="true">Dusklight</span>
@@ -328,19 +359,6 @@
         </div>
       </section>
 
-      <section id="stance">
-        <div class="wrap">
-          <div class="head rise">
-            <h2>Our stance on <em>fiction</em></h2>
-          </div>
-          <div id="policy" class="rise">
-            <p>Dusklight is against censorship. You are free to join whatever your stance on fiction is.</p>
-            <p>We will not accept bigotry. Hate aimed at real people, for who they are, gets you removed.</p>
-            <p>All we ask is that everyone respects each other's boundaries.</p>
-          </div>
-        </div>
-      </section>
-
       <section id="download">
         <div class="wrap">
           <div id="get" class="rise">
@@ -349,7 +367,7 @@
               <p>Windows, Linux, macOS</p>
             </div>
             <div class="side">
-              <div class="hole"><img src="/logo.png" alt="" loading="lazy"></div>
+              <div class="hole"><img src="/logo.png?v=firefly" alt="" loading="lazy"></div>
               <a class="pill big soon" id="get-button" aria-disabled="true">Soon</a>
             </div>
           </div>
@@ -360,11 +378,10 @@
     <footer>
       <div class="wrap">
         <div class="row">
-          <a class="brand" href="#top"><img src="/logo.png" alt="">Dusklight</a>
+          <a class="brand" href="#top"><img src="/logo.png?v=firefly" alt="">Dusklight</a>
           <a href="/register">Create account</a>
           <a href="/account">Account</a>
           <a href="/commands">Commands</a>
-          <a href="#stance">Our stance</a>
           <a data-link="github" href="#" hidden>GitHub</a>
           <a data-link="discord" href="#" hidden>Discord</a>
           <a href="/terms">Terms</a>

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Download Dusklight</title>
-    <link rel="icon" type="image/png" href="/logo-square.png">
+    <link rel="icon" type="image/png" href="/logo-square.png?v=firefly">
     <style>
       /* the look of the sign-up page: black and white, the game's text font,
          rounded pills. the rows are filled in by the server (lib/http.js),
@@ -13,18 +13,21 @@
       @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
       :root {
         color-scheme: dark;
-        --bg: #000;
-        --panel: #0d0d0d;
-        --line: #2e2e2e;
-        --text: #fff;
-        --muted: #8c8c8c;
+        --bg: #0b0a1f;
+        --panel: #131335;
+        --line: #2e2e5e;
+        --text: #fbf6dd;
+        --glow: #f6ec7c;
+        --ink: #17142e;
+        --muted: #9a9cc8;
       }
       * { box-sizing: border-box; }
-      ::selection { background: #fff; color: #000; }
+      ::selection { background: var(--glow); color: var(--ink); }
       body {
         margin: 0;
         padding: 40px 16px;
-        background: var(--bg);
+        background: radial-gradient(1100px 600px at 50% -10%, #2b2168 0%, transparent 62%), var(--bg);
+        background-attachment: fixed;
         color: var(--text);
         font: 15px/1.4 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
         -webkit-font-smoothing: antialiased;
@@ -47,16 +50,16 @@
       .get {
         flex: none;
         padding: 7px 16px 8px;
-        border: 1px solid var(--text);
+        border: 1px solid var(--glow);
         border-radius: 999px;
-        background: var(--text);
-        color: #000;
+        background: var(--glow);
+        color: var(--ink);
         font-weight: 700;
         font-size: 14px;
         text-decoration: none;
         transition: background 0.12s, border-color 0.12s;
       }
-      .get:hover { background: #d9d9d9; border-color: #d9d9d9; }
+      .get:hover { background: #fff6a6; border-color: #fff6a6; box-shadow: 0 0 22px rgba(246, 236, 124, 0.45); }
       .soon { flex: none; padding: 7px 16px 8px; border: 1px dashed var(--line); border-radius: 999px; color: var(--muted); font-size: 14px; }
       .none { margin: 0; padding: 12px 0; border-top: 1px solid var(--line); color: var(--muted); }
       footer { max-width: 520px; margin: 14px auto 0; text-align: center; font-size: 13px; color: var(--muted); }
@@ -65,7 +68,7 @@
   </head>
   <body>
     <main>
-      <a href="/"><img class="logo" src="/logo.png" alt="Dusklight"></a>
+      <a href="/"><img class="logo" src="/logo.png?v=firefly" alt="Dusklight"></a>
       <h1>Download</h1>
       {{rows}}
     </main>

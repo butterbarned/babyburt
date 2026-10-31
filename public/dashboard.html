@@ -4,20 +4,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Dusklight dashboard</title>
-    <link rel="icon" type="image/png" href="/logo-square.png">
+    <link rel="icon" type="image/png" href="/logo-square.png?v=firefly">
     <style>
       @font-face { font-family: DigitalDelivery; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
       @font-face { font-family: DigitalDelivery; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
       :root { color-scheme: dark; } * { box-sizing: border-box; }
-      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #000; color: #fff; font: 16px/1.45 DigitalDelivery, system-ui, sans-serif; }
-      main { width: min(720px, 100%); padding: clamp(24px, 6vw, 48px); border: 1px solid #333; border-radius: 22px; background: #0d0d0d; }
-      header { display: flex; align-items: center; gap: 15px; margin-bottom: 28px; } header img { width: 54px; height: 54px; object-fit: contain; } h1 { margin: 0; font-size: 30px; } p { color: #aaa; margin: 5px 0 0; }
-      .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; } a { display: block; padding: 20px; color: inherit; text-decoration: none; border: 1px solid #3a3a3a; border-radius: 15px; background: #151515; } a:hover, a:focus-visible { background: #222; border-color: #fff; outline: none; } strong { display: block; font-size: 19px; margin-bottom: 5px; } .hint { font-size: 13px; color: #aaa; } footer { margin-top: 24px; font-size: 12px; color: #777; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(1000px 560px at 50% -10%, #2b2168 0%, transparent 62%), #0b0a1f; color: #fbf6dd; font: 16px/1.45 DigitalDelivery, system-ui, sans-serif; }
+      main { width: min(720px, 100%); padding: clamp(24px, 6vw, 48px); border: 1px solid #2e2e5e; border-radius: 22px; background: #131335; }
+      header { display: flex; align-items: center; gap: 15px; margin-bottom: 28px; } header img { width: 54px; height: 54px; object-fit: contain; } h1 { margin: 0; font-size: 30px; } p { color: #9a9cc8; margin: 5px 0 0; }
+      .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; } a { display: block; padding: 20px; color: inherit; text-decoration: none; border: 1px solid #2e2e5e; border-radius: 15px; background: #1d1d47; } a:hover, a:focus-visible { background: #26265a; border-color: #f6ec7c; box-shadow: 0 0 22px rgba(246, 236, 124, 0.2); outline: none; } strong { display: block; font-size: 19px; margin-bottom: 5px; } .hint { font-size: 13px; color: #9a9cc8; } footer { margin-top: 24px; font-size: 12px; color: #7d80ad; }
     </style>
   </head>
   <body>
     <main>
-      <header><img src="/logo.png" alt=""><div><h1>Dusklight dashboard</h1><p>One place for running and moderating your server.</p></div></header>
+      <header><img src="/logo.png?v=firefly" alt=""><div><h1>Dusklight dashboard</h1><p>One place for running and moderating your server.</p></div></header>
       <div class="choices">
         <a href="/dashboard/admin"><strong>Owner dashboard</strong><span class="hint">Server settings, accounts, logs, items, roles, and all administration. Owners: sign in to the staff dashboard first.</span></a>
         <a href="/dashboard/staff"><strong>Staff dashboard</strong><span class="hint">Player care, reports, moderation, review, and server health.</span></a>

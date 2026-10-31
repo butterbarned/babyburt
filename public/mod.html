@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Moderators</title>
-    <link rel="icon" type="image/png" href="/logo-square.png">
+    <link rel="icon" type="image/png" href="/logo-square.png?v=firefly">
     <style>
       /* a modern dark dashboard: a sidebar of pages, cards on a slate
          ground. black and white throughout, in the game's own text font: the
@@ -14,31 +14,57 @@
       @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
       :root {
         color-scheme: dark;
-        --bg: #000;
-        --panel: #0d0d0d;
-        --raised: #1a1a1a;
-        --field: #000;
-        --line: #2e2e2e;
-        --line-strong: #555;
-        --text: #fff;
-        --muted: #8c8c8c;
-        --accent: #fff;
-        --accent-soft: #1a1a1a;
+        --bg: #0b0a1f;
+        --panel: #131335;
+        --raised: #1d1d47;
+        --field: #0b0a1f;
+        --line: #2e2e5e;
+        --line-strong: #4b4d85;
+        --text: #fbf6dd;
+        --glow: #f6ec7c;
+        --glow-hover: #fff6a6;
+        --ink: #17142e;
+        --leaf: #c9e8a6;
+        --sky: #45bdff;
+        --muted: #9a9cc8;
+        --accent: #f6ec7c;
+        --accent-soft: #1d1d47;
         --radius: 14px;
         --shadow: none;
       }
       * { box-sizing: border-box; }
       [hidden] { display: none !important; }
-      ::selection { background: #fff; color: #000; }
+      ::selection { background: var(--glow); color: var(--ink); }
       ::-webkit-scrollbar { width: 10px; height: 10px; }
       ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 5px; border: 3px solid var(--bg); }
       body {
         margin: 0;
-        background: var(--bg);
+        background:
+          radial-gradient(1200px 620px at 50% -12%, #2b2168 0%, transparent 62%),
+          radial-gradient(900px 520px at 100% 100%, #0f2f4d 0%, transparent 62%),
+          var(--bg);
+        background-attachment: fixed;
         color: var(--text);
         font: 15px/1.4 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
         -webkit-font-smoothing: antialiased;
       }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+          radial-gradient(3px 3px at 12% 24%, rgba(246, 236, 124, 0.9), transparent 70%),
+          radial-gradient(2px 2px at 82% 14%, rgba(246, 236, 124, 0.8), transparent 70%),
+          radial-gradient(3px 3px at 68% 78%, rgba(201, 232, 166, 0.85), transparent 70%),
+          radial-gradient(2px 2px at 28% 86%, rgba(246, 236, 124, 0.75), transparent 70%),
+          radial-gradient(2px 2px at 92% 56%, rgba(201, 232, 166, 0.8), transparent 70%),
+          radial-gradient(3px 3px at 46% 8%, rgba(246, 236, 124, 0.7), transparent 70%),
+          radial-gradient(2px 2px at 6% 64%, rgba(246, 236, 124, 0.7), transparent 70%);
+        animation: twinkle 7s ease-in-out infinite alternate;
+      }
+      @keyframes twinkle { from { opacity: 0.9; } to { opacity: 0.3; } }
       a { color: inherit; text-underline-offset: 3px; }
       h1, h2, h3 { font-family: "DigitalDelivery", system-ui, sans-serif; }
       h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.01em; }
@@ -56,9 +82,9 @@
         padding: 8px 12px;
         transition: border-color 0.12s, box-shadow 0.12s;
       }
-      input::placeholder, textarea::placeholder { color: #555; }
+      input::placeholder, textarea::placeholder { color: #4b4d85; }
       input:hover, select:hover, textarea:hover { border-color: var(--line-strong); }
-      input:focus, select:focus, textarea:focus { outline: none; border-color: var(--text); }
+      input:focus, select:focus, textarea:focus { outline: none; border-color: var(--glow); box-shadow: 0 0 0 3px rgba(246, 236, 124, 0.15); }
       input:disabled, select:disabled, textarea:disabled { opacity: 0.45; }
       select:not([multiple]) {
         -webkit-appearance: none;
@@ -84,8 +110,8 @@
         cursor: pointer;
       }
       input[type="checkbox"]:checked {
-        border-color: var(--text);
-        background: var(--text) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.5 9.5l3 3 6-7' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat;
+        border-color: var(--glow);
+        background: var(--glow) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.5 9.5l3 3 6-7' fill='none' stroke='%2317142e' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat;
       }
       button {
         font: inherit;
@@ -102,11 +128,11 @@
       button:hover { background: #262626; border-color: var(--line-strong); }
       button:active { transform: translateY(1px); }
       button:disabled { opacity: 0.45; cursor: default; transform: none; }
-      button:focus-visible, a:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-      button.primary { font-weight: 700; color: #000; background: var(--text); border-color: var(--text); }
-      button.primary:hover { background: #d9d9d9; border-color: #d9d9d9; }
-      button.primary:disabled, button.primary:disabled:hover { background: #3a3a3a; border-color: #3a3a3a; color: #000; }
-      button.danger { border-style: dashed; border-color: #666; }
+      button:focus-visible, a:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--glow); outline-offset: 2px; }
+      button.primary { font-weight: 700; color: var(--ink); background: var(--glow); border-color: var(--glow); }
+      button.primary:hover { background: var(--glow-hover); border-color: var(--glow-hover); box-shadow: 0 0 22px rgba(246, 236, 124, 0.45); }
+      button.primary:disabled, button.primary:disabled:hover { background: #2a2c55; border-color: #2a2c55; color: #8a8cba; }
+      button.danger { border-style: dashed; border-color: #5a5c94; }
       button.danger:hover { border-style: solid; border-color: var(--text); }
       .status, #status { min-height: 20px; margin: 10px 0 0; font-size: 13px; color: var(--muted); }
       .status.bad, #status.bad { color: var(--text); }
@@ -117,8 +143,8 @@
         height: 17px;
         margin-right: 7px;
         border-radius: 50%;
-        background: var(--text);
-        color: #000;
+        background: var(--glow);
+        color: var(--ink);
         font-weight: 700;
         line-height: 17px;
         text-align: center;
@@ -148,7 +174,7 @@
       #wear-rule-animals label.check { display: inline-flex; align-items: center; gap: 5px; }
       #wear-rule-animal { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
       #wear-rule-animal button { margin: 0; }
-      #wear-rule-animal button[aria-pressed="true"] { color: #000; background: var(--text); border-color: var(--text); }
+      #wear-rule-animal button[aria-pressed="true"] { color: var(--ink); background: var(--glow); border-color: var(--glow); }
       #wear-rule-results li, #wear-rule-active li { display: flex; gap: 10px; align-items: center; }
       #wear-rule-results .meta, #wear-rule-active .meta { color: var(--muted); font-size: 12px; }
       #wear-rule-results button, #wear-rule-active button { margin-left: auto; }
@@ -204,8 +230,8 @@
         margin-left: auto;
         padding: 0 8px;
         border-radius: 999px;
-        background: var(--text);
-        color: #000;
+        background: var(--glow);
+        color: var(--ink);
         font-size: 11.5px;
         font-weight: 700;
         line-height: 19px;
@@ -267,7 +293,7 @@
       .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
       .toolbar input[type="search"] { flex: 1; min-width: 200px; }
       .tag { display: inline-block; padding: 1px 9px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
-      .tag.good { color: #000; background: var(--text); border-color: var(--text); font-weight: 700; }
+      .tag.good { color: var(--ink); background: var(--glow); border-color: var(--glow); font-weight: 700; }
       .tag.bad { color: var(--text); border-color: var(--text); font-weight: 700; }
       #detail { margin-top: 0; }
       .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
@@ -442,7 +468,7 @@
   </head>
   <body>
     <main id="gate" hidden>
-      <img class="logo" src="/logo.png" alt="">
+      <img class="logo" src="/logo.png?v=firefly" alt="">
       <h1>Moderators</h1>
       <form id="gate-form">
         <label for="username">Username</label>
@@ -462,7 +488,7 @@
     <div id="panel" hidden>
       <aside id="side">
         <div class="brand">
-          <img class="mark" src="/logo.png" alt="">
+          <img class="mark" src="/logo.png?v=firefly" alt="">
           <div><h1>Dusklight dashboard</h1><span class="hint" id="who"></span></div>
         </div>
         <nav role="tablist" aria-orientation="vertical">
