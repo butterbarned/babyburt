@@ -49,12 +49,13 @@ sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapf
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```
 
-## 4. Install Node, git, certbot
+## 4. Install Node, git, certbot, ffmpeg
 ```sh
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt install -y nodejs git certbot acl
+sudo apt install -y nodejs git certbot acl ffmpeg
 node -v        # must be >= 22.5
 ```
+ffmpeg is for theatre videos: it makes an uploaded MKV an MP4 and takes a video's own subtitles out of it. Without it, videos are kept as sent and only subtitle files added by hand are shown.
 
 ## 5. TLS certificate
 Port 80 must be free and open (step 3).

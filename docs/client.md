@@ -281,12 +281,9 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.DenEditor
 
-- `swf-src/DenEditor.as`, 2062 lines
+- `swf-src/DenEditor.as`, 1989 lines
 - original: `tools/decompiled/gui/DenEditor.as`
-- **changed:** `init`, `destroy`
-- **added:** `createLayerControls`, `addLayerButton`, `makeLayerLabel`, `onSendBehind`, `onBringOnTop`, `onResetLayer`, `destroyLayerControls`
-
-> Small controls added at runtime so every den item can be stacked deliberately, instead of relying solely on where its feet land.
+- **changed:** `init`
 
 ### gui.TradeManager
 
@@ -572,11 +569,11 @@ For each class: the methods changed and added against the untouched original (co
 
 ### room.DenItemHolder
 
-- `tools/decompiled/room/DenItemHolder.as`, 1727 lines
+- `tools/decompiled/room/DenItemHolder.as`, 2150 lines
 - original: `tools/decompiled/room/DenItemHolder.as`
 - no method changed
 
-> The original editor only sorted furniture from its y position.  These helpers give the replacement editor an explicit, persisted choice. Bits 2-3 of `flipped` are unused by the game's flip code, so the normal horizontal/vertical flip bits remain intact in bits 0-1.
+> Groups and locks (this server). Both are kept in the item's saved `flipped` value, which the server stores as it is: bits 0-1 are the game's flips, 2-3 an old stacking choice, bit 4 locked, bits 8-15 the group (0 for none). Shift+click picks items; "Group" joins the
 
 
 ## Replaced as P-code

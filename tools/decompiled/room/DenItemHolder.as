@@ -22,6 +22,8 @@ package room
    import flash.geom.Matrix;
    import flash.geom.Point;
    import flash.geom.Rectangle;
+   import flash.text.TextField;
+   import flash.text.TextFormat;
    import flash.utils.Dictionary;
    import game.MinigameManager;
    import gui.AvatarEditor;
@@ -86,6 +88,38 @@ package room
       private var _ecoScorePopup:EcoScorePopup;
       
       private var _ecoPointsPopup:EcoPointsPopup;
+
+      // Groups and locks (this server). Both are kept in the item's saved
+      // `flipped` value, which the server stores as it is: bits 0-1 are the
+      // game's flips, 2-3 an old stacking choice, bit 4 locked, bits 8-15
+      // the group (0 for none). Shift+click picks items; "Group" joins the
+      // picked ones, and dragging one of a group moves all of it. A locked
+      // item (or group) does not move, flip or go back to the inventory.
+      private static const LOCK_BIT:int = 16;
+
+      private static const GROUP_SHIFT:int = 8;
+
+      private static const GROUP_MASK:int = 255 << 8;
+
+      private static const PICK_GLOW:uint = 16182396;
+
+      private var _picked:Array;
+
+      private var _glowing:Array;
+
+      private var _wasDown:Boolean;
+
+      private var _pressPicked:Boolean;
+
+      private var _shiftAtDown:Boolean;
+
+      private var _groupBtn:Sprite;
+
+      private var _ungroupBtn:Sprite;
+
+      private var _lockBtn:Sprite;
+
+      private var _pickHint:TextField;
       
       public function DenItemHolder(param1:LayerManager)
       {
@@ -102,6 +136,16 @@ package room
          _flipBtnVer.addEventListener("mouseDown",onFlipBtn,false,0,true);
          _linkBtn = GETDEFINITIONBYNAME("portalLinkBtnCont");
          _linkBtn.addEventListener("mouseDown",onLinkBtn,false,0,true);
+         _picked = [];
+         _glowing = [];
+         _groupBtn = makeGroupButton("Group",onGroupBtn);
+         _ungroupBtn = makeGroupButton("Ungroup",onUngroupBtn);
+         _lockBtn = makeGroupButton("Lock",onLockBtn);
+         _pickHint = makeGroupLabel("Shift+click: pick more",130,11,16774041);
+         _pickHint.background = true;
+         _pickHint.backgroundColor = 1250869;
+         gMainFrame.stage.addEventListener("mouseDown",onStageMouseDown,true,0,true);
+         gMainFrame.stage.addEventListener("mouseUp",onStageMouseUp,true,0,true);
          release();
          _lastItemInvId = -1;
       }
@@ -124,6 +168,9 @@ package room
          _savedDenItemHelpers = [];
          _lastSelectedItem = null;
          _dragItem = null;
+         _picked = [];
+         _wasDown = false;
+         _pressPicked = false;
          updateCloseBtn();
       }
       
@@ -149,40 +196,6 @@ package room
          return _dragItem != null;
       }
 
-      // The original editor only sorted furniture from its y position.  These
-      // helpers give the replacement editor an explicit, persisted choice.
-      // Bits 2-3 of `flipped` are unused by the game's flip code, so the
-      // normal horizontal/vertical flip bits remain intact in bits 0-1.
-      public function sendSelectedBehind() : Boolean
-      {
-         return setSelectedStacking(1);
-      }
-
-      public function bringSelectedToFront() : Boolean
-      {
-         return setSelectedStacking(2);
-      }
-
-      public function resetSelectedStacking() : Boolean
-      {
-         return setSelectedStacking(0);
-      }
-
-      private function setSelectedStacking(param1:int) : Boolean
-      {
-         if(_dragItem == null || _dragItem.layerId == 1 || isTheme(_dragItem.sortCatId) || _dragItem.sortCatId == 4)
-         {
-            return false;
-         }
-         _dragItem.flipped = _dragItem.flipped & -13 | param1 << 2;
-         if(_dragItem.denItemHelper && _dragItem.denItemHelper.displayObject)
-         {
-            _dragItem.denItemHelper.displayObject.name = String(_dragItem.denItemHelper.sortOffset);
-         }
-         saveState(_dragItem.invIdx);
-         return true;
-      }
-      
       public function get lastSelectedItem() : DenStateItem
       {
          return _lastSelectedItem;
@@ -618,16 +631,16 @@ package room
          {
             _linkBtn.parent.removeChild(_linkBtn);
          }
-         if(_itemFilter)
+         if(_flipBtnVer.parent)
          {
-            if(_itemFilter.denItemHelper.displayObject)
-            {
-               _itemFilter.denItemHelper.displayObject.filters = [];
-            }
-            _itemFilter = null;
+            _flipBtnVer.parent.removeChild(_flipBtnVer);
          }
+         _itemFilter = null;
+         _picked = [];
+         hideGroupControls();
+         refreshGlows();
       }
-      
+
       private function updateInitialState() : void
       {
          _itemsInit = new DenStateItemCollection();
@@ -644,6 +657,15 @@ package room
          var _loc6_:DenStateItem = null;
          if(param3)
          {
+            if(!_wasDown)
+            {
+               _wasDown = true;
+               onPress(param1,param2);
+            }
+            if(_pressPicked)
+            {
+               return;
+            }
             if(_dragItem)
             {
                if(_dragItem.specialType == 1)
@@ -654,9 +676,21 @@ package room
                      return;
                   }
                }
-               _loc5_ = _dragItem.x + param1 - _dragPoint.x;
-               _loc4_ = _dragItem.y + param2 - _dragPoint.y;
-               setItemMatrix(_dragItem,_loc5_,_loc4_,_dragItem.flipped);
+               var _loc7_:Array = moveSet(_dragItem);
+               if(anyLocked(_loc7_))
+               {
+                  _dragPoint.x = param1;
+                  _dragPoint.y = param2;
+                  return;
+               }
+               var _loc8_:Number = param1 - _dragPoint.x;
+               var _loc9_:Number = param2 - _dragPoint.y;
+               for each(var _loc10_:DenStateItem in _loc7_)
+               {
+                  setItemMatrix(_loc10_,_loc10_.x + _loc8_,_loc10_.y + _loc9_,_loc10_.flipped);
+               }
+               _loc5_ = _dragItem.x;
+               _loc4_ = _dragItem.y;
                setBtnPos(_loc5_ + _dragItem.denItemHelper.contentWidth - 30,_loc4_);
                _dragPoint.x = param1;
                _dragPoint.y = param2;
@@ -664,6 +698,12 @@ package room
          }
          else
          {
+            _wasDown = false;
+            _pressPicked = false;
+            if(_dragItem && overControls(param1,param2))
+            {
+               return;
+            }
             if(_dragItem && _dragItem.specialType == 1)
             {
                _loc6_ = hitTest(param1,param2);
@@ -697,6 +737,15 @@ package room
       
       public function setRoomMode(param1:int) : void
       {
+         if(_roomMode == 1 && param1 != 1)
+         {
+            // out of den editing: no picks, glows or buttons left behind
+            _picked = [];
+            _wasDown = false;
+            _pressPicked = false;
+            _dragItem = null;
+            updateCloseBtn();
+         }
          _roomMode = param1;
          stopListenersOnPets(_roomMode == 1);
          stopMouseOnNonMouseItems(_roomMode == 1);
@@ -976,15 +1025,24 @@ package room
                   BuddyList.closeWorldBuddyList();
                }
             }
-            if(_itemFilter != _dragItem)
+            _itemFilter = _dragItem;
+            if(isLocked(_dragItem))
             {
-               if(_itemFilter)
+               if(_closeBtn.parent)
                {
-                  _itemFilter.denItemHelper.displayObject.filters = [];
+                  _closeBtn.parent.removeChild(_closeBtn);
                }
-               _itemFilter = _dragItem;
-               _itemFilter.denItemHelper.displayObject.filters = [new GlowFilter(16777215,1,8,8,8)];
+               if(_flipBtn.parent)
+               {
+                  _flipBtn.parent.removeChild(_flipBtn);
+               }
+               if(_flipBtnVer.parent)
+               {
+                  _flipBtnVer.parent.removeChild(_flipBtnVer);
+               }
             }
+            showGroupControls();
+            refreshGlows();
          }
          else
          {
@@ -1005,17 +1063,12 @@ package room
                _linkBtn.parent.removeChild(_linkBtn);
                BuddyList.closeWorldBuddyList();
             }
-            if(_itemFilter)
-            {
-               if(_itemFilter.denItemHelper.displayObject)
-               {
-                  _itemFilter.denItemHelper.displayObject.filters = [];
-               }
-               _itemFilter = null;
-            }
+            _itemFilter = null;
+            showGroupControls();
+            refreshGlows();
          }
       }
-      
+
       private function setBtnPos(param1:Number, param2:Number) : void
       {
          _closeBtn.x = param1;
@@ -1027,14 +1080,16 @@ package room
          _linkBtn.x = param1 + 15;
          _linkBtn.y = param2 + 125;
          BuddyList.updateWorldBuddyListPosition(_linkBtn);
+         placeGroupControls(param1,param2);
       }
       
       private function onCloseBtn(param1:Event) : void
       {
          var _loc2_:DenItemHolderEvent = null;
          param1.stopPropagation();
-         if(_dragItem)
+         if(_dragItem && !isLocked(_dragItem))
          {
+            dropPick(_dragItem);
             _loc2_ = new DenItemHolderEvent("OnItemRemoved");
             _loc2_.id = _dragItem.invIdx;
             _loc2_.refId = _dragItem.refId;
@@ -1049,7 +1104,7 @@ package room
       private function onFlipBtn(param1:Event) : void
       {
          param1.stopPropagation();
-         if(_dragItem)
+         if(_dragItem && !isLocked(_dragItem))
          {
             if(param1.currentTarget == _flipBtn)
             {
@@ -1116,6 +1171,7 @@ package room
       
       private function releaseItem(param1:DenStateItem, param2:Boolean = true) : void
       {
+         dropPick(param1);
          var _loc3_:int = _currItems.getCoreArray().indexOf(param1);
          if(_loc3_ >= 0)
          {
@@ -1277,6 +1333,373 @@ package room
          }
       }
       
+      // ---- groups and locks ----
+      private function groupOf(param1:DenStateItem) : int
+      {
+         return param1.flipped >> GROUP_SHIFT & 255;
+      }
+
+      private function isLocked(param1:DenStateItem) : Boolean
+      {
+         return param1 != null && (param1.flipped & LOCK_BIT) != 0;
+      }
+
+      // what may be picked, grouped and locked: not the den's theme or music
+      private function groupable(param1:DenStateItem) : Boolean
+      {
+         return param1 != null && !isTheme(param1.sortCatId) && param1.sortCatId != 4 && param1.petItem == null && param1.denItemHelper != null && param1.denItemHelper.displayObject != null;
+      }
+
+      // the item and the rest of its group
+      private function members(param1:DenStateItem) : Array
+      {
+         var _loc2_:int = groupOf(param1);
+         if(_loc2_ == 0)
+         {
+            return [param1];
+         }
+         var _loc3_:Array = [];
+         for each(var _loc4_:DenStateItem in _currItems.getCoreArray())
+         {
+            if(groupOf(_loc4_) == _loc2_ && groupable(_loc4_))
+            {
+               _loc3_.push(_loc4_);
+            }
+         }
+         return _loc3_.length > 0 ? _loc3_ : [param1];
+      }
+
+      // the picked items, with the rest of their groups
+      private function pickedSet() : Array
+      {
+         var _loc1_:Array = [];
+         for each(var _loc2_:DenStateItem in _picked)
+         {
+            for each(var _loc3_:DenStateItem in members(_loc2_))
+            {
+               if(_loc1_.indexOf(_loc3_) < 0)
+               {
+                  _loc1_.push(_loc3_);
+               }
+            }
+         }
+         return _loc1_;
+      }
+
+      // what moves (and locks) with this item: its group, or every picked
+      // item when it is one of them
+      private function moveSet(param1:DenStateItem) : Array
+      {
+         if(!groupable(param1))
+         {
+            return [param1];
+         }
+         var _loc2_:Array = pickedSet();
+         if(_loc2_.indexOf(param1) >= 0)
+         {
+            return _loc2_;
+         }
+         return members(param1);
+      }
+
+      private function anyLocked(param1:Array) : Boolean
+      {
+         for each(var _loc2_:DenStateItem in param1)
+         {
+            if(isLocked(_loc2_))
+            {
+               return true;
+            }
+         }
+         return false;
+      }
+
+      private function isPicked(param1:DenStateItem) : Boolean
+      {
+         return pickedSet().indexOf(param1) >= 0;
+      }
+
+      private function dropPick(param1:DenStateItem) : void
+      {
+         var _loc2_:int = int(_picked.indexOf(param1));
+         if(_loc2_ >= 0)
+         {
+            _picked.splice(_loc2_,1);
+         }
+      }
+
+      private function onStageMouseDown(param1:MouseEvent) : void
+      {
+         _shiftAtDown = param1.shiftKey;
+      }
+
+      private function onStageMouseUp(param1:MouseEvent) : void
+      {
+         _wasDown = false;
+      }
+
+      // the first moment of a press on the den: Shift picks (or unpicks) the
+      // item and its group; a press on anything else drops the picks.
+      private function onPress(param1:Number, param2:Number) : void
+      {
+         _pressPicked = false;
+         if(_shiftAtDown && groupable(_dragItem))
+         {
+            var _loc3_:Array = members(_dragItem);
+            if(isPicked(_dragItem))
+            {
+               for each(var _loc4_:DenStateItem in _loc3_)
+               {
+                  dropPick(_loc4_);
+               }
+            }
+            else
+            {
+               _picked.push(_dragItem);
+            }
+            _pressPicked = true;
+            showGroupControls();
+            refreshGlows();
+            return;
+         }
+         if(_picked.length > 0 && (_dragItem == null || !isPicked(_dragItem)))
+         {
+            _picked = [];
+            showGroupControls();
+            refreshGlows();
+         }
+      }
+
+      // the mouse over a button by the item, or on the way to one over
+      // nothing else: the item stays chosen
+      private function overControls(param1:Number, param2:Number) : Boolean
+      {
+         var _loc5_:Rectangle = null;
+         var _loc4_:Rectangle = null;
+         if(_dragItem.denItemHelper && _dragItem.denItemHelper.displayObject)
+         {
+            _loc5_ = _dragItem.denItemHelper.displayObject.getBounds(_layerManager.room_avatars);
+         }
+         for each(var _loc3_:DisplayObject in [_closeBtn,_flipBtn,_flipBtnVer,_linkBtn,_groupBtn,_ungroupBtn,_lockBtn])
+         {
+            if(_loc3_.parent)
+            {
+               _loc4_ = _loc3_.getBounds(_layerManager.room_avatars);
+               if(_loc4_.contains(param1,param2))
+               {
+                  return true;
+               }
+               _loc5_ = _loc5_ ? _loc5_.union(_loc4_) : _loc4_;
+            }
+         }
+         if(_loc5_ == null)
+         {
+            return false;
+         }
+         _loc5_.inflate(6,6);
+         return _loc5_.contains(param1,param2) && hitTest(param1,param2) == null;
+      }
+
+      // glows: white round the item under the mouse and its group, yellow
+      // round the picked ones
+      private function refreshGlows() : void
+      {
+         var _loc1_:DenStateItem = null;
+         for each(_loc1_ in _glowing)
+         {
+            if(_loc1_.denItemHelper && _loc1_.denItemHelper.displayObject)
+            {
+               _loc1_.denItemHelper.displayObject.filters = [];
+            }
+         }
+         _glowing = [];
+         for each(_loc1_ in pickedSet())
+         {
+            if(_loc1_.denItemHelper && _loc1_.denItemHelper.displayObject && _currItems.getCoreArray().indexOf(_loc1_) >= 0)
+            {
+               _loc1_.denItemHelper.displayObject.filters = [new GlowFilter(PICK_GLOW,1,10,10,6)];
+               _glowing.push(_loc1_);
+            }
+         }
+         if(_dragItem && _dragItem.denItemHelper && _dragItem.denItemHelper.displayObject)
+         {
+            for each(_loc1_ in members(_dragItem))
+            {
+               if(_loc1_.denItemHelper && _loc1_.denItemHelper.displayObject)
+               {
+                  _loc1_.denItemHelper.displayObject.filters = [new GlowFilter(isLocked(_loc1_) ? 11184810 : 16777215,1,8,8,8)];
+                  if(_glowing.indexOf(_loc1_) < 0)
+                  {
+                     _glowing.push(_loc1_);
+                  }
+               }
+            }
+         }
+      }
+
+      private function makeGroupLabel(param1:String, param2:Number, param3:int, param4:uint) : TextField
+      {
+         var _loc5_:TextField = new TextField();
+         _loc5_.width = param2;
+         _loc5_.height = param3 + 8;
+         _loc5_.selectable = false;
+         _loc5_.mouseEnabled = false;
+         _loc5_.defaultTextFormat = new TextFormat("Arial",param3,param4,true,null,null,null,null,"center");
+         _loc5_.text = param1;
+         return _loc5_;
+      }
+
+      private function makeGroupButton(param1:String, param2:Function) : Sprite
+      {
+         var _loc3_:Sprite = new Sprite();
+         _loc3_.buttonMode = true;
+         _loc3_.mouseChildren = false;
+         var _loc4_:TextField = makeGroupLabel(param1,78,12,16777215);
+         _loc4_.y = 4;
+         _loc3_.addChild(_loc4_);
+         drawGroupButton(_loc3_,false);
+         _loc3_.addEventListener("mouseDown",param2,false,0,true);
+         return _loc3_;
+      }
+
+      private function drawGroupButton(param1:Sprite, param2:Boolean) : void
+      {
+         param1.graphics.clear();
+         param1.graphics.lineStyle(1,param2 ? 16182396 : 3026014);
+         param1.graphics.beginFill(param2 ? 6055990 : 1910087,0.95);
+         param1.graphics.drawRoundRect(0,0,78,24,10,10);
+         param1.graphics.endFill();
+      }
+
+      private function setGroupButtonText(param1:Sprite, param2:String, param3:Boolean = false) : void
+      {
+         TextField(param1.getChildAt(0)).text = param2;
+         drawGroupButton(param1,param3);
+      }
+
+      private function hideGroupControls() : void
+      {
+         for each(var _loc1_:DisplayObject in [_groupBtn,_ungroupBtn,_lockBtn,_pickHint])
+         {
+            if(_loc1_.parent)
+            {
+               _loc1_.parent.removeChild(_loc1_);
+            }
+         }
+      }
+
+      // which buttons the item under the mouse gets
+      private function showGroupControls() : void
+      {
+         hideGroupControls();
+         if(_dragItem == null || !groupable(_dragItem) || !_layerManager.room_chat)
+         {
+            return;
+         }
+         var _loc1_:Array = pickedSet();
+         if(_loc1_.length >= 2 && _loc1_.indexOf(_dragItem) >= 0)
+         {
+            setGroupButtonText(_groupBtn,"Group " + _loc1_.length,true);
+            _layerManager.room_chat.addChild(_groupBtn);
+         }
+         if(groupOf(_dragItem) != 0)
+         {
+            _layerManager.room_chat.addChild(_ungroupBtn);
+         }
+         setGroupButtonText(_lockBtn,isLocked(_dragItem) ? "Unlock" : "Lock",isLocked(_dragItem));
+         _layerManager.room_chat.addChild(_lockBtn);
+         if(_loc1_.length < 2)
+         {
+            _layerManager.room_chat.addChild(_pickHint);
+         }
+         placeGroupControls(_closeBtn.x,_closeBtn.y);
+      }
+
+      private function placeGroupControls(param1:Number, param2:Number) : void
+      {
+         var _loc3_:Number = param2;
+         for each(var _loc4_:DisplayObject in [_groupBtn,_ungroupBtn,_lockBtn,_pickHint])
+         {
+            if(_loc4_.parent)
+            {
+               _loc4_.x = param1 + 52;
+               _loc4_.y = _loc3_ - 12;
+               _loc3_ += 28;
+            }
+         }
+      }
+
+      // a group number no item in the den has
+      private function freeGroup() : int
+      {
+         var _loc1_:Object = {};
+         for each(var _loc2_:DenStateItem in _currItems.getCoreArray())
+         {
+            _loc1_[groupOf(_loc2_)] = true;
+         }
+         var _loc3_:int = 1;
+         while(_loc3_ < 255 && _loc1_[_loc3_])
+         {
+            _loc3_++;
+         }
+         return _loc3_;
+      }
+
+      private function setGroup(param1:DenStateItem, param2:int) : void
+      {
+         param1.flipped = param1.flipped & ~GROUP_MASK | (param2 & 255) << GROUP_SHIFT;
+      }
+
+      private function onGroupBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         var _loc2_:Array = pickedSet();
+         if(_loc2_.length < 2)
+         {
+            return;
+         }
+         var _loc3_:int = freeGroup();
+         var _loc4_:Boolean = anyLocked(_loc2_);
+         for each(var _loc5_:DenStateItem in _loc2_)
+         {
+            setGroup(_loc5_,_loc3_);
+            _loc5_.flipped = _loc4_ ? _loc5_.flipped | LOCK_BIT : _loc5_.flipped & ~LOCK_BIT;
+         }
+         _picked = [];
+         updateCloseBtn();
+      }
+
+      private function onUngroupBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         if(_dragItem == null)
+         {
+            return;
+         }
+         for each(var _loc2_:DenStateItem in members(_dragItem))
+         {
+            setGroup(_loc2_,0);
+            dropPick(_loc2_);
+         }
+         updateCloseBtn();
+      }
+
+      // the item, its group or every picked item
+      private function onLockBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         if(_dragItem == null)
+         {
+            return;
+         }
+         var _loc2_:Boolean = !isLocked(_dragItem);
+         for each(var _loc3_:DenStateItem in moveSet(_dragItem))
+         {
+            _loc3_.flipped = _loc2_ ? _loc3_.flipped | LOCK_BIT : _loc3_.flipped & ~LOCK_BIT;
+         }
+         updateCloseBtn();
+      }
+
       private function hitTest(param1:int, param2:int) : DenStateItem
       {
          var _loc3_:DenStateItem = null;

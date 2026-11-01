@@ -956,11 +956,11 @@
       <div data-view="videos" hidden>
         <section>
           <h2>Upload a theatre video</h2>
-          <p class="hint">A video kept on this server, for the theatre's screen. Staff with the theatre control type its name in the theatre's video box (where a YouTube link goes), or add it on the Theatre page: everyone in the room sees the same part of it, and anyone who comes in later joins it where it is. MP4 (H.264 video, AAC sound) or WebM; 4 GB at most.</p>
+          <p class="hint">A video kept on this server, for the theatre's screen. Staff with the theatre control type its name in the theatre's video box (where a YouTube link goes), or add it on the Theatre page: everyone in the room sees the same part of it, and anyone who comes in later joins it where it is. MP4 (H.264 video, AAC sound), WebM or MKV; 4 GB at most. The server makes an MKV an MP4, and sound the game cannot play AAC. A video's own subtitles are taken out of it and shown with it (players can hide them with the CC button); or add an .srt, .vtt or .ass file for it in the list below.</p>
           <div class="actions">
             <div class="action">
               <h3>The video</h3>
-              <div class="row"><input id="videos-file" type="file" accept=".mp4,.m4v,.webm,video/mp4,video/webm" aria-label="Video file"></div>
+              <div class="row"><input id="videos-file" type="file" accept=".mp4,.m4v,.webm,.mkv,video/mp4,video/webm,video/x-matroska" aria-label="Video file"></div>
               <div class="row" style="margin-top:8px"><input id="videos-name" maxlength="60" placeholder="Name (what staff type to play it)" aria-label="Name"></div>
               <div class="row" style="margin-top:8px"><button type="button" class="primary" id="videos-upload">Upload</button></div>
             </div>
@@ -970,7 +970,7 @@
         <section>
           <h2>Theatre videos</h2>
           <div class="table-wrap"><table>
-            <thead><tr><th>Video (its name is what staff type)</th><th>Added</th><th class="num">Size</th><th></th></tr></thead>
+            <thead><tr><th>Video (its name is what staff type)</th><th>Subtitles</th><th>Added</th><th class="num">Size</th><th></th></tr></thead>
             <tbody id="videos-list"></tbody>
           </table></div>
           <div class="empty" id="no-videos" hidden>None yet.</div>
@@ -3040,7 +3040,47 @@
           player.preload = "none";
           player.src = `${VIDEOS}?play=${video.id}`;
           player.style.cssText = "display:block;margin-top:6px;width:260px;max-width:100%;background:#000";
+          if (video.subtitles) {
+            const track = el("track");
+            track.kind = "subtitles";
+            track.label = "Subtitles";
+            track.srclang = "en";
+            track.default = true;
+            track.src = `${VIDEOS}?subtitles=${video.id}`;
+            player.append(track);
+          }
           name.append(el("strong", video.name), player);
+          // its subtitles: an .srt, .vtt or .ass file sent for it, or taken off
+          const subtitles = el("td");
+          subtitles.append(el("div", video.subtitles ? "Yes" : video.lookingForSubtitles ? "Looking in the video..." : "None"));
+          const picker = el("input");
+          picker.type = "file";
+          picker.accept = ".srt,.vtt,.ass,.ssa";
+          picker.hidden = true;
+          picker.addEventListener("change", async () => {
+            const file = picker.files[0];
+            if (!file) {
+              return;
+            }
+            let result;
+            try {
+              const response = await fetch(`${VIDEOS}?subtitles=${video.id}`, {method: "POST", body: file});
+              result = await response.json().catch(() => ({error: "That did not work."}));
+            }
+            catch (err) {
+              result = {error: "The server did not answer."};
+            }
+            setStatus($("videos-status"), result.ok || result.error || "That did not work.", !result.ok);
+            await loadVideos();
+          });
+          subtitles.append(picker, button(video.subtitles ? "Replace" : "Add file", () => picker.click()));
+          if (video.subtitles) {
+            subtitles.append(" ", button("Remove", async () => {
+              const result = await videosCall(`?nosubtitles=${video.id}`);
+              setStatus($("videos-status"), result.ok || result.error || "That did not work.", !result.ok);
+              await loadVideos();
+            }, "danger"));
+          }
           const actions = el("td");
           actions.append(button("Rename", async () => {
             const chosen = prompt("New name for this video (60 characters at most):", video.name);
@@ -3059,7 +3099,7 @@
             setStatus($("videos-status"), result.ok || result.error || "That did not work.", !result.ok);
             await loadVideos();
           }, "danger"));
-          row.append(name, el("td", when(Math.floor(video.addedAt / 1000))),
+          row.append(name, subtitles, el("td", when(Math.floor(video.addedAt / 1000))),
             el("td", `${(video.bytes / 1048576).toFixed(1)} MB`, "num"), actions);
           return row;
         }));
@@ -3096,7 +3136,9 @@
         request.open("POST", `${VIDEOS}?name=${encodeURIComponent($("videos-name").value.trim())}`);
         request.upload.addEventListener("progress", event => {
           if (event.lengthComputable) {
-            setStatus($("videos-status"), `Uploading... ${Math.floor(event.loaded / event.total * 100)}% of ${(event.total / 1048576).toFixed(0)} MB`);
+            setStatus($("videos-status"), event.loaded >= event.total
+              ? "Uploaded. The server is checking it and taking out its subtitles: a big file can take a few minutes..."
+              : `Uploading... ${Math.floor(event.loaded / event.total * 100)}% of ${(event.total / 1048576).toFixed(0)} MB`);
           }
         });
         const done = result => {
