@@ -376,6 +376,19 @@ const first = async () => {
   const full = await maker("make", "den", 1, "One Too Many");
   assert.deepStrictEqual([full.ok, full.today], [false, 0]);
   assert.match(full.said, /made 5 items today/);
+  // the limits are the admin's (lib/creatorlimits.js): the server's, and a
+  // player's own in their place
+  assert.strictEqual((await admin("/admin/api/creator-limits")).data.limits.itemsPerDay, 5);
+  assert.strictEqual((await admin("/admin/api/creator-limits", {limits: {itemsPerDay: -1}})).status, 400);
+  assert.strictEqual((await admin("/admin/api/creator-limits", {limits: {itemsPerDay: 7}})).status, 200);
+  assert.deepStrictEqual([(await maker("info")).today, (await maker("info")).inAll], [2, 15]);
+  assert.match((await admin("/admin/api/account", {username: "Pat", action: "creatorLimits", limits: {itemsPerDay: 9, itemsInAll: 7}})).data.ok, /own limits/);
+  assert.deepStrictEqual([(await maker("info")).today, (await maker("info")).inAll], [2, 2]);
+  assert.match((await admin("/admin/api/account", {username: "Pat", action: "creatorLimits", limits: {itemsInAll: 5}})).data.ok, /own limits/);
+  assert.match((await maker("make", "den", 1, "Over")).said, /made 5 items, as many as you can have/);
+  assert.match((await admin("/admin/api/account", {username: "Pat", action: "creatorLimits", limits: {itemsPerDay: null, itemsInAll: null}})).data.ok, /server's limits/);
+  assert.strictEqual((await admin("/admin/api/creator-limits", {limits: {itemsPerDay: null}})).status, 200);
+  assert.deepStrictEqual([(await maker("info")).today, (await maker("info")).inAll], [0, 15]);
   // --- its own picture (lib/itemart.js): checked and cleaned, served, and
   // every game told; only by its maker or staff who make items
   const crc32 = buf => {
