@@ -53,6 +53,12 @@
       #theatre-video.visible {
         display: block;
       }
+      /* a theatre video's subtitles: readable on any picture */
+      #theatre-file::cue {
+        font-family: Arial, sans-serif;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.72);
+      }
       #own-video > * {
         width: 100%;
         height: 100%;
@@ -744,8 +750,33 @@
             theatreFile.play().catch(() => {});
           });
         };
+        // its subtitles (lib/theatrevideos.js), when it has any: shown at
+        // once, and the player's CC button hides them
+        let subtitlesFor = "";
+        const dropSubtitles = () => {
+          subtitlesFor = "";
+          for (const track of [...theatreFile.querySelectorAll("track")]) {
+            track.remove();
+          }
+        };
+        const addSubtitles = async id => {
+          subtitlesFor = id;
+          const response = await fetch(`/theatre/${id}.vtt`, {method: "HEAD", cache: "no-cache"}).catch(() => null);
+          if (!response || !response.ok || subtitlesFor !== id) {
+            return;
+          }
+          const track = document.createElement("track");
+          track.kind = "subtitles";
+          track.label = "Subtitles";
+          track.srclang = "en";
+          track.src = `/theatre/${id}.vtt`;
+          track.default = true;
+          theatreFile.append(track);
+          track.track.mode = "showing";
+        };
         const stop = () => {
           clearInterval(timer);
+          dropSubtitles();
           theatreFile.pause();
           theatreFile.removeAttribute("src");
           theatreFile.load();
@@ -787,6 +818,7 @@
             startedAt = performance.now() - msIn;
             theatreFile.muted = false;
             theatreFile.src = `/theatre/${id}`;
+            addSubtitles(id);
             theatreFile.hidden = false;
             if (here) {
               start();

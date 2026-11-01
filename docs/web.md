@@ -41,6 +41,7 @@ Calls `/admin/api/<route>` (through `/dashboard/api/...` for the dashboards), an
 | `chat` | `GET` lib/panel.js |
 | `chat/around` | `GET` lib/panel.js |
 | `counts` | `GET` lib/panel.js |
+| `creator-limits` | `GET` lib/panel.js, `POST` lib/panel.js |
 | `debug` | `GET` lib/panel.js, `POST` lib/panel.js |
 | `device` | `POST` lib/panel.js |
 | `discord` | `GET` lib/panel.js |
@@ -165,6 +166,8 @@ Calls `/account/api/<route>` (through `/dashboard/api/...` for the dashboards), 
 | `GET /admin/api/chat` | lib/panel.js |
 | `GET /admin/api/chat/around` | lib/panel.js |
 | `GET /admin/api/counts` | lib/panel.js |
+| `GET /admin/api/creator-limits` | lib/panel.js |
+| `POST /admin/api/creator-limits` | lib/panel.js |
 | `GET /admin/api/debug` | lib/panel.js |
 | `POST /admin/api/debug` | lib/panel.js |
 | `POST /admin/api/device` | lib/panel.js |

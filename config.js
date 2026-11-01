@@ -355,6 +355,12 @@ module.exports = {
   // pictures an account may post in any 24 hours.
   masterpieceMinAccountAge: env.AJ_MASTERPIECE_MIN_AGE === undefined ? 86400 : Number(env.AJ_MASTERPIECE_MIN_AGE),
   masterpiecesPerDay: 10,
+  // the theatre's videos (lib/theatrevideos.js): ffmpeg and ffprobe make an
+  // upload playable (an MKV becomes an MP4, sound the game cannot play
+  // becomes AAC) and take its subtitles out of it. without them a video is
+  // kept as it was sent and only subtitles added by hand are shown.
+  ffmpeg: env.AJ_FFMPEG || "ffmpeg",
+  ffprobe: env.AJ_FFPROBE || "ffprobe",
   maxConnections: 2000,
   maxHttpConnections: 2000, // open at once, in all
   maxHttpConnectionsPerAddress: 40, // the game opens a good many at once while it loads
