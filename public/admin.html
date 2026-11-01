@@ -685,6 +685,19 @@
                     <option value="acid">Acid</option>
                   </select>
                   <button type="button" data-action="tint">Set tint</button></div>
+              </div>
+              <div class="action">
+                <h3>Their own limits</h3>
+                <p class="hint" style="margin:0 0 6px">Higher (or lower) limits for this player alone. Leave a box empty for the server's, shown faintly.</p>
+                <div class="row">
+                  <label>Items a day <input type="number" id="own-itemsPerDay" min="0" step="1" style="width:80px"></label>
+                  <label>Items in all <input type="number" id="own-itemsInAll" min="0" step="1" style="width:80px"></label>
+                </div>
+                <div class="row" style="margin-top:6px">
+                  <label>Masterpieces a day <input type="number" id="own-masterpiecesPerDay" min="0" step="1" style="width:80px"></label>
+                  <label>Account age (hours) <input type="number" id="own-masterpieceMinAgeHours" min="0" step="any" style="width:80px"></label>
+                </div>
+                <div class="row" style="margin-top:8px"><button type="button" data-action="creatorLimits">Set limits</button></div>
                 <div class="row" style="margin-top:8px" title="Players link their Discord themselves, on the account page">
                   <span class="hint" id="discord-name"></span>
                   <button type="button" data-action="discord">Unlink Discord</button></div>
@@ -987,6 +1000,11 @@
           <label class="check"><input type="checkbox" id="maker-on"> Players can make items</label>
           <label class="check" style="margin-top:8px"><input type="checkbox" id="maker-approval"> New items (and their pictures) wait for a moderator to approve them</label>
           <label class="check" style="margin-top:8px"><input type="checkbox" id="maker-art-approval"> Every new picture a player uploads waits for a moderator (recommended: pictures are seen by everyone who meets the item)</label>
+          <p class="hint" style="margin-top:12px">How many items each player may make. A player can be given limits of their own on their page under Players.</p>
+          <div class="row" style="margin-top:4px">
+            <label>Items a day <input type="number" id="limit-itemsPerDay" min="0" step="1" style="width:90px"></label>
+            <label>Items in all <input type="number" id="limit-itemsInAll" min="0" step="1" style="width:90px"></label>
+          </div>
           <div class="row" style="margin-top:10px"><button type="button" class="primary" id="maker-save">Save</button></div>
           <p class="status" id="maker-status" role="status"></p>
         </section>
@@ -1191,6 +1209,13 @@
             <input id="masterpiece-creator" type="search" maxlength="100" placeholder="Maker's username" autocomplete="off" spellcheck="false" aria-label="Maker's username">
           </div>
           <label class="check"><input id="masterpiece-review" type="checkbox"> Review new masterpieces</label>
+          <label class="check" style="margin-top:8px"><input id="masterpiece-on" type="checkbox"> Players can make Masterpieces</label>
+          <div class="row" style="margin-top:8px">
+            <label>Masterpieces a day <input type="number" id="limit-masterpiecesPerDay" min="0" step="1" style="width:90px"></label>
+            <label>Account age needed (hours) <input type="number" id="limit-masterpieceMinAgeHours" min="0" step="any" style="width:90px"></label>
+            <button type="button" class="primary" id="masterpiece-settings-save">Save</button>
+          </div>
+          <p class="hint">A player can be given limits of their own on their page under Players.</p>
           <p class="status" id="masterpiece-status" role="status"></p>
           <div class="paintings" id="masterpieces"></div>
           <div class="empty" id="no-masterpieces" hidden>Nothing here.</div>
@@ -1946,6 +1971,11 @@
         $("temp-two-step-off").disabled = !current || !current.twoStep;
         $("guide-toggle").textContent = current && current.guide ? "Remove guide" : "Make guide";
         $("tint-select").value = current ? current.tint || "" : "";
+        for (const field of LIMIT_NAMES) {
+          const own = current && current.creatorLimits ? current.creatorLimits[field] : undefined;
+          $(`own-${field}`).value = own === undefined ? "" : String(own);
+          $(`own-${field}`).placeholder = serverLimits ? String(serverLimits[field]) : "";
+        }
         $("discord-name").textContent = current && current.discord ? `Discord: ${current.discord}` : "No Discord linked";
         $("admin-dashboard-access").textContent = current && current.adminDashboardAccess ? "Remove Discord dashboard access" : "Allow Discord dashboard access";
         $("admin-dashboard-access").disabled = !current || (!current.discord && !current.adminDashboardAccess);
@@ -2138,6 +2168,7 @@
           case "adminDashboardAccess": return {on: !(current || {}).adminDashboardAccess};
           case "guide": return {on: !(current || {}).guide};
           case "tint": return {tint: $("tint-select").value};
+          case "creatorLimits": return {limits: Object.fromEntries(LIMIT_NAMES.map(field => [field, $(`own-${field}`).value.trim() === "" ? null : Number($(`own-${field}`).value)]))};
           case "tempPassword": return {twoStepOff: $("temp-two-step-off").checked};
           case "message": return {text: $("message-text").value};
           case "gems": return {amount: numberFrom("gems-amount")};
@@ -2925,9 +2956,47 @@
       });
 
       let makerSwitchesShown = false;
+
+      // ---- how much players may make (lib/creatorlimits.js): the server's
+      // values, on the Items and Masterpieces pages; a player's own are on
+      // their page.
+      const LIMIT_NAMES = ["itemsPerDay", "itemsInAll", "masterpiecesPerDay", "masterpieceMinAgeHours"];
+      let serverLimits = null;
+      let limitsShown = false; // set from the server once a visit, as the switches are
+      const loadCreatorLimits = async () => {
+        const result = await api("creator-limits");
+        if (!result.ok) {
+          return;
+        }
+        serverLimits = result.data.limits;
+        if (!limitsShown) {
+          for (const field of LIMIT_NAMES) {
+            $(`limit-${field}`).value = String(serverLimits[field]);
+          }
+          $("masterpiece-on").checked = result.data.masterpieces;
+          limitsShown = true;
+        }
+      };
+      // an empty box goes back to the default
+      const limitValues = fields => Object.fromEntries(fields.map(field => [field, $(`limit-${field}`).value.trim() === "" ? null : Number($(`limit-${field}`).value)]));
+      const saveCreatorLimits = async body => {
+        const result = await api("creator-limits", body);
+        limitsShown = false;
+        await loadCreatorLimits();
+        return result;
+      };
+      $("masterpiece-settings-save").addEventListener("click", async () => {
+        const result = await saveCreatorLimits({masterpieces: $("masterpiece-on").checked, limits: limitValues(["masterpiecesPerDay", "masterpieceMinAgeHours"])});
+        setStatus($("masterpiece-status"), said(result), !result.ok);
+      });
       $("maker-save").addEventListener("click", async () => {
+        const limits = await saveCreatorLimits({limits: limitValues(["itemsPerDay", "itemsInAll"])});
+        if (!limits.ok) {
+          setStatus($("maker-status"), said(limits), true);
+          return;
+        }
         const result = await api("item-switches", {enabled: $("maker-on").checked, approval: $("maker-approval").checked, artApproval: $("maker-art-approval").checked});
-        setStatus($("maker-status"), said(result), !result.ok);
+        setStatus($("maker-status"), result.ok ? `${said(result)} ${$("limit-itemsPerDay").value} items a day, ${$("limit-itemsInAll").value} in all.` : said(result), !result.ok);
         makerSwitchesShown = false;
         await refresh();
       });
@@ -3659,6 +3728,9 @@
           }
         }
         else if (tab === "accounts") {
+          if (!serverLimits) {
+            await loadCreatorLimits(); // the faint values in "Their own limits"
+          }
           const searchBy = $("account-search-by").value;
           const query = searchBy !== "name" ? "" : $("account-search").value.trim();
           const filter = $("account-filter").value;
@@ -3713,6 +3785,7 @@
             renderItems();
             renderLocked();
           }
+          await loadCreatorLimits();
           const review = await api("review");
           if (review.ok) {
             renderReview(review.data);
@@ -3726,6 +3799,7 @@
           }
         }
         else if (tab === "masterpieces") {
+          await loadCreatorLimits();
           result = await api(`masterpieces?creator=${encodeURIComponent($("masterpiece-creator").value.trim())}`);
           if (result.ok) {
             renderMasterpieces(result.data);

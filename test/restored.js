@@ -245,6 +245,20 @@ const run = async () => {
   assert.deepStrictEqual([described[2], described[3], described[3 + 19]], ["2", "51", "139"]);
   a.xt("mj", den, 51, 0, 0, 0);
   const easel = (await a.untilXt("mj"))[1];
+  // the admin can turn Masterpieces off, and set how old an account must be
+  // (lib/creatorlimits.js): either way no token, and a message says why
+  const refused = async () => {
+    a.xt("mm", easel, 51, "gmtkn", 0, 1);
+    const said = await a.untilXt("xtl");
+    assert.strictEqual((await a.untilXt("mm"))[3], "0");
+    return said[2];
+  };
+  assert.strictEqual((await panel("creator-limits", {masterpieces: false}, admin)).status, 200);
+  assert.match(await refused(), /turned off/);
+  assert.strictEqual((await panel("creator-limits", {masterpieces: true, limits: {masterpieceMinAgeHours: 48}}, admin)).status, 200);
+  assert.match(await refused(), /once they are 2 days old/);
+  assert.match((await panel("account", {username: "Ann", action: "creatorLimits", limits: {masterpieceMinAgeHours: 0}}, admin)).data.ok, /own limits/);
+  assert.strictEqual((await panel("creator-limits", {limits: {masterpieceMinAgeHours: null}}, admin)).status, 200);
   a.xt("mm", easel, 51, "gmtkn", 0, 1);
   const tokenReply = await a.untilXt("mm");
   assert.deepStrictEqual([tokenReply[2], tokenReply[3], tokenReply[7]], ["tkn", "1", "1"]);
