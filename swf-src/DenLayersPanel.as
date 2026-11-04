@@ -147,23 +147,37 @@ package gui
 
       public function destroy() : void
       {
-         _holder.removeEventListener("OnLayersChanged",onChanged);
-         _holder.setPreview(null);
-         _poll.stop();
-         _poll.removeEventListener("timer",onPoll);
-         removeEventListener("enterFrame",onFrame);
-         endPress();
+         // off the screen first: whatever fails after, nothing of the panel
+         // stays up in the next room
+         visible = false;
+         _shown = false;
          if(parent)
          {
             parent.removeChild(this);
          }
-         if(_pickBar.parent)
+         if(_pickBar && _pickBar.parent)
          {
             _pickBar.parent.removeChild(_pickBar);
          }
-         for each(var _loc1_:BitmapData in _thumbs)
+         _holder.removeEventListener("OnLayersChanged",onChanged);
+         _poll.stop();
+         _poll.removeEventListener("timer",onPoll);
+         removeEventListener("enterFrame",onFrame);
+         try
          {
-            _loc1_.dispose();
+            _holder.setPreview(null);
+            endPress();
+         }
+         catch(e:Error)
+         {
+         }
+         // each is {bmp, version, flip} (thumbOf)
+         for each(var _loc1_:Object in _thumbs)
+         {
+            if(_loc1_ != null && _loc1_.bmp is BitmapData)
+            {
+               BitmapData(_loc1_.bmp).dispose();
+            }
          }
          _thumbs = new Dictionary(true);
       }

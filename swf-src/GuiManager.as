@@ -2698,7 +2698,15 @@ package gui
             }
             if(denEditor)
             {
-               denEditor.destroy();
+               // the old den's editor goes whatever happens in its destroy,
+               // or it stays up (and saves) in the next room
+               try
+               {
+                  denEditor.destroy();
+               }
+               catch(e:Error)
+               {
+               }
                denEditor = null;
                mainHud.furnBtn.visible = false;
             }
@@ -2708,7 +2716,15 @@ package gui
          {
             if(denEditor)
             {
-               denEditor.destroy();
+               // the old den's editor goes whatever happens in its destroy,
+               // or it stays up (and saves) in the next room
+               try
+               {
+                  denEditor.destroy();
+               }
+               catch(e:Error)
+               {
+               }
                denEditor = null;
             }
             denEditor = new DenEditor();

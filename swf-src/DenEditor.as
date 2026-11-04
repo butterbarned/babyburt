@@ -189,21 +189,34 @@ package gui
       {
          _denItemHolder.removeEventListener("OnItemRemoved",onDenItemRemoved);
          _denItemHolder.removeEventListener("OnSaveState",onDenSaveState);
-         if(_layers)
-         {
-            _layers.destroy();
-            _layers = null;
-         }
-         if(_prefabs)
-         {
-            if(_denItemHolder)
-            {
-               _denItemHolder.onDuplicate = null;
-            }
-            _prefabs.destroy();
-            _prefabs = null;
-         }
+         // this server's parts (the layers panel, prefabs) go first, each on
+         // its own: whatever goes wrong in them, the editor itself is still
+         // taken away below (or it would stay up in the next room, and save
+         // to the player's own den there)
+         _denItemHolder.onDuplicate = null;
          DenXtCommManager.prefabCallback = null;
+         try
+         {
+            if(_layers)
+            {
+               _layers.destroy();
+            }
+         }
+         catch(e:Error)
+         {
+         }
+         _layers = null;
+         try
+         {
+            if(_prefabs)
+            {
+               _prefabs.destroy();
+            }
+         }
+         catch(e:Error)
+         {
+         }
+         _prefabs = null;
          removeListeners();
          _guiLayer.removeChild(_denEditor);
          if(_denLockPopup)
