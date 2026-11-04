@@ -21,7 +21,7 @@ moderator look at new pictures first, and some check them with an automatic filt
 - **Den items (furniture and decorations).** Your picture simply replaces the item. It is shown as a still image,
   standing on the spot where you put it. It won't move, animate, or do anything special.
 - **Wallpapers and floors.** One picture fits every den, slanted to match its walls (or laid flat on its floor),
-  with the den's own light and shade on top. A wallpaper has two looks: **pattern** (your picture is a *tile*,
+  with light and shade on top made from the shape of the den's walls (none of the base's own picture shows). A wallpaper has two looks: **pattern** (your picture is a *tile*,
   repeated across and down) or **segments** (your picture stands on the floor of each wall at its own size, copy
   after copy along it, cut off at the top of the wall). A floor is a pattern. (The game's own wallpapers are
   neither: each is drawn by hand for every den. A custom one cannot be, so it is fitted to each den instead.)
@@ -287,10 +287,14 @@ icons still show the plain picture):
    (`stackRuns`). Each run is then filled with the picture at its own size, not repeated, its bottom on the foot
    line and sheared with the slant, one copy every picture-width from the origin. A copy is not repeated, so
    above the picture its top row carries on up (Flash extends a fill's edges).
-5. **Shading:** the base's brightness, blurred 28 px (past its own pattern), is turned into a grey centred on the
-   base's average brightness (`(lum - mean) * 1.5 + 128`) and laid over the tiles with `overlay`. That brings
-   back lighter tops, darker feet and the darker rim. The base's alpha is then copied in exactly, and a thin
-   inner dark edge (an inner `GlowFilter`, 5 px, 45%) drawn.
+5. **Shading** (`themeShade`), from the stencil's **shape only**, never its colours, so none of the base's own
+   picture (its planets, stars, plants) shows through as highlights: a grey map laid over the picture with
+   `overlay` (128 changes nothing). On walls, each run gets a linear gradient from its head line to its foot line,
+   sheared with its slant: 168 at the top, 140 at 60% of the way down, 96 at the foot. A floor is an even 140. Both
+   are then multiplied by the outline blurred 24 px, scaled to 55% at the edge and 100% further in, which darkens
+   every edge like the game's rims. The base's alpha is then copied in exactly, and a thin inner dark edge (an
+   inner `GlowFilter`, 5 px, 45%) drawn. (The first version took the base's brightness, blurred, as the shading:
+   its pictures showed through as bright and dark blobs.)
 6. The result is a smoothed `Bitmap` at the base's bounds; the base's `Loader` stays (invisible) so that
    anything that reads the item's content still finds it. Anything that fails on the way shows the base.
 
@@ -321,8 +325,9 @@ Den items:
 ### 9a. Wallpapers and floors: a guide for makers
 
 Make the item in the Item Maker as any den item: pick a wallpaper or floor as the base, then add your picture.
-The base only gives the shape of each den's walls (or floor) and their shading, so any wallpaper works for a
-wallpaper and any floor for a floor. For a wallpaper, **Look** switches between *pattern* and *segments* (the
+The base only gives the shape of each den's walls (or floor): the shading is made from that shape, and none of
+the base's own picture shows. So any wallpaper works for a wallpaper and any floor for a floor (only the ones
+with art for each den, which is nearly all of them). For a wallpaper, **Look** switches between *pattern* and *segments* (the
 account page and the staff panels have it too).
 
 How tall are the den's walls? Measured on one wallpaper in all 54 dens that have one: walls run from 16 px

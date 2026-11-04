@@ -11,7 +11,7 @@ package loader
    import flash.display.BitmapData;
    import flash.display.Shape;
    import flash.filters.BlurFilter;
-   import flash.filters.ColorMatrixFilter;
+   import flash.geom.ColorTransform;
    import flash.filters.GlowFilter;
    import flash.geom.Matrix;
    import flash.geom.Point;
@@ -969,7 +969,7 @@ package loader
             }
          }
          _loc8_.draw(_loc9_);
-         themeShade(_loc8_,_loc7_);
+         themeShade(_loc8_,_loc7_,param3 ? null : _loc10_);
          _loc7_.dispose();
          var _loc12_:Bitmap = new Bitmap(_loc8_,"auto",true);
          _loc12_.x = _loc4_.x;
@@ -1238,45 +1238,68 @@ package loader
          return (Number(_loc5_[int(_loc5_.length / 2)]) + 1) * THEME_STEP;
       }
 
-      // the base's light and shade over the picture: its brightness, blurred
-      // past its own pattern, as a grey about the middle laid over (lighter
-      // tops, darker bottoms, the darker rim); then the base's exact outline
-      // and a thin dark edge inside it, as every den piece has
-      private static function themeShade(param1:BitmapData, param2:BitmapData) : void
+      // the light and shade laid over the picture, from the shape of the
+      // walls (or floor) alone, so nothing of the base's own picture shows
+      // through it: each stretch of wall lighter at its top line and darker
+      // at its foot, along its slant (`param3`, wallRuns; null for a floor,
+      // one even tone), darker towards every edge (the outline blurred), as
+      // a grey about the middle laid over; then the base's exact outline and
+      // a thin dark edge inside it, as every den piece has
+      private static const SHADE_TOP:int = 168;
+
+      private static const SHADE_MID:int = 140;
+
+      private static const SHADE_FOOT:int = 96;
+
+      private static const SHADE_FLOOR:int = 140;
+
+      private static const SHADE_RIM_BLUR:int = 24;
+
+      // how dark the very edge is, as a part of the tone further in
+      private static const SHADE_RIM_LOW:Number = 0.55;
+
+      private static function grey(param1:int) : uint
       {
-         var _loc3_:BitmapData = new BitmapData(param2.width,param2.height,false,0);
-         var _loc4_:Number = 0;
-         var _loc5_:Number = 0;
-         var _loc6_:int = 0;
-         var _loc7_:int = 0;
-         var _loc8_:uint = 0;
-         // the base's average brightness, where it is drawn
-         while(_loc7_ < param2.height)
+         return param1 << 16 | param1 << 8 | param1;
+      }
+
+      private static function themeShade(param1:BitmapData, param2:BitmapData, param3:Array) : void
+      {
+         var _loc4_:BitmapData = new BitmapData(param2.width,param2.height,false,grey(param3 == null ? SHADE_FLOOR : 128));
+         var _loc5_:Shape = null;
+         var _loc6_:Matrix = null;
+         var _loc7_:BitmapData = null;
+         var _loc8_:Point = new Point(0,0);
+         if(param3 != null)
          {
-            _loc6_ = 0;
-            while(_loc6_ < param2.width)
+            _loc5_ = new Shape();
+            for each(var _loc9_:Array in param3)
             {
-               _loc8_ = param2.getPixel32(_loc6_,_loc7_);
-               if(_loc8_ >>> 24 > 128)
-               {
-                  _loc4_ += 0.3 * (_loc8_ >> 16 & 255) + 0.59 * (_loc8_ >> 8 & 255) + 0.11 * (_loc8_ & 255);
-                  _loc5_++;
-               }
-               _loc6_ += THEME_STEP;
+               // top line to foot line, its rows along the slant:
+               // y' = y + slant * (x - left)
+               _loc6_ = new Matrix();
+               _loc6_.createGradientBox(Math.max(1,_loc9_[2]),Math.max(8,_loc9_[5] - _loc9_[7]),Math.PI / 2,_loc9_[0],_loc9_[7]);
+               _loc6_.concat(new Matrix(1,_loc9_[4],0,1,0,-_loc9_[4] * _loc9_[0]));
+               _loc5_.graphics.beginGradientFill("linear",[grey(SHADE_TOP),grey(SHADE_MID),grey(SHADE_FOOT)],[1,1,1],[0,153,255],_loc6_,"pad");
+               _loc5_.graphics.drawRect(_loc9_[0],_loc9_[1],_loc9_[2],_loc9_[3]);
+               _loc5_.graphics.endFill();
             }
-            _loc7_ += THEME_STEP;
+            _loc4_.draw(_loc5_);
          }
-         var _loc9_:Number = _loc5_ > 0 ? _loc4_ / _loc5_ : 128;
-         _loc3_.draw(param2);
-         // grey: (brightness - average) * 1.5 + 128
-         var _loc10_:Number = 1.5;
-         var _loc11_:Number = 128 - _loc9_ * _loc10_;
-         _loc3_.applyFilter(_loc3_,_loc3_.rect,new Point(0,0),new ColorMatrixFilter([0.3 * _loc10_,0.59 * _loc10_,0.11 * _loc10_,0,_loc11_,0.3 * _loc10_,0.59 * _loc10_,0.11 * _loc10_,0,_loc11_,0.3 * _loc10_,0.59 * _loc10_,0.11 * _loc10_,0,_loc11_,0,0,0,1,0]));
-         _loc3_.applyFilter(_loc3_,_loc3_.rect,new Point(0,0),new BlurFilter(28,28,2));
-         param1.draw(_loc3_,null,null,"overlay");
-         _loc3_.dispose();
-         param1.copyChannel(param2,param1.rect,new Point(0,0),8,8);
-         param1.applyFilter(param1,param1.rect,new Point(0,0),new GlowFilter(0,0.45,5,5,2,2,true));
+         // the rim: the outline, blurred, from SHADE_RIM_LOW at the edge to
+         // nothing further in
+         _loc7_ = new BitmapData(param2.width,param2.height,false,0);
+         _loc7_.copyChannel(param2,_loc7_.rect,_loc8_,8,1);
+         _loc7_.copyChannel(param2,_loc7_.rect,_loc8_,8,2);
+         _loc7_.copyChannel(param2,_loc7_.rect,_loc8_,8,4);
+         _loc7_.applyFilter(_loc7_,_loc7_.rect,_loc8_,new BlurFilter(SHADE_RIM_BLUR,SHADE_RIM_BLUR,2));
+         _loc7_.colorTransform(_loc7_.rect,new ColorTransform(1 - SHADE_RIM_LOW,1 - SHADE_RIM_LOW,1 - SHADE_RIM_LOW,1,SHADE_RIM_LOW * 255,SHADE_RIM_LOW * 255,SHADE_RIM_LOW * 255,0));
+         _loc4_.draw(_loc7_,null,null,"multiply");
+         _loc7_.dispose();
+         param1.draw(_loc4_,null,null,"overlay");
+         _loc4_.dispose();
+         param1.copyChannel(param2,param1.rect,_loc8_,8,8);
+         param1.applyFilter(param1,param1.rect,_loc8_,new GlowFilter(0,0.45,5,5,2,2,true));
       }
 
       private function onUniqueImageIdLoaded(param1:Sprite) : void
