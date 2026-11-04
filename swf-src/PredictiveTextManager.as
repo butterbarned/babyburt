@@ -292,6 +292,12 @@ package gui
       
       public function onKeyDown(param1:KeyboardEvent) : void
       {
+         // shift, ctrl, alt, caps lock and the windows keys type nothing
+         // (shift is held to pick den items), so they make no sound
+         if(param1.keyCode == 16 || param1.keyCode == 17 || param1.keyCode == 18 || param1.keyCode == 20 || param1.keyCode == 91 || param1.keyCode == 92)
+         {
+            return;
+         }
          if(param1.keyCode != 13 && param1.keyCode != 8 && _chatMsgText.length >= _chatMsgText.maxChars)
          {
             AJAudio.playLimitedChatErrorSound();

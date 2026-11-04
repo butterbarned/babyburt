@@ -20,6 +20,7 @@ const config = require("./config.js");
 const defpacks = require("./lib/defpacks.js");
 const http = require("./lib/http.js");
 const masterpieces = require("./lib/masterpieces.js");
+const denPrefabs = require("./lib/denprefabs.js");
 const panel = require("./lib/panel.js");
 const reports = require("./lib/reports.js");
 const roomInfo = require("./lib/roominfo.js");
@@ -55,6 +56,7 @@ const main = async () => {
   chatlog.load();
   modlog.load();
   masterpieces.load();
+  denPrefabs.load();
   retention.load();
   stats.load(() => world.players().length);
   roles.load();

@@ -96,11 +96,15 @@ set -- \
   item.Item Item.as \
   loader.DenItemHelper DenItemHelper.as \
   den.DenItem DenItem.as \
+  gui.DenUi DenUi.as \
+  gui.DenLayersPanel DenLayersPanel.as \
+  gui.DenPrefabs DenPrefabs.as \
   room.DenItemHolder ../tools/decompiled/room/DenItemHolder.as
 # not in the game: added before the replace (game.ArtStudioKit is Strawberry
 # Jam's, shared by its two art studio painters; gui.SitForwardAction is the
-# action of sitting facing forward)
-NEW_CLASSES="game.ArtStudioKit gui.SitForwardAction"
+# action of sitting facing forward; gui.DenUi, gui.DenLayersPanel and
+# gui.DenPrefabs are the den editor's layers panel and prefab tab)
+NEW_CLASSES="game.ArtStudioKit gui.SitForwardAction gui.DenUi gui.DenLayersPanel gui.DenPrefabs"
 args=""
 while [ $# -gt 0 ]; do
   args="$args $1 swf-src/$2"

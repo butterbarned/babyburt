@@ -19,6 +19,7 @@ package loader
    import flash.utils.ByteArray;
    import pet.PetItem;
    import pet.PetManager;
+   import room.DenItemHolder;
    
    public class DenItemHelper
    {
@@ -101,20 +102,25 @@ package loader
       public function get sortOffset() : int
       {
          // The low two flip bits are used by the original client.  Den editing
-         // also uses bits 2-3 as an explicit stacking choice: 1 = behind and
-         // 2 = in front.  A very large offset lets that choice win over the
-         // normal y-position depth sort without visibly moving the item.
+         // also uses bits 2-3 as the item's player depth: 1 = always behind
+         // players and 2 = always in front (a very large offset wins over the
+         // normal y-position depth sort without visibly moving the item), and
+         // bits 16-30 as a nudge of so many pixels further in front, which the
+         // layers panel sets to put items in the order it shows
+         // (room.DenItemHolder).
          if(_denStateItem != null)
          {
-            var _loc1_:int = _denStateItem.flipped >> 2 & 3;
+            var _loc1_:int = DenItemHolder.depthOf(_denStateItem.flipped);
+            var _loc2_:int = _sortOffset - DenItemHolder.nudgeOf(_denStateItem.flipped);
             if(_loc1_ == 1)
             {
-               return _sortOffset + 1000000;
+               return _loc2_ + 1000000;
             }
             if(_loc1_ == 2)
             {
-               return _sortOffset - 1000000;
+               return _loc2_ - 1000000;
             }
+            return _loc2_;
          }
          return _sortOffset;
       }

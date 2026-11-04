@@ -17,6 +17,7 @@ package room
    import flash.display.Sprite;
    import flash.events.Event;
    import flash.events.EventDispatcher;
+   import flash.events.KeyboardEvent;
    import flash.events.MouseEvent;
    import flash.filters.GlowFilter;
    import flash.geom.Matrix;
@@ -27,6 +28,7 @@ package room
    import flash.utils.Dictionary;
    import game.MinigameManager;
    import gui.AvatarEditor;
+   import gui.DenUi;
    import gui.EcoPointsPopup;
    import gui.EcoScorePopup;
    import gui.GenericListGuiManager;
@@ -89,19 +91,56 @@ package room
       
       private var _ecoPointsPopup:EcoPointsPopup;
 
-      // Groups and locks (this server). Both are kept in the item's saved
-      // `flipped` value, which the server stores as it is: bits 0-1 are the
-      // game's flips, 2-3 an old stacking choice, bit 4 locked, bits 8-15
-      // the group (0 for none). Shift+click picks items; "Group" joins the
-      // picked ones, and dragging one of a group moves all of it. A locked
-      // item (or group) does not move, flip or go back to the inventory.
+      // Groups, locks, player depth and layer order (this server). All are
+      // kept in the item's saved `flipped` value, which the server stores as
+      // it is:
+      //   bits 0-1   the game's flips
+      //   bits 2-3   player depth: 0 by position (as the game draws), 1 always
+      //              behind players, 2 always in front of them
+      //              (DenItemHelper.sortOffset)
+      //   bit 4      locked: in the den editor it cannot be clicked in the
+      //              room (it is chosen from the layers panel), moved,
+      //              flipped or put away
+      //   bit 5      its group's items are chosen one by one, not as one
+      //   bits 8-15  the group (0 for none)
+      //   bits 16-30 layer nudge, signed pixels: drawn so much further in
+      //              front (more) or behind (less) than where it stands says;
+      //              a floor item's place among the floor items
+      // Shift+click picks items; the pick bar (gui.DenLayersPanel) makes
+      // them a group, and dragging one of a group moves all of it.
+      public static const DEPTH_AUTO:int = 0;
+
+      public static const DEPTH_BEHIND:int = 1;
+
+      public static const DEPTH_FRONT:int = 2;
+
+      public static const DEPTH_LABELS:Array = ["Auto depth","Below players","Above players"];
+
+      public static const MAX_NUDGE:int = 16383;
+
+      private static const DEPTH_MASK:int = 12;
+
       private static const LOCK_BIT:int = 16;
+
+      private static const LOOSE_BIT:int = 32;
 
       private static const GROUP_SHIFT:int = 8;
 
       private static const GROUP_MASK:int = 255 << 8;
 
+      private static const NUDGE_SHIFT:int = 16;
+
+      private static const NUDGE_MASK:int = 32767 << 16;
+
       private static const PICK_GLOW:uint = 16182396;
+
+      private static const PREVIEW_GLOW:uint = 4105463;
+
+      private static const BTN_W:int = 100;
+
+      private static const BTN_EDGE:uint = 6042644;
+
+      private static const BTN_TEXT:uint = 6042644;
 
       private var _picked:Array;
 
@@ -113,13 +152,20 @@ package room
 
       private var _shiftAtDown:Boolean;
 
-      private var _groupBtn:Sprite;
+      private var _depthBtn:Sprite;
+
+      private var _sticky:Boolean;
+
+      private var _preview:DenStateItem;
 
       private var _ungroupBtn:Sprite;
+      private var _duplicateBtn:Sprite;
+      // copies den items ([DenStateItem...]) in the den editor (gui.DenPrefabs)
+      public var onDuplicate:Function;
 
       private var _lockBtn:Sprite;
 
-      private var _pickHint:TextField;
+      private var _pickHint:Sprite;
       
       public function DenItemHolder(param1:LayerManager)
       {
@@ -138,14 +184,22 @@ package room
          _linkBtn.addEventListener("mouseDown",onLinkBtn,false,0,true);
          _picked = [];
          _glowing = [];
-         _groupBtn = makeGroupButton("Group",onGroupBtn);
+         _depthBtn = makeGroupButton(DEPTH_LABELS[0],onDepthBtn);
          _ungroupBtn = makeGroupButton("Ungroup",onUngroupBtn);
+         _duplicateBtn = makeGroupButton("Duplicate",onDuplicateBtn);
          _lockBtn = makeGroupButton("Lock",onLockBtn);
-         _pickHint = makeGroupLabel("Shift+click: pick more",130,11,16774041);
-         _pickHint.background = true;
-         _pickHint.backgroundColor = 1250869;
+         // a little tag in the look of the layers panel: wood around cream
+         _pickHint = new Sprite();
+         _pickHint.mouseEnabled = false;
+         _pickHint.mouseChildren = false;
+         var _loc1_:TextField = DenUi.text("Shift+click: pick more",11,DenUi.TEXT);
+         DenUi.woodBox(_pickHint.graphics,_loc1_.width + 22,26,3);
+         _loc1_.x = 11;
+         _loc1_.y = int((26 - _loc1_.height) * 0.5);
+         _pickHint.addChild(_loc1_);
          gMainFrame.stage.addEventListener("mouseDown",onStageMouseDown,true,0,true);
          gMainFrame.stage.addEventListener("mouseUp",onStageMouseUp,true,0,true);
+         gMainFrame.stage.addEventListener("keyDown",onStageKeyDown,true,0,true);
          release();
          _lastItemInvId = -1;
       }
@@ -171,7 +225,10 @@ package room
          _picked = [];
          _wasDown = false;
          _pressPicked = false;
+         _sticky = false;
+         _preview = null;
          updateCloseBtn();
+         changed();
       }
       
       public function clearDen() : void
@@ -309,6 +366,15 @@ package room
                         if(_loc4_.sortCatId == 99 && _loc4_.denItemHelper)
                         {
                            _loc4_.denItemHelper.setVersion(_loc8_.version,_loc8_.version2,_loc8_.version3);
+                        }
+                        else if(_loc4_.petItem == null && _loc4_.version != _loc8_.version)
+                        {
+                           // its owner gave it another colour (DenXtCommManager "dvc")
+                           _loc4_.version = _loc8_.version;
+                           if(_loc4_.denItemHelper)
+                           {
+                              _loc4_.denItemHelper.setVersion(_loc8_.version);
+                           }
                         }
                         if(_loc4_.specialType == 1)
                         {
@@ -637,6 +703,8 @@ package room
          }
          _itemFilter = null;
          _picked = [];
+         _sticky = false;
+         _preview = null;
          hideGroupControls();
          refreshGlows();
       }
@@ -704,6 +772,12 @@ package room
             {
                return;
             }
+            // clicked (in the den or the layers panel): kept, whatever the
+            // mouse passes over, till a click on something else
+            if(_sticky && _dragItem)
+            {
+               return;
+            }
             if(_dragItem && _dragItem.specialType == 1)
             {
                _loc6_ = hitTest(param1,param2);
@@ -744,7 +818,11 @@ package room
             _wasDown = false;
             _pressPicked = false;
             _dragItem = null;
+            _sticky = false;
+            _preview = null;
+            _roomMode = param1;
             updateCloseBtn();
+            changed();
          }
          _roomMode = param1;
          stopListenersOnPets(_roomMode == 1);
@@ -1172,6 +1250,10 @@ package room
       private function releaseItem(param1:DenStateItem, param2:Boolean = true) : void
       {
          dropPick(param1);
+         if(_preview == param1)
+         {
+            _preview = null;
+         }
          var _loc3_:int = _currItems.getCoreArray().indexOf(param1);
          if(_loc3_ >= 0)
          {
@@ -1244,8 +1326,9 @@ package room
             }
          }
          _lastSelectedItem = null;
+         changed();
       }
-      
+
       private function setItemMatrix(param1:DenStateItem, param2:Number, param3:Number, param4:int) : void
       {
          var _loc14_:Sprite = null;
@@ -1333,7 +1416,36 @@ package room
          }
       }
       
-      // ---- groups and locks ----
+      // ---- groups, locks, player depth and layer order ----
+      public static function depthOf(param1:int) : int
+      {
+         return param1 >> 2 & 3;
+      }
+
+      public static function nudgeOf(param1:int) : int
+      {
+         var _loc2_:int = param1 >> NUDGE_SHIFT & 32767;
+         return _loc2_ >= 16384 ? _loc2_ - 32768 : _loc2_;
+      }
+
+      public static function withNudge(param1:int, param2:int) : int
+      {
+         param2 = Math.max(-MAX_NUDGE,Math.min(MAX_NUDGE,param2));
+         return param1 & ~NUDGE_MASK | (param2 & 32767) << NUDGE_SHIFT;
+      }
+
+      // the flip value with no group, lock or one-by-one (a prefab's items)
+      public static function plainFlip(param1:int) : int
+      {
+         return param1 & ~(GROUP_MASK | LOCK_BIT | LOOSE_BIT);
+      }
+
+      // and put in group `param2` (0: none)
+      public static function inGroup(param1:int, param2:int) : int
+      {
+         return plainFlip(param1) | (param2 & 255) << GROUP_SHIFT;
+      }
+
       private function groupOf(param1:DenStateItem) : int
       {
          return param1.flipped >> GROUP_SHIFT & 255;
@@ -1342,6 +1454,11 @@ package room
       private function isLocked(param1:DenStateItem) : Boolean
       {
          return param1 != null && (param1.flipped & LOCK_BIT) != 0;
+      }
+
+      private function isLoose(param1:DenStateItem) : Boolean
+      {
+         return param1 != null && groupOf(param1) != 0 && (param1.flipped & LOOSE_BIT) != 0;
       }
 
       // what may be picked, grouped and locked: not the den's theme or music
@@ -1358,15 +1475,15 @@ package room
          {
             return [param1];
          }
-         var _loc3_:Array = [];
-         for each(var _loc4_:DenStateItem in _currItems.getCoreArray())
-         {
-            if(groupOf(_loc4_) == _loc2_ && groupable(_loc4_))
-            {
-               _loc3_.push(_loc4_);
-            }
-         }
+         var _loc3_:Array = groupMembers(_loc2_);
          return _loc3_.length > 0 ? _loc3_ : [param1];
+      }
+
+      // what goes with the item when it is clicked: its group, or just it
+      // when its group's items are chosen one by one
+      private function unit(param1:DenStateItem) : Array
+      {
+         return isLoose(param1) ? [param1] : members(param1);
       }
 
       // the picked items, with the rest of their groups
@@ -1375,7 +1492,7 @@ package room
          var _loc1_:Array = [];
          for each(var _loc2_:DenStateItem in _picked)
          {
-            for each(var _loc3_:DenStateItem in members(_loc2_))
+            for each(var _loc3_:DenStateItem in unit(_loc2_))
             {
                if(_loc1_.indexOf(_loc3_) < 0)
                {
@@ -1386,8 +1503,8 @@ package room
          return _loc1_;
       }
 
-      // what moves (and locks) with this item: its group, or every picked
-      // item when it is one of them
+      // what moves (and locks) with this item: every picked item when it is
+      // one of them, else its group (or just it)
       private function moveSet(param1:DenStateItem) : Array
       {
          if(!groupable(param1))
@@ -1399,7 +1516,7 @@ package room
          {
             return _loc2_;
          }
-         return members(param1);
+         return unit(param1);
       }
 
       private function anyLocked(param1:Array) : Boolean
@@ -1428,6 +1545,12 @@ package room
          }
       }
 
+      // the layers panel and the pick bar (gui.DenLayersPanel) listen
+      private function changed() : void
+      {
+         dispatchEvent(new DenItemHolderEvent("OnLayersChanged"));
+      }
+
       private function onStageMouseDown(param1:MouseEvent) : void
       {
          _shiftAtDown = param1.shiftKey;
@@ -1438,14 +1561,115 @@ package room
          _wasDown = false;
       }
 
+      // the arrow keys move the chosen item (and what moves with it) a pixel,
+      // ten with Shift; not while something is being typed
+      private function onStageKeyDown(param1:KeyboardEvent) : void
+      {
+         if(param1.keyCode < 37 || param1.keyCode > 40 || _roomMode != 1 || !_sticky || _dragItem == null || _wasDown)
+         {
+            return;
+         }
+         var _loc2_:TextField = gMainFrame.stage.focus as TextField;
+         if(_loc2_ != null && _loc2_.type == "input" && _loc2_.length > 0)
+         {
+            return;
+         }
+         var _loc3_:Array = moveSet(_dragItem);
+         if(anyLocked(_loc3_))
+         {
+            return;
+         }
+         param1.stopImmediatePropagation();
+         var _loc4_:Number = param1.shiftKey ? 10 : 1;
+         var _loc5_:Number = param1.keyCode == 37 ? -_loc4_ : (param1.keyCode == 39 ? _loc4_ : 0);
+         var _loc6_:Number = param1.keyCode == 38 ? -_loc4_ : (param1.keyCode == 40 ? _loc4_ : 0);
+         for each(var _loc7_:DenStateItem in _loc3_)
+         {
+            setItemMatrix(_loc7_,_loc7_.x + _loc5_,_loc7_.y + _loc6_,_loc7_.flipped);
+         }
+         setBtnPos(_dragItem.x + _dragItem.denItemHelper.contentWidth - 30,_dragItem.y);
+      }
+
+      // items set out edge to edge, `param2` across, `param3` pixels apart,
+      // in about the order they stand (by rows, top to bottom, then left to
+      // right), from the top left of them all; then made one group. returns
+      // the group (0: not done)
+      public function arrangeGrid(param1:Array, param2:int, param3:Number = 0) : int
+      {
+         var _loc4_:Array = [];
+         for each(var _loc5_:DenStateItem in param1)
+         {
+            if(groupable(_loc5_) && !isLocked(_loc5_) && _loc5_.denItemHelper && _loc5_.denItemHelper.displayObject && _loc4_.indexOf(_loc5_) < 0)
+            {
+               _loc4_.push(_loc5_);
+            }
+         }
+         if(_loc4_.length < 2)
+         {
+            return 0;
+         }
+         var _loc6_:int = Math.max(1,Math.min(param2,_loc4_.length));
+         var _loc7_:Number = 0;
+         var _loc8_:Number = 0;
+         var _loc9_:Number = Infinity;
+         var _loc10_:Number = Infinity;
+         for each(_loc5_ in _loc4_)
+         {
+            _loc7_ = Math.max(_loc7_,_loc5_.denItemHelper.contentWidth);
+            _loc8_ = Math.max(_loc8_,_loc5_.denItemHelper.contentHeight);
+            _loc9_ = Math.min(_loc9_,_loc5_.x);
+            _loc10_ = Math.min(_loc10_,_loc5_.y);
+         }
+         _loc4_.sort(function(param1:DenStateItem, param2:DenStateItem):int
+         {
+            return param1.y < param2.y ? -1 : (param1.y > param2.y ? 1 : (param1.x < param2.x ? -1 : (param1.x > param2.x ? 1 : 0)));
+         });
+         var _loc11_:int = 0;
+         while(_loc11_ < _loc4_.length)
+         {
+            var _loc12_:Array = _loc4_.slice(_loc11_,_loc11_ + _loc6_);
+            _loc12_.sort(function(param1:DenStateItem, param2:DenStateItem):int
+            {
+               return param1.x < param2.x ? -1 : (param1.x > param2.x ? 1 : 0);
+            });
+            var _loc13_:int = _loc11_ / _loc6_;
+            var _loc14_:int = 0;
+            while(_loc14_ < _loc12_.length)
+            {
+               var _loc15_:DenStateItem = _loc12_[_loc14_];
+               setItemMatrix(_loc15_,_loc9_ + _loc14_ * (_loc7_ + param3),_loc10_ + _loc13_ * (_loc8_ + param3),_loc15_.flipped);
+               _loc14_++;
+            }
+            _loc11_ += _loc6_;
+         }
+         var _loc16_:int = makeGroup(_loc4_);
+         if(_dragItem && _dragItem.denItemHelper)
+         {
+            setBtnPos(_dragItem.x + _dragItem.denItemHelper.contentWidth - 30,_dragItem.y);
+         }
+         changed();
+         return _loc16_;
+      }
+
       // the first moment of a press on the den: Shift picks (or unpicks) the
-      // item and its group; a press on anything else drops the picks.
+      // item and its group; a press on anything else drops the picks, and a
+      // choice made in the layers panel.
       private function onPress(param1:Number, param2:Number) : void
       {
          _pressPicked = false;
-         if(_shiftAtDown && groupable(_dragItem))
+         // a drag goes from here: a chosen item is kept while the mouse is
+         // elsewhere, so the last point it had is old
+         _dragPoint.x = param1;
+         _dragPoint.y = param2;
+         if(_sticky && !overControls(param1,param2) && hitTest(param1,param2) != _dragItem)
          {
-            var _loc3_:Array = members(_dragItem);
+            _sticky = false;
+            _dragItem = hitTest(param1,param2);
+            updateCloseBtn();
+         }
+         if(_shiftAtDown && groupable(_dragItem) && !isLocked(_dragItem))
+         {
+            var _loc3_:Array = unit(_dragItem);
             if(isPicked(_dragItem))
             {
                for each(var _loc4_:DenStateItem in _loc3_)
@@ -1460,6 +1684,7 @@ package room
             _pressPicked = true;
             showGroupControls();
             refreshGlows();
+            changed();
             return;
          }
          if(_picked.length > 0 && (_dragItem == null || !isPicked(_dragItem)))
@@ -1467,6 +1692,15 @@ package room
             _picked = [];
             showGroupControls();
             refreshGlows();
+            changed();
+         }
+         // a click on an item keeps it chosen once the mouse leaves it, so
+         // its colour and the rest can be changed in the layers panel
+         if(_dragItem != null && !_sticky)
+         {
+            _sticky = true;
+            updateCloseBtn();
+            changed();
          }
       }
 
@@ -1476,11 +1710,15 @@ package room
       {
          var _loc5_:Rectangle = null;
          var _loc4_:Rectangle = null;
+         if(_dragItem == null)
+         {
+            return false;
+         }
          if(_dragItem.denItemHelper && _dragItem.denItemHelper.displayObject)
          {
             _loc5_ = _dragItem.denItemHelper.displayObject.getBounds(_layerManager.room_avatars);
          }
-         for each(var _loc3_:DisplayObject in [_closeBtn,_flipBtn,_flipBtnVer,_linkBtn,_groupBtn,_ungroupBtn,_lockBtn])
+         for each(var _loc3_:DisplayObject in [_closeBtn,_flipBtn,_flipBtnVer,_linkBtn,_depthBtn,_ungroupBtn,_duplicateBtn,_lockBtn])
          {
             if(_loc3_.parent)
             {
@@ -1500,8 +1738,9 @@ package room
          return _loc5_.contains(param1,param2) && hitTest(param1,param2) == null;
       }
 
-      // glows: white round the item under the mouse and its group, yellow
-      // round the picked ones
+      // glows: white round the item under the mouse and what goes with it
+      // (grey when locked), yellow round the picked ones, blue round the
+      // one the mouse is over in the layers panel
       private function refreshGlows() : void
       {
          var _loc1_:DenStateItem = null;
@@ -1513,6 +1752,10 @@ package room
             }
          }
          _glowing = [];
+         if(_roomMode != 1)
+         {
+            return;
+         }
          for each(_loc1_ in pickedSet())
          {
             if(_loc1_.denItemHelper && _loc1_.denItemHelper.displayObject && _currItems.getCoreArray().indexOf(_loc1_) >= 0)
@@ -1523,7 +1766,7 @@ package room
          }
          if(_dragItem && _dragItem.denItemHelper && _dragItem.denItemHelper.displayObject)
          {
-            for each(_loc1_ in members(_dragItem))
+            for each(_loc1_ in unit(_dragItem))
             {
                if(_loc1_.denItemHelper && _loc1_.denItemHelper.displayObject)
                {
@@ -1535,8 +1778,17 @@ package room
                }
             }
          }
+         if(_preview && _preview.denItemHelper && _preview.denItemHelper.displayObject && _currItems.getCoreArray().indexOf(_preview) >= 0)
+         {
+            _preview.denItemHelper.displayObject.filters = [new GlowFilter(PREVIEW_GLOW,1,12,12,6)];
+            if(_glowing.indexOf(_preview) < 0)
+            {
+               _glowing.push(_preview);
+            }
+         }
       }
 
+      // the buttons by an item, in the game's cream and brown
       private function makeGroupLabel(param1:String, param2:Number, param3:int, param4:uint) : TextField
       {
          var _loc5_:TextField = new TextField();
@@ -1544,7 +1796,8 @@ package room
          _loc5_.height = param3 + 8;
          _loc5_.selectable = false;
          _loc5_.mouseEnabled = false;
-         _loc5_.defaultTextFormat = new TextFormat("Arial",param3,param4,true,null,null,null,null,"center");
+         _loc5_.embedFonts = AJClient.hasGameFont();
+         _loc5_.defaultTextFormat = new TextFormat(_loc5_.embedFonts ? "CCDigitalDelivery" : "Arial",param3,param4,true,null,null,null,null,"center");
          _loc5_.text = param1;
          return _loc5_;
       }
@@ -1554,8 +1807,8 @@ package room
          var _loc3_:Sprite = new Sprite();
          _loc3_.buttonMode = true;
          _loc3_.mouseChildren = false;
-         var _loc4_:TextField = makeGroupLabel(param1,78,12,16777215);
-         _loc4_.y = 4;
+         var _loc4_:TextField = makeGroupLabel(param1,BTN_W,12,BTN_TEXT);
+         _loc4_.y = 3;
          _loc3_.addChild(_loc4_);
          drawGroupButton(_loc3_,false);
          _loc3_.addEventListener("mouseDown",param2,false,0,true);
@@ -1564,10 +1817,15 @@ package room
 
       private function drawGroupButton(param1:Sprite, param2:Boolean) : void
       {
+         var _loc3_:Matrix = new Matrix();
+         _loc3_.createGradientBox(BTN_W,24,Math.PI / 2);
          param1.graphics.clear();
-         param1.graphics.lineStyle(1,param2 ? 16182396 : 3026014);
-         param1.graphics.beginFill(param2 ? 6055990 : 1910087,0.95);
-         param1.graphics.drawRoundRect(0,0,78,24,10,10);
+         param1.graphics.beginFill(0,0.25);
+         param1.graphics.drawRoundRect(0,2,BTN_W,24,22,22);
+         param1.graphics.endFill();
+         param1.graphics.lineStyle(2,BTN_EDGE);
+         param1.graphics.beginGradientFill("linear",param2 ? [16772744,15905862] : [16773836,15258010],[1,1],[0,255],_loc3_);
+         param1.graphics.drawRoundRect(0,0,BTN_W,24,22,22);
          param1.graphics.endFill();
       }
 
@@ -1579,7 +1837,7 @@ package room
 
       private function hideGroupControls() : void
       {
-         for each(var _loc1_:DisplayObject in [_groupBtn,_ungroupBtn,_lockBtn,_pickHint])
+         for each(var _loc1_:DisplayObject in [_depthBtn,_ungroupBtn,_duplicateBtn,_lockBtn,_pickHint])
          {
             if(_loc1_.parent)
             {
@@ -1588,27 +1846,32 @@ package room
          }
       }
 
-      // which buttons the item under the mouse gets
+      // which buttons the chosen item gets: its player depth, its lock, and
+      // Ungroup when it is in a group. a locked one gets Unlock only.
       private function showGroupControls() : void
       {
          hideGroupControls();
-         if(_dragItem == null || !groupable(_dragItem) || !_layerManager.room_chat)
+         if(_dragItem == null || !groupable(_dragItem) || !_layerManager.room_chat || _roomMode != 1)
          {
             return;
          }
          var _loc1_:Array = pickedSet();
-         if(_loc1_.length >= 2 && _loc1_.indexOf(_dragItem) >= 0)
+         if(!isLocked(_dragItem))
          {
-            setGroupButtonText(_groupBtn,"Group " + _loc1_.length,true);
-            _layerManager.room_chat.addChild(_groupBtn);
-         }
-         if(groupOf(_dragItem) != 0)
-         {
-            _layerManager.room_chat.addChild(_ungroupBtn);
+            setGroupButtonText(_depthBtn,DEPTH_LABELS[depthOf(_dragItem.flipped)],depthOf(_dragItem.flipped) != DEPTH_AUTO);
+            _layerManager.room_chat.addChild(_depthBtn);
          }
          setGroupButtonText(_lockBtn,isLocked(_dragItem) ? "Unlock" : "Lock",isLocked(_dragItem));
          _layerManager.room_chat.addChild(_lockBtn);
-         if(_loc1_.length < 2)
+         if(groupOf(_dragItem) != 0 && !isLocked(_dragItem))
+         {
+            _layerManager.room_chat.addChild(_ungroupBtn);
+         }
+         if(!isLocked(_dragItem) && onDuplicate != null)
+         {
+            _layerManager.room_chat.addChild(_duplicateBtn);
+         }
+         if(_loc1_.length == 0)
          {
             _layerManager.room_chat.addChild(_pickHint);
          }
@@ -1618,13 +1881,13 @@ package room
       private function placeGroupControls(param1:Number, param2:Number) : void
       {
          var _loc3_:Number = param2;
-         for each(var _loc4_:DisplayObject in [_groupBtn,_ungroupBtn,_lockBtn,_pickHint])
+         for each(var _loc4_:DisplayObject in [_depthBtn,_lockBtn,_ungroupBtn,_duplicateBtn,_pickHint])
          {
             if(_loc4_.parent)
             {
                _loc4_.x = param1 + 52;
                _loc4_.y = _loc3_ - 12;
-               _loc3_ += 28;
+               _loc3_ += 29;
             }
          }
       }
@@ -1648,25 +1911,31 @@ package room
       private function setGroup(param1:DenStateItem, param2:int) : void
       {
          param1.flipped = param1.flipped & ~GROUP_MASK | (param2 & 255) << GROUP_SHIFT;
+         if(param2 == 0)
+         {
+            param1.flipped &= ~LOOSE_BIT;
+         }
       }
 
-      private function onGroupBtn(param1:MouseEvent) : void
+      private function onDepthBtn(param1:MouseEvent) : void
       {
          param1.stopPropagation();
-         var _loc2_:Array = pickedSet();
-         if(_loc2_.length < 2)
+         if(_dragItem == null || isLocked(_dragItem))
          {
             return;
          }
-         var _loc3_:int = freeGroup();
-         var _loc4_:Boolean = anyLocked(_loc2_);
-         for each(var _loc5_:DenStateItem in _loc2_)
+         setDepth(moveSet(_dragItem),(depthOf(_dragItem.flipped) + 1) % 3);
+      }
+
+      // the item, its group or every picked item, copied beside them
+      private function onDuplicateBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         if(_dragItem == null || isLocked(_dragItem) || onDuplicate == null)
          {
-            setGroup(_loc5_,_loc3_);
-            _loc5_.flipped = _loc4_ ? _loc5_.flipped | LOCK_BIT : _loc5_.flipped & ~LOCK_BIT;
+            return;
          }
-         _picked = [];
-         updateCloseBtn();
+         onDuplicate(moveSet(_dragItem));
       }
 
       private function onUngroupBtn(param1:MouseEvent) : void
@@ -1676,15 +1945,11 @@ package room
          {
             return;
          }
-         for each(var _loc2_:DenStateItem in members(_dragItem))
-         {
-            setGroup(_loc2_,0);
-            dropPick(_loc2_);
-         }
-         updateCloseBtn();
+         ungroup(groupOf(_dragItem));
       }
 
-      // the item, its group or every picked item
+      // the item, its group or every picked item. a locked item can only be
+      // chosen from the layers panel after this, so it stays chosen for now.
       private function onLockBtn(param1:MouseEvent) : void
       {
          param1.stopPropagation();
@@ -1692,12 +1957,587 @@ package room
          {
             return;
          }
-         var _loc2_:Boolean = !isLocked(_dragItem);
-         for each(var _loc3_:DenStateItem in moveSet(_dragItem))
+         var _loc2_:DenStateItem = _dragItem;
+         setLocked(moveSet(_loc2_),!isLocked(_loc2_));
+         _dragItem = _loc2_;
+         _sticky = true;
+         updateCloseBtn();
+      }
+
+      private function resort(param1:DenStateItem) : void
+      {
+         var _loc2_:DisplayObject = param1.denItemHelper ? param1.denItemHelper.displayObject : null;
+         if(_loc2_ != null && !isFloorItem(param1))
          {
-            _loc3_.flipped = _loc2_ ? _loc3_.flipped | LOCK_BIT : _loc3_.flipped & ~LOCK_BIT;
+            _loc2_.name = String(param1.denItemHelper.sortOffset);
+         }
+      }
+
+      // ---- for the layers panel (gui.DenLayersPanel) and prefabs ----
+
+      // what the layers panel lists: every item standing in the den but
+      // its wallpaper, floor and music
+      // every item in the den, loaded or still loading
+      public function get placedItems() : Array
+      {
+         return _currItems.getCoreArray().concat();
+      }
+
+      public function get layerItems() : Array
+      {
+         var _loc1_:Array = [];
+         for each(var _loc2_:DenStateItem in _currItems.getCoreArray())
+         {
+            if(!isTheme(_loc2_.sortCatId) && _loc2_.sortCatId != 4 && _loc2_.denItemHelper && _loc2_.denItemHelper.displayObject)
+            {
+               _loc1_.push(_loc2_);
+            }
+         }
+         return _loc1_;
+      }
+
+      public function get inEditMode() : Boolean
+      {
+         return _roomMode == 1;
+      }
+
+      // a rug and the like: under everything, in an order of their own
+      public function isFloorItem(param1:DenStateItem) : Boolean
+      {
+         return param1.layerId == 1;
+      }
+
+      // how far in front the room draws it: higher is further in front
+      public function depthKey(param1:DenStateItem) : Number
+      {
+         var _loc2_:DisplayObject = param1.denItemHelper.displayObject;
+         if(isFloorItem(param1))
+         {
+            return _loc2_.parent ? _loc2_.parent.getChildIndex(_loc2_) : 0;
+         }
+         var _loc3_:Number = Number(_loc2_.name);
+         return _loc2_.getBounds(_loc2_.parent ? _loc2_.parent : _layerManager.room_avatars).bottom - (isNaN(_loc3_) ? 0 : _loc3_);
+      }
+
+      public function groupIdOf(param1:DenStateItem) : int
+      {
+         return groupOf(param1);
+      }
+
+      public function lockedItem(param1:DenStateItem) : Boolean
+      {
+         return isLocked(param1);
+      }
+
+      public function canGroup(param1:DenStateItem) : Boolean
+      {
+         return groupable(param1);
+      }
+
+      public function groupMembers(param1:int) : Array
+      {
+         var _loc2_:Array = [];
+         if(param1 == 0)
+         {
+            return _loc2_;
+         }
+         for each(var _loc3_:DenStateItem in _currItems.getCoreArray())
+         {
+            if(groupOf(_loc3_) == param1 && groupable(_loc3_))
+            {
+               _loc2_.push(_loc3_);
+            }
+         }
+         return _loc2_;
+      }
+
+      // is the group's every item chosen as the group?
+      public function groupSelectsAsOne(param1:int) : Boolean
+      {
+         for each(var _loc2_:DenStateItem in groupMembers(param1))
+         {
+            if(isLoose(_loc2_))
+            {
+               return false;
+            }
+         }
+         return true;
+      }
+
+      public function get selectedItem() : DenStateItem
+      {
+         return _dragItem;
+      }
+
+      public function get pickedItems() : Array
+      {
+         return pickedSet();
+      }
+
+      public function isPickedItem(param1:DenStateItem) : Boolean
+      {
+         return isPicked(param1);
+      }
+
+      // chosen in the layers panel: it stays chosen (its buttons by it)
+      // till the mouse goes to another item in the room or the room is
+      // clicked. a locked item can be chosen only so.
+      public function selectItem(param1:DenStateItem) : void
+      {
+         if(_roomMode != 1 || param1 == null || _currItems.getCoreArray().indexOf(param1) < 0)
+         {
+            return;
+         }
+         _dragItem = param1;
+         _sticky = true;
+         updateCloseBtn();
+         changed();
+      }
+
+      public function togglePick(param1:DenStateItem) : void
+      {
+         if(!groupable(param1) || isLocked(param1))
+         {
+            return;
+         }
+         if(isPicked(param1))
+         {
+            for each(var _loc2_:DenStateItem in unit(param1))
+            {
+               dropPick(_loc2_);
+            }
+         }
+         else
+         {
+            _picked.push(param1);
+         }
+         showGroupControls();
+         refreshGlows();
+         changed();
+      }
+
+      // every item of a group picked, however its items are chosen
+      public function pickGroup(param1:int) : void
+      {
+         _picked = groupMembers(param1);
+         if(_picked.length > 0)
+         {
+            _dragItem = _picked[0];
+            _sticky = true;
          }
          updateCloseBtn();
+         changed();
+      }
+
+      public function setPicked(param1:Array) : void
+      {
+         _picked = [];
+         for each(var _loc2_:DenStateItem in param1)
+         {
+            if(groupable(_loc2_) && _currItems.getCoreArray().indexOf(_loc2_) >= 0)
+            {
+               _picked.push(_loc2_);
+            }
+         }
+         updateCloseBtn();
+         changed();
+      }
+
+      public function clearPicks() : void
+      {
+         _picked = [];
+         updateCloseBtn();
+         changed();
+      }
+
+      // the item the mouse is over in the layers panel (or null)
+      public function setPreview(param1:DenStateItem) : void
+      {
+         if(_preview != param1)
+         {
+            _preview = param1;
+            refreshGlows();
+         }
+      }
+
+      public function setLocked(param1:Array, param2:Boolean) : void
+      {
+         for each(var _loc3_:DenStateItem in param1)
+         {
+            if(groupable(_loc3_))
+            {
+               _loc3_.flipped = param2 ? _loc3_.flipped | LOCK_BIT : _loc3_.flipped & ~LOCK_BIT;
+               if(param2)
+               {
+                  dropPick(_loc3_);
+               }
+            }
+         }
+         updateCloseBtn();
+         changed();
+      }
+
+      public function setDepth(param1:Array, param2:int) : void
+      {
+         for each(var _loc3_:DenStateItem in param1)
+         {
+            if(groupable(_loc3_) && !isFloorItem(_loc3_) && !isLocked(_loc3_))
+            {
+               _loc3_.flipped = _loc3_.flipped & ~DEPTH_MASK | (param2 & 3) << 2;
+               resort(_loc3_);
+            }
+         }
+         updateCloseBtn();
+         changed();
+      }
+
+      // the items made a new group (from whatever groups they were in).
+      // locked if any of them was. returns the group, or 0.
+      public function makeGroup(param1:Array) : int
+      {
+         var _loc2_:Array = [];
+         for each(var _loc3_:DenStateItem in param1)
+         {
+            if(groupable(_loc3_) && _loc2_.indexOf(_loc3_) < 0)
+            {
+               _loc2_.push(_loc3_);
+            }
+         }
+         if(_loc2_.length < 2)
+         {
+            return 0;
+         }
+         var _loc4_:int = freeGroup();
+         var _loc5_:Boolean = anyLocked(_loc2_);
+         for each(_loc3_ in _loc2_)
+         {
+            setGroup(_loc3_,_loc4_);
+            _loc3_.flipped &= ~LOOSE_BIT;
+            _loc3_.flipped = _loc5_ ? _loc3_.flipped | LOCK_BIT : _loc3_.flipped & ~LOCK_BIT;
+         }
+         _picked = [];
+         updateCloseBtn();
+         changed();
+         return _loc4_;
+      }
+
+      public function ungroup(param1:int) : void
+      {
+         for each(var _loc2_:DenStateItem in groupMembers(param1))
+         {
+            setGroup(_loc2_,0);
+            dropPick(_loc2_);
+         }
+         updateCloseBtn();
+         changed();
+      }
+
+      // one item into a group (0: out of its group). it takes on the
+      // group's lock and how its items are chosen. a group of one is no
+      // group: its last item leaves it too.
+      public function setItemGroup(param1:DenStateItem, param2:int) : void
+      {
+         if(!groupable(param1) || groupOf(param1) == param2)
+         {
+            return;
+         }
+         var _loc3_:int = groupOf(param1);
+         var _loc4_:Array = groupMembers(param2);
+         setGroup(param1,param2);
+         if(_loc4_.length > 0)
+         {
+            param1.flipped = isLocked(_loc4_[0]) ? param1.flipped | LOCK_BIT : param1.flipped & ~LOCK_BIT;
+            param1.flipped = isLoose(_loc4_[0]) ? param1.flipped | LOOSE_BIT : param1.flipped & ~LOOSE_BIT;
+         }
+         if(_loc3_ != 0 && groupMembers(_loc3_).length == 1)
+         {
+            setGroup(groupMembers(_loc3_)[0],0);
+         }
+         updateCloseBtn();
+         changed();
+      }
+
+      // the group's items chosen as one (true) or one by one
+      public function setGroupSelectsAsOne(param1:int, param2:Boolean) : void
+      {
+         for each(var _loc3_:DenStateItem in groupMembers(param1))
+         {
+            _loc3_.flipped = param2 ? _loc3_.flipped & ~LOOSE_BIT : _loc3_.flipped | LOOSE_BIT;
+         }
+         updateCloseBtn();
+         changed();
+      }
+
+      // the layers panel's order for one band of items: `param1` the band's
+      // items front first as the panel now shows them, `param2` the ones
+      // dragged there, `param3` the band's player depth (or -1, the floor).
+      // the dragged ones are nudged in between their new neighbours; the
+      // ones in front of them only as much as it takes to stay in front.
+      public function applyOrder(param1:Array, param2:Array, param3:int) : void
+      {
+         var _loc4_:DenStateItem = null;
+         var _loc5_:int = 0;
+         var _loc6_:int = param1.length;
+         if(param3 == -1)
+         {
+            applyFloorOrder(param1);
+            changed();
+            return;
+         }
+         for each(_loc4_ in param2)
+         {
+            if(groupable(_loc4_) && !isFloorItem(_loc4_) && !isLocked(_loc4_))
+            {
+               _loc4_.flipped = _loc4_.flipped & ~DEPTH_MASK | (param3 & 3) << 2;
+               resort(_loc4_);
+            }
+         }
+         var _loc7_:Array = [];
+         var _loc8_:Array = [];
+         _loc5_ = 0;
+         while(_loc5_ < _loc6_)
+         {
+            _loc4_ = param1[_loc5_];
+            _loc8_[_loc5_] = depthKey(_loc4_);
+            _loc7_[_loc5_] = _loc8_[_loc5_] - nudgeOf(_loc4_.flipped);
+            _loc5_++;
+         }
+         var _loc9_:Number = -Infinity;
+         _loc5_ = _loc6_ - 1;
+         while(_loc5_ >= 0)
+         {
+            _loc4_ = param1[_loc5_];
+            var _loc10_:Number = _loc8_[_loc5_];
+            if(param2.indexOf(_loc4_) >= 0)
+            {
+               // the run of dragged ones this starts, and what is in front of it
+               var _loc11_:int = _loc5_;
+               while(_loc11_ > 0 && param2.indexOf(param1[_loc11_ - 1]) >= 0)
+               {
+                  _loc11_--;
+               }
+               var _loc12_:int = _loc5_ - _loc11_ + 1;
+               var _loc13_:int = _loc5_ - _loc11_;
+               var _loc14_:Number = _loc11_ > 0 ? Number(_loc8_[_loc11_ - 1]) : Infinity;
+               if(_loc9_ == -Infinity && _loc14_ == Infinity)
+               {
+                  _loc10_ = Math.max(_loc7_[_loc5_],_loc9_ + 1);
+               }
+               else if(_loc9_ == -Infinity)
+               {
+                  _loc10_ = _loc14_ - 2 * (_loc13_ + 1);
+               }
+               else if(_loc14_ == Infinity || _loc14_ - _loc9_ < _loc12_ + 1)
+               {
+                  _loc10_ = _loc9_ + 2;
+               }
+               else
+               {
+                  _loc10_ = _loc9_ + (_loc14_ - _loc9_) / (_loc12_ + 1);
+               }
+            }
+            if(_loc10_ <= _loc9_)
+            {
+               _loc10_ = _loc9_ + 1;
+            }
+            if(_loc10_ != _loc8_[_loc5_] && !isLocked(_loc4_))
+            {
+               _loc4_.flipped = withNudge(_loc4_.flipped,Math.ceil(_loc10_ - _loc7_[_loc5_]));
+               resort(_loc4_);
+               _loc10_ = _loc7_[_loc5_] + nudgeOf(_loc4_.flipped);
+            }
+            _loc8_[_loc5_] = _loc10_;
+            _loc9_ = _loc10_;
+            _loc5_--;
+         }
+         changed();
+      }
+
+      // floor items front first: each kept its place among them as its nudge
+      private function applyFloorOrder(param1:Array) : void
+      {
+         var _loc2_:Array = [];
+         var _loc3_:DisplayObject = null;
+         var _loc4_:int = 0;
+         var _loc5_:int = param1.length;
+         var _loc6_:Sprite = _layerManager.room_bkg_main;
+         for each(var _loc7_:DenStateItem in param1)
+         {
+            _loc3_ = _loc7_.denItemHelper.displayObject;
+            if(_loc3_.parent != _loc6_)
+            {
+               return;
+            }
+            _loc2_.push(_loc6_.getChildIndex(_loc3_));
+         }
+         _loc2_.sort(16);
+         _loc4_ = 0;
+         while(_loc4_ < _loc5_)
+         {
+            _loc7_ = param1[_loc4_];
+            if(!isLocked(_loc7_))
+            {
+               _loc7_.flipped = withNudge(_loc7_.flipped,_loc5_ - _loc4_);
+            }
+            _loc6_.removeChild(_loc7_.denItemHelper.displayObject);
+            _loc4_++;
+         }
+         _loc4_ = 0;
+         while(_loc4_ < _loc5_)
+         {
+            _loc6_.addChildAt(DenStateItem(param1[_loc5_ - 1 - _loc4_]).denItemHelper.displayObject,_loc2_[_loc4_]);
+            _loc4_++;
+         }
+      }
+
+      // a floor item put down: in its place among the others (by nudge)
+      private function addFloorItem(param1:DenStateItem, param2:DisplayObject) : void
+      {
+         var _loc3_:Sprite = _layerManager.room_bkg_main;
+         var _loc4_:int = -1;
+         var _loc5_:int = nudgeOf(param1.flipped);
+         for each(var _loc6_:DenStateItem in _currItems.getCoreArray())
+         {
+            if(_loc6_ != param1 && isFloorItem(_loc6_) && _loc6_.denItemHelper && _loc6_.denItemHelper.displayObject && _loc6_.denItemHelper.displayObject.parent == _loc3_ && nudgeOf(_loc6_.flipped) > _loc5_)
+            {
+               var _loc7_:int = _loc3_.getChildIndex(_loc6_.denItemHelper.displayObject);
+               if(_loc4_ < 0 || _loc7_ < _loc4_)
+               {
+                  _loc4_ = _loc7_;
+               }
+            }
+         }
+         if(param2.parent == _loc3_)
+         {
+            _loc3_.removeChild(param2);
+         }
+         if(_loc4_ >= 0 && _loc5_ != 0)
+         {
+            _loc3_.addChildAt(param2,Math.min(_loc4_,_loc3_.numChildren));
+         }
+         else
+         {
+            _loc3_.addChild(param2);
+         }
+      }
+
+      // the item (and what goes with it) brought to the middle of the
+      // screen: for one that is out of sight
+      public function bringToView(param1:DenStateItem) : void
+      {
+         var _loc2_:Array = moveSet(param1);
+         if(anyLocked(_loc2_) || param1.denItemHelper == null)
+         {
+            return;
+         }
+         var _loc3_:Point = RoomManagerWorld.instance.convertScreenToWorldSpace(450,250);
+         var _loc4_:Number = _loc3_.x - (param1.x + param1.denItemHelper.contentWidth * 0.5);
+         var _loc5_:Number = _loc3_.y - (param1.y + param1.denItemHelper.contentHeight * 0.5);
+         for each(var _loc6_:DenStateItem in _loc2_)
+         {
+            setItemMatrix(_loc6_,_loc6_.x + _loc4_,_loc6_.y + _loc5_,_loc6_.flipped);
+         }
+         _dragItem = param1;
+         _sticky = true;
+         setBtnPos(param1.x + param1.denItemHelper.contentWidth - 30,param1.y);
+         updateCloseBtn();
+         changed();
+      }
+
+      // the colours the item's art has (null or one: it has no others)
+      public function versionsOf(param1:DenStateItem) : Array
+      {
+         return param1 && param1.denItemHelper && param1.petItem == null && param1.uniqueImageId == "" ? param1.denItemHelper.getVersions() : null;
+      }
+
+      // the server changed an item's colour (DenXtCommManager "dvc")
+      public function setItemVersion(param1:int, param2:int) : void
+      {
+         for each(var _loc3_:DenStateItem in _currItems.getCoreArray())
+         {
+            if(_loc3_.invIdx == param1 && _loc3_.petItem == null)
+            {
+               _loc3_.version = param2;
+               if(_loc3_.denItemHelper)
+               {
+                  _loc3_.denItemHelper.setVersion(param2);
+               }
+            }
+         }
+         for each(_loc3_ in _itemsInit.getCoreArray())
+         {
+            if(_loc3_.invIdx == param1 && _loc3_.petItem == null)
+            {
+               _loc3_.version = param2;
+            }
+         }
+         changed();
+      }
+
+      // a prefab put down (gui.DenPrefabs): its items, already where they
+      // go and in one group, are placed, picked and chosen
+      public function spawnItems(param1:Array) : void
+      {
+         var _loc2_:DenStateItemCollection = new DenStateItemCollection();
+         var _loc3_:DenStateItem = null;
+         for each(_loc3_ in param1)
+         {
+            _loc2_.pushDenStateItem(_loc3_);
+         }
+         setItems(_loc2_,true);
+         var _loc4_:Array = [];
+         for each(_loc3_ in param1)
+         {
+            for each(var _loc5_:DenStateItem in _currItems.getCoreArray())
+            {
+               if(_loc5_.invIdx == _loc3_.invIdx && _loc5_.refId == _loc3_.refId)
+               {
+                  _loc4_.push(_loc5_);
+                  break;
+               }
+            }
+         }
+         _picked = [];
+         if(_loc4_.length > 0)
+         {
+            _dragItem = _loc4_[0];
+            _sticky = true;
+         }
+         updateCloseBtn();
+         changed();
+      }
+
+      // items taken out of the den, back to the den items list, as the
+      // close button does one (a prefab's "Put away"); locked ones too
+      public function putAway(param1:Array) : void
+      {
+         for each(var _loc2_:DenStateItem in param1.concat())
+         {
+            if(_currItems.getCoreArray().indexOf(_loc2_) < 0)
+            {
+               continue;
+            }
+            dropPick(_loc2_);
+            var _loc3_:DenItemHolderEvent = new DenItemHolderEvent("OnItemRemoved");
+            _loc3_.id = _loc2_.invIdx;
+            _loc3_.refId = _loc2_.refId;
+            _loc3_.array = [_loc2_];
+            releaseItem(_loc2_);
+            if(_dragItem == _loc2_)
+            {
+               _dragItem = null;
+            }
+            dispatchEvent(_loc3_);
+         }
+         _sticky = false;
+         updateCloseBtn();
+         changed();
+      }
+
+      // a group number no item has, for a prefab coming down
+      public function newGroupId() : int
+      {
+         return freeGroup();
       }
 
       private function hitTest(param1:int, param2:int) : DenStateItem
@@ -1714,7 +2554,7 @@ package room
          while(_loc7_ < _loc5_)
          {
             _loc9_ = _currItems.getDenStateItem(_loc7_);
-            if(!isTheme(_loc9_.sortCatId))
+            if(!isTheme(_loc9_.sortCatId) && !(_roomMode == 1 && isLocked(_loc9_)))
             {
                _loc6_ = _loc9_.denItemHelper.displayObject;
                _loc4_ = _loc6_.getBounds(_layerManager.room_avatars);
@@ -1845,7 +2685,7 @@ package room
             switch(_loc10_)
             {
                case 1:
-                  _layerManager.room_bkg_main.addChild(_loc3_);
+                  addFloorItem(_loc8_,_loc3_);
                   break;
                case 100:
                   _layerManager.room_bkg_main.addChildAt(_loc3_,0);
@@ -1859,6 +2699,7 @@ package room
                   }
                   _loc12_.addChild(_loc3_);
             }
+            changed();
          }
       }
       

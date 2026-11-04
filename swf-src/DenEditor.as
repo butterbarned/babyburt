@@ -20,6 +20,7 @@ package gui
    import flash.events.MouseEvent;
    import flash.events.TimerEvent;
    import flash.geom.Point;
+   import flash.geom.Rectangle;
    import flash.text.TextField;
    import flash.text.TextFormat;
    import flash.utils.Timer;
@@ -143,6 +144,14 @@ package gui
       
       private var _itemSetEvent:DenItemHolderEvent;
 
+      // this server's additions: the layers panel (with its pick bar) and
+      // the prefab tab
+      private var _layers:DenLayersPanel;
+
+      private var _prefabs:DenPrefabs;
+
+      private var _searchBarX:Number = NaN;
+
       
       public function DenEditor()
       {
@@ -166,13 +175,35 @@ package gui
          DenXtCommManager.denEditorDIResponseCallback = diResponseCallback;
          _denItemHolder.addEventListener("OnItemRemoved",onDenItemRemoved,false,0,true);
          _denItemHolder.addEventListener("OnSaveState",onDenSaveState,false,0,true);
+         _prefabs = new DenPrefabs(_guiLayer,_denItemHolder,_denEditor.itemBlock.itemBlock,placePrefabItems);
+         _prefabs.makeTabs(_denEditor.petBtnDn,_denEditor.petBtnUp,onPrefabTab,onPrefabTabOver,btnOutHandler);
+         _layers = new DenLayersPanel(_denItemHolder,_guiLayer,hudTop,_prefabs.saveNew,_prefabs.duplicateItems);
+         _denItemHolder.onDuplicate = _prefabs.duplicateItems;
+         DenXtCommManager.prefabCallback = onPrefabReply;
+         setupTabsVisibilityAndPosition();
          addListeners();
+         _layers.show(_denEditor.bottomHud.visible);
       }
       
       public function destroy() : void
       {
          _denItemHolder.removeEventListener("OnItemRemoved",onDenItemRemoved);
          _denItemHolder.removeEventListener("OnSaveState",onDenSaveState);
+         if(_layers)
+         {
+            _layers.destroy();
+            _layers = null;
+         }
+         if(_prefabs)
+         {
+            if(_denItemHolder)
+            {
+               _denItemHolder.onDuplicate = null;
+            }
+            _prefabs.destroy();
+            _prefabs = null;
+         }
+         DenXtCommManager.prefabCallback = null;
          removeListeners();
          _guiLayer.removeChild(_denEditor);
          if(_denLockPopup)
@@ -418,6 +449,10 @@ package gui
       {
          _denEditor.bottomHud.visible = param1;
          _mainHud.visible = param1;
+         if(_layers)
+         {
+            _layers.show(param1 && _denItemHolder.inEditMode);
+         }
       }
       
       private function initAssetVisibility() : void
@@ -618,7 +653,7 @@ package gui
          {
             _denEditor.wallBtnDn.visible = false;
          }
-         if(_petItems.length > 0)
+         if(_petItems && _petItems.length > 0)
          {
             _denEditor.petBtnDn.visible = true;
             _denEditor.petBtnDn.x = _denEditor.normBtnDn.x + 44.2 * _loc1_;
@@ -629,6 +664,28 @@ package gui
          {
             _denEditor.petBtnDn.visible = false;
          }
+         placePrefabTab(_loc1_);
+      }
+
+      private function placePrefabTab(param1:int) : void
+      {
+         if(_prefabs == null || _prefabs.tabDn == null)
+         {
+            return;
+         }
+         _prefabs.tabDn.x = _denEditor.normBtnDn.x + 44.2 * param1;
+         _prefabs.tabDn.y = _denEditor.normBtnDn.y;
+         _prefabs.tabUp.x = _prefabs.tabDn.x;
+         _prefabs.tabUp.y = _prefabs.tabDn.y;
+         var _loc2_:Object = _denEditor.searchBar;
+         if(isNaN(_searchBarX))
+         {
+            _searchBarX = _loc2_.x;
+         }
+         var _loc3_:Rectangle = _prefabs.tabDn.getBounds(_loc2_.parent);
+         var _loc4_:Rectangle = _loc2_.getBounds(_loc2_.parent);
+         var _loc5_:Number = _loc4_.left - _loc2_.x;
+         _loc2_.x = Math.max(_searchBarX,_loc3_.right + 6 - _loc5_);
       }
       
       private function diResponseCallback() : void
@@ -648,6 +705,12 @@ package gui
       
       public function resetWindowsAndTabsToNormal() : void
       {
+         if(_prefabs && _prefabs.isOpen)
+         {
+            // the prefab tab stays open (its items were just added)
+            setupPlayerItems();
+            return;
+         }
          _denEditor.normBtnUp.visible = true;
          _denEditor.themeBtnUp.visible = false;
          _denEditor.petBtnUp.visible = false;
@@ -666,6 +729,10 @@ package gui
       
       private function drawItemWindows() : void
       {
+         if(_prefabs && _prefabs.isOpen)
+         {
+            return;
+         }
          if(_itemWindow != null)
          {
             _itemWindow.destroy();
@@ -709,7 +776,12 @@ package gui
       private function scrollBtnHandler(param1:MouseEvent) : void
       {
          param1.stopPropagation();
-         if(!param1.currentTarget.isGray)
+         if(_prefabs && _prefabs.isOpen)
+         {
+            _prefabs.scroll(param1.currentTarget.name == _denEditor.lArrowBtn.name);
+            return;
+         }
+         if(!param1.currentTarget.isGray && _itemWindow)
          {
             _itemWindow.handleScrollBtnClick(param1.currentTarget.name == _denEditor.lArrowBtn.name);
          }
@@ -748,6 +820,10 @@ package gui
             _roomMgr.setRoomMode(1);
             GuiManager.closeAnyHudPopups();
             drawItemWindows();
+            if(_layers)
+            {
+               _layers.show(true);
+            }
             if(!gMainFrame.userInfo.userVarCache.isBitSet(379,1))
             {
                TutorialPopups.openTalkingTutorial(18655,18662,10,115,null,_denEditor.itemBlock.glowCont.glow);
@@ -767,6 +843,19 @@ package gui
             if(_denAudioPopup && _denAudioPopup.visible)
             {
                audioBtnHandler(null);
+            }
+            if(_layers)
+            {
+               _layers.show(false);
+            }
+            if(_prefabs && _prefabs.isOpen)
+            {
+               _prefabs.close();
+               _denEditor.normBtnUp.visible = true;
+               if(_allNormalDenItems)
+               {
+                  _currItems = _allNormalDenItems;
+               }
             }
             if(_itemWindow != null)
             {
@@ -789,6 +878,10 @@ package gui
       public function toggleEditorHud(param1:Boolean) : void
       {
          _denEditor.bottomHud.visible = param1;
+         if(_layers)
+         {
+            _layers.show(param1 && _denItemHolder.inEditMode);
+         }
          onDenLockPopupClose(null);
          onAudioPopupClose(null);
          if(param1)
@@ -889,6 +982,10 @@ package gui
       private function tabBtnHandler(param1:MouseEvent) : void
       {
          param1.stopPropagation();
+         if(_prefabs && _prefabs.isOpen)
+         {
+            _prefabs.close();
+         }
          _denEditor.normBtnUp.visible = false;
          _denEditor.themeBtnUp.visible = false;
          _denEditor.petBtnUp.visible = false;
@@ -1192,6 +1289,156 @@ package gui
          UpsellManager.displayPopup("denAudio","selectDenAudio/" + _audioItems.getDenItem(param1.currentTarget.index).defId);
       }
       
+      // ---- the prefab tab and the layers panel (this server) ----
+
+      private function onPrefabTab(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         if(_prefabs.isOpen)
+         {
+            return;
+         }
+         AJAudio.playSubMenuBtnClick();
+         _denEditor.normBtnUp.visible = false;
+         _denEditor.themeBtnUp.visible = false;
+         _denEditor.petBtnUp.visible = false;
+         _denEditor.toyBtnUp.visible = false;
+         _denEditor.plantBtnUp.visible = false;
+         _denEditor.furnitureBtnUp.visible = false;
+         _denEditor.wallBtnUp.visible = false;
+         if(_itemWindow != null)
+         {
+            _itemWindow.destroy();
+            _itemWindow = null;
+         }
+         while(_denEditor.itemBlock.itemBlock.numChildren > 1)
+         {
+            _denEditor.itemBlock.itemBlock.removeChildAt(_denEditor.itemBlock.itemBlock.numChildren - 1);
+         }
+         _denEditor.lArrowBtn.activateGrayState(false);
+         _denEditor.rArrowBtn.activateGrayState(false);
+         _prefabs.open(_denEditor.itemCountTxt);
+      }
+
+      private function onPrefabTabOver(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         var _loc2_:Point = param1.currentTarget.localToGlobal(new Point(param1.currentTarget.width * 0.5,-10));
+         GuiManager.toolTip.init(_guiLayer,"Prefabs",_loc2_.x,_loc2_.y);
+         GuiManager.toolTip.startTimer(param1);
+      }
+
+      // the top of the den editor's tabs, on the screen: the layers panel
+      // and the pick bar stay above it
+      private function hudTop() : Number
+      {
+         try
+         {
+            return _denEditor.normBtnDn.getBounds(gMainFrame.stage).top - 8;
+         }
+         catch(e:Error)
+         {
+         }
+         return 410;
+      }
+
+      // a prefab's items put down: [[DenItem, x, y, flip]...]
+      // den item `param1` put down (`param2` its in-world category; 0 put
+      // away) in every list the editor keeps of it: the tabs hold copies
+      // (Utility.sortItems clones them), and an item still shown as free
+      // there would be put down twice
+      private function markPlaced(param1:int, param2:int) : void
+      {
+         var _loc3_:Array = [gMainFrame.userInfo.playerUserInfo.denItemsFull,_themeItems,_toyItems,_plantItems,_furnitureItems,_wallItems,_currItems,_allNormalDenItems];
+         for each(var _loc4_:DenItemCollection in _loc3_)
+         {
+            var _loc5_:int = 0;
+            while(_loc4_ && _loc5_ < _loc4_.length)
+            {
+               var _loc6_:DenItem = _loc4_.getDenItem(_loc5_);
+               if(_loc6_ && _loc6_.invIdx == param1 && _loc6_.refId == 0)
+               {
+                  _loc6_.categoryId = param2;
+               }
+               _loc5_++;
+            }
+         }
+      }
+
+      private function placePrefabItems(param1:Array) : void
+      {
+         var _loc2_:Array = [];
+         for each(var _loc3_:Array in param1)
+         {
+            var _loc4_:DenItem = _loc3_[0];
+            var _loc5_:int = DenItem.getInWorldId(_loc4_.sortId,_roomMgr.denCatId);
+            _loc4_.categoryId = _loc5_;
+            markPlaced(_loc4_.invIdx,_loc5_);
+            _loc2_.push(new DenStateItem(_loc4_.defId,_loc4_.invIdx,_loc4_.defId << 16 | _loc5_,int(_loc3_[1]),int(_loc3_[2]),_loc4_.version,_loc4_.version2,_loc4_.version3,int(_loc3_[3]),_loc5_,_loc4_.refId,_loc4_.sortId,_loc4_.minigameDefId,_loc4_.layerId,_loc4_.enviroType,_loc4_.strmName,0,"",_loc4_.specialType,_loc4_.listId,_loc4_.uniqueImageId,_loc4_.uniqueImageCreator,_loc4_.uniqueImageCreatorDbId,_loc4_.uniqueImageCreatorUUID,true,null,0,0,_loc4_.petItem,_loc4_.mannequinData,_loc4_.ecoConsumerStateId));
+         }
+         _denItemHolder.spawnItems(_loc2_);
+         if(_itemWindow)
+         {
+            _itemWindow.callUpdateInWindow();
+         }
+      }
+
+      // the server's answers about prefabs and colours (DenXtCommManager)
+      private function onPrefabReply(param1:Object) : void
+      {
+         if(String(param1[0]) != "dvc")
+         {
+            if(_prefabs)
+            {
+               _prefabs.onReply(param1);
+            }
+            return;
+         }
+         if(String(param1[2]) != "1")
+         {
+            new SBOkPopup(_guiLayer,String(param1[3]));
+         }
+         else
+         {
+            var _loc2_:int = int(param1[3]);
+            var _loc3_:int = int(param1[4]);
+            _denItemHolder.setItemVersion(_loc2_,_loc3_);
+            var _loc4_:DenItemCollection = gMainFrame.userInfo.playerUserInfo.denItemsFull;
+            var _loc5_:int = 0;
+            while(_loc4_ && _loc5_ < _loc4_.length)
+            {
+               if(_loc4_.getDenItem(_loc5_).invIdx == _loc2_)
+               {
+                  _loc4_.getDenItem(_loc5_).setVersion(_loc3_);
+               }
+               _loc5_++;
+            }
+            // the tabs (themes, toys, plants, furniture, walls) hold copies
+            // of the den items (Utility.sortItems clones them): those too
+            for each(var _loc6_:DenItemCollection in [_themeItems,_toyItems,_plantItems,_furnitureItems,_wallItems,_currItems,_allNormalDenItems])
+            {
+               var _loc7_:int = 0;
+               while(_loc6_ && _loc7_ < _loc6_.length)
+               {
+                  var _loc8_:DenItem = _loc6_.getDenItem(_loc7_);
+                  if(_loc8_ && _loc8_.invIdx == _loc2_ && _loc8_.refId == 0 && _loc8_.version != _loc3_)
+                  {
+                     _loc8_.setVersion(_loc3_);
+                  }
+                  _loc7_++;
+               }
+            }
+            if(_itemWindow)
+            {
+               _itemWindow.callUpdateInWindow();
+            }
+         }
+         if(_layers)
+         {
+            _layers.colourChanged();
+         }
+      }
+
       private function placeItemInRoom(param1:DenItem) : void
       {
          var _loc2_:int = DenItem.getInWorldId(param1.sortId,_roomMgr.denCatId);
@@ -1816,6 +2063,11 @@ package gui
       
       private function onSearchTextInput(param1:Event) : void
       {
+         if(_prefabs && _prefabs.isOpen)
+         {
+            _prefabs.search(_denEditor.searchBar.searchTxt.text);
+            return;
+         }
          if(_itemWindow)
          {
             _itemWindow.handleSearchInput(_denEditor.searchBar.searchTxt.text);
