@@ -8,6 +8,14 @@ package loader
    import den.DenStateItem;
    import den.DenXtCommManager;
    import flash.display.Bitmap;
+   import flash.display.BitmapData;
+   import flash.display.Shape;
+   import flash.filters.BlurFilter;
+   import flash.filters.ColorMatrixFilter;
+   import flash.filters.GlowFilter;
+   import flash.geom.Matrix;
+   import flash.geom.Point;
+   import flash.geom.Rectangle;
    import flash.display.DisplayObject;
    import flash.display.Loader;
    import flash.display.MovieClip;
@@ -306,6 +314,16 @@ package loader
          _uniqueImageCreatorDbId = param1.uniqueImageCreatorDbId;
          _uniqueImageCreatorUUID = param1.uniqueImageCreatorUUID;
          _mannequinData = param1.mannequinData;
+         // a wallpaper (3) or floor (2) with a picture: drawn into the base's
+         // own art for this den (themeTexture, below)
+         if(param1.sortCatId == 2 || param1.sortCatId == 3)
+         {
+            _themeArtUrl = AJClient.customArtUrl("den",_defId);
+            _themeIsFloor = param1.sortCatId == 2;
+            _themeLook = AJClient.customArtMode("den",_defId) == "segments" && !_themeIsFloor ? "segments" : "pattern";
+            loadBaseArt();
+            return;
+         }
          if(loadCustomArt())
          {
             return;
@@ -356,6 +374,11 @@ package loader
          }
          _callback = null;
          _sprite = null;
+         if(_themeBitmap != null && _themeBitmap.bitmapData != null)
+         {
+            _themeBitmap.bitmapData.dispose();
+         }
+         _themeBitmap = null;
       }
       
       public function loadUniqueImage() : void
@@ -775,7 +798,54 @@ package loader
                _masterpieceDefHelper.init(_uniqueImageId,onUniqueImageIdLoaded);
             }
          }
+         if(_themeArtUrl != null)
+         {
+            fetchArtBytes(_themeArtUrl,onThemeTileBytes);
+            return;
+         }
+         finishLoad();
+      }
+
+      // ---- custom wallpapers and floors (this server) ----
+      // a wallpaper's or floor's file is drawn for the den it is in (its id
+      // carries the den's denCatId), so a picture of its own cannot simply
+      // stand in for it as other den items' pictures do. the base's own file
+      // for this den is loaded as ever and used as a stencil: the picture is
+      // tiled inside its outline, slanted as the den's walls and floors are,
+      // and the base's light and shade laid back over it. so one picture
+      // fits every den. (docs/CUSTOM_ITEM_ART.md has what pictures suit.)
+      private var _themeArtUrl:String = null;
+
+      private var _themeIsFloor:Boolean = false;
+
+      // its look (AJClient.customArtMode; lib/customitems.js LOOKS_BY_USE):
+      // "pattern" (a tile, over and over) or, for a wallpaper, "segments"
+      // (floor up at its own size, side by side along each wall). a look
+      // for floors is added in themeTexture.
+      private var _themeLook:String = "pattern";
+
+      private var _themeLoader:Loader = null;
+
+      private var _themeBitmap:Bitmap = null;
+
+      // the bitmaps are full size; a den bigger than this keeps its base
+      private static const THEME_MAX_PIXELS:int = 12000000;
+
+      // the stencil is read at a quarter size, for its walls' slants
+      private static const THEME_STEP:int = 4;
+
+      // the slant of a wall: dy per dx, as the game's walls are drawn
+      private static const THEME_SLANT:Number = 0.5;
+
+      // what onBytesLoaded did last, once the item is ready
+      private function finishLoad() : void
+      {
          _sprite.addChild(_loader);
+         if(_themeBitmap != null)
+         {
+            _loader.visible = false;
+            _sprite.addChild(_themeBitmap);
+         }
          _sprite.addChild(_portalSprite);
          if(_callback != null)
          {
@@ -783,7 +853,432 @@ package loader
             _callback = null;
          }
       }
-      
+
+      private function onThemeTileBytes(param1:ByteArray) : void
+      {
+         if(_sprite == null)
+         {
+            return;
+         }
+         if(param1 == null)
+         {
+            finishLoad();
+            return;
+         }
+         _themeLoader = new Loader();
+         _themeLoader.contentLoaderInfo.addEventListener("complete",onThemeTileLoaded);
+         _themeLoader.contentLoaderInfo.addEventListener("ioError",onThemeTileFailed);
+         try
+         {
+            _themeLoader.loadBytes(param1);
+         }
+         catch(e:Error)
+         {
+            onThemeTileFailed(null);
+         }
+      }
+
+      private function onThemeTileFailed(param1:Event) : void
+      {
+         if(_sprite != null)
+         {
+            finishLoad();
+         }
+      }
+
+      private function onThemeTileLoaded(param1:Event) : void
+      {
+         var _loc2_:Bitmap = null;
+         if(_sprite == null)
+         {
+            return;
+         }
+         _loc2_ = _themeLoader.content as Bitmap;
+         try
+         {
+            if(_loc2_ != null && _loc2_.bitmapData != null)
+            {
+               _themeBitmap = themeTexture(_loader.content,_loc2_.bitmapData,_themeIsFloor,_themeLook);
+            }
+         }
+         catch(e:Error)
+         {
+            _themeBitmap = null;
+         }
+         _themeLoader.unload();
+         _themeLoader = null;
+         finishLoad();
+      }
+
+      // the picture `param2` in the shape of `param1` (the base's art for
+      // this den), a floor's (`param3`) or walls', in look `param4`; null
+      // when it cannot be made
+      private static function themeTexture(param1:DisplayObject, param2:BitmapData, param3:Boolean, param4:String = "pattern") : Bitmap
+      {
+         var _loc4_:Rectangle = param1.getBounds(param1);
+         var _loc5_:int = Math.ceil(_loc4_.width);
+         var _loc6_:int = Math.ceil(_loc4_.height);
+         if(_loc5_ < 2 || _loc6_ < 2 || _loc5_ > 8000 || _loc6_ > 8000 || _loc5_ * _loc6_ > THEME_MAX_PIXELS)
+         {
+            return null;
+         }
+         var _loc7_:BitmapData = new BitmapData(_loc5_,_loc6_,true,0);
+         _loc7_.draw(param1,new Matrix(1,0,0,1,-_loc4_.x,-_loc4_.y));
+         var _loc8_:BitmapData = new BitmapData(_loc5_,_loc6_,true,0);
+         var _loc9_:Shape = new Shape();
+         var _loc10_:Array = null;
+         if(param3)
+         {
+            // a floor: the picture laid flat, as the game's floors are (2:1)
+            _loc9_.graphics.beginBitmapFill(param2,floorMatrix(_loc4_),true,true);
+            _loc9_.graphics.drawRect(0,0,_loc5_,_loc6_);
+            _loc9_.graphics.endFill();
+         }
+         else if(param4 == "segments")
+         {
+            // a wall in segments: each stretch of wall from its left end,
+            // the picture side by side at its own size, its bottom on the
+            // floor line, slanted with the wall. a wall lower than the
+            // picture shows its bottom part; one higher, its top row drawn
+            // on up (the fill is not repeated, so its edges carry on)
+            _loc10_ = wallRuns(_loc7_);
+            for each(var _loc13_:Array in _loc10_)
+            {
+               // the first segment that reaches this stretch, from its origin
+               var _loc14_:int = Math.floor((_loc13_[0] - _loc13_[6]) / param2.width);
+               while(_loc13_[6] + _loc14_ * param2.width < _loc13_[0] + _loc13_[2])
+               {
+                  var _loc15_:Number = _loc13_[6] + _loc14_ * param2.width;
+                  var _loc16_:Number = Math.max(_loc15_,_loc13_[0]);
+                  _loc9_.graphics.beginBitmapFill(param2,new Matrix(1,_loc13_[4],0,1,_loc15_,_loc13_[5] + _loc13_[4] * (_loc15_ - _loc13_[0]) - param2.height),false,true);
+                  _loc9_.graphics.drawRect(_loc16_,_loc13_[1],Math.min(_loc15_ + param2.width,_loc13_[0] + _loc13_[2]) - _loc16_,_loc13_[3]);
+                  _loc9_.graphics.endFill();
+                  _loc14_++;
+               }
+            }
+         }
+         else
+         {
+            // a wall as a pattern: each stretch of each wall slanted its own way
+            _loc10_ = wallRuns(_loc7_);
+            for each(var _loc11_:Array in _loc10_)
+            {
+               _loc9_.graphics.beginBitmapFill(param2,wallMatrix(_loc4_,_loc11_[4]),true,true);
+               _loc9_.graphics.drawRect(_loc11_[0],_loc11_[1],_loc11_[2],_loc11_[3]);
+               _loc9_.graphics.endFill();
+            }
+         }
+         _loc8_.draw(_loc9_);
+         themeShade(_loc8_,_loc7_);
+         _loc7_.dispose();
+         var _loc12_:Bitmap = new Bitmap(_loc8_,"auto",true);
+         _loc12_.x = _loc4_.x;
+         _loc12_.y = _loc4_.y;
+         return _loc12_;
+      }
+
+      // the picture's place in the room, the same in any den: room
+      // coordinates, so tiles line up across walls of one height
+      private static function floorMatrix(param1:Rectangle) : Matrix
+      {
+         var _loc2_:Matrix = new Matrix();
+         _loc2_.rotate(Math.PI / 4);
+         _loc2_.scale(1,THEME_SLANT);
+         _loc2_.translate(-param1.x,-param1.y);
+         return _loc2_;
+      }
+
+      private static function wallMatrix(param1:Rectangle, param2:Number) : Matrix
+      {
+         // x along the wall, y down it: y' = y + slant * x
+         var _loc3_:Matrix = new Matrix(1,param2,0,1,0,0);
+         _loc3_.translate(-param1.x,-param1.y - param2 * param1.x);
+         return _loc3_;
+      }
+
+      // the walls in the stencil `param1`, as [x, y, width, height, slant,
+      // foot, origin, head] rectangles (full size) covering them: `foot` and
+      // `head` the y of the wall's foot and top at its left end (each runs
+      // on with the slant), `origin` the x its segments are counted from: each separate piece of wall
+      // is found, and each column of it given the slant of its top and
+      // bottom edges there, -0.5 (rising to the right), 0 or 0.5, so a
+      // corner where two walls meet turns with them
+      private static function wallRuns(param1:BitmapData) : Array
+      {
+         var _loc2_:int = Math.max(1,Math.ceil(param1.width / THEME_STEP));
+         var _loc3_:int = Math.max(1,Math.ceil(param1.height / THEME_STEP));
+         var _loc4_:BitmapData = new BitmapData(_loc2_,_loc3_,true,0);
+         _loc4_.draw(param1,new Matrix(1 / THEME_STEP,0,0,1 / THEME_STEP));
+         var _loc5_:BitmapData = new BitmapData(_loc2_,_loc3_,true,0);
+         // white where there is wall, clear elsewhere
+         _loc5_.threshold(_loc4_,_loc5_.rect,new Point(0,0),">=",2147483648,4294967295,4278190080,false);
+         _loc4_.dispose();
+         var _loc6_:Array = [];
+         var _loc7_:uint = 1;
+         var _loc8_:int = 0;
+         var _loc9_:int = 0;
+         var _loc10_:uint = 0;
+         var _loc11_:Rectangle = null;
+         while(_loc9_ < _loc3_)
+         {
+            _loc8_ = 0;
+            while(_loc8_ < _loc2_)
+            {
+               if(_loc5_.getPixel32(_loc8_,_loc9_) == 4294967295 && _loc7_ < 16777000)
+               {
+                  _loc10_ = 4278190080 | _loc7_++;
+                  _loc5_.floodFill(_loc8_,_loc9_,_loc10_);
+                  _loc11_ = _loc5_.getColorBoundsRect(4294967295,_loc10_,true);
+                  if(_loc11_.width * _loc11_.height >= 6)
+                  {
+                     pieceRuns(_loc5_,_loc10_,_loc11_,_loc6_);
+                  }
+               }
+               _loc8_++;
+            }
+            _loc9_++;
+         }
+         _loc5_.dispose();
+         stackRuns(_loc6_);
+         return _loc6_;
+      }
+
+      // how far apart (px) a piece of wall may be above another and still
+      // stand on it
+      private static const THEME_STACK_GAP:int = 64;
+
+      // a piece of wall just above another of the same slant (a band the
+      // den's art draws apart from the wall under it, a rail): it stands on
+      // that one's foot, its segments in line with that one's, so a segment
+      // goes on up through both. the lowest such wins, a few times over for
+      // three or more in a stack.
+      private static function stackRuns(param1:Array) : void
+      {
+         var _loc2_:int = 0;
+         var _loc3_:Boolean = false;
+         var _loc4_:Array = null;
+         var _loc5_:Array = null;
+         var _loc6_:Array = null;
+         var _loc7_:Number = NaN;
+         var _loc8_:Number = NaN;
+         while(_loc2_ < 8)
+         {
+            _loc3_ = false;
+            for each(_loc4_ in param1)
+            {
+               _loc6_ = null;
+               for each(_loc5_ in param1)
+               {
+                  if(_loc5_ == _loc4_ || _loc5_[4] != _loc4_[4])
+                  {
+                     continue;
+                  }
+                  // overlapping by a third of the narrower one
+                  if(Math.min(_loc4_[0] + _loc4_[2],_loc5_[0] + _loc5_[2]) - Math.max(_loc4_[0],_loc5_[0]) < Math.min(_loc4_[2],_loc5_[2]) / 3)
+                  {
+                     continue;
+                  }
+                  // its top just under this one's foot, at this one's left end
+                  _loc7_ = _loc5_[7] + _loc5_[4] * (_loc4_[0] - _loc5_[0]) - _loc4_[5];
+                  if(_loc7_ >= -8 && _loc7_ <= THEME_STACK_GAP && (_loc6_ == null || _loc5_[5] + _loc5_[4] * (_loc4_[0] - _loc5_[0]) > _loc6_[5] + _loc6_[4] * (_loc4_[0] - _loc6_[0])))
+                  {
+                     _loc6_ = _loc5_;
+                  }
+               }
+               if(_loc6_ != null)
+               {
+                  _loc8_ = _loc6_[5] + _loc6_[4] * (_loc4_[0] - _loc6_[0]);
+                  if(_loc8_ > _loc4_[5] + 1)
+                  {
+                     _loc4_[5] = _loc8_;
+                     _loc4_[6] = _loc6_[6];
+                     _loc3_ = true;
+                  }
+               }
+            }
+            if(!_loc3_)
+            {
+               break;
+            }
+            _loc2_++;
+         }
+      }
+
+      // one piece of wall (`param2` its colour in `param1`, `param3` its
+      // bounds): its columns' slants, as full-size runs into `param4`
+      private static function pieceRuns(param1:BitmapData, param2:uint, param3:Rectangle, param4:Array) : void
+      {
+         var _loc5_:int = int(param3.width);
+         var _loc6_:Array = [];
+         var _loc7_:Array = [];
+         var _loc8_:int = 0;
+         var _loc9_:int = 0;
+         var _loc10_:int = 0;
+         var _loc11_:int = 0;
+         var _loc12_:int = 5;
+         var _loc13_:Array = [];
+         var _loc14_:int = 0;
+         var _loc15_:int = 0;
+         var _loc16_:Number = 0;
+         var _loc17_:Array = [];
+         var _loc18_:Array = null;
+         var _loc19_:int = 0;
+         // the top and bottom of the piece in each column (-1 for none)
+         while(_loc8_ < _loc5_)
+         {
+            _loc10_ = -1;
+            _loc11_ = -1;
+            _loc9_ = int(param3.y);
+            while(_loc9_ < param3.bottom)
+            {
+               if(param1.getPixel32(param3.x + _loc8_,_loc9_) == param2)
+               {
+                  if(_loc10_ < 0)
+                  {
+                     _loc10_ = _loc9_;
+                  }
+                  _loc11_ = _loc9_;
+               }
+               _loc9_++;
+            }
+            _loc6_.push(_loc10_);
+            _loc7_.push(_loc11_);
+            _loc8_++;
+         }
+         // most pieces are one wall: the middling slant of all their edges
+         // (rough tops do not sway it) is theirs, all across
+         var _loc20_:Array = [];
+         _loc8_ = 0;
+         while(_loc8_ < _loc5_)
+         {
+            _loc14_ = Math.max(0,_loc8_ - _loc12_);
+            _loc15_ = Math.min(_loc5_ - 1,_loc8_ + _loc12_);
+            if(_loc15_ > _loc14_ && _loc6_[_loc14_] >= 0 && _loc6_[_loc15_] >= 0)
+            {
+               _loc20_.push((_loc6_[_loc15_] - _loc6_[_loc14_]) / (_loc15_ - _loc14_));
+               _loc20_.push((_loc7_[_loc15_] - _loc7_[_loc14_]) / (_loc15_ - _loc14_));
+            }
+            _loc8_++;
+         }
+         _loc20_.sort(Array.NUMERIC);
+         _loc16_ = _loc20_.length > 0 ? Number(_loc20_[int(_loc20_.length / 2)]) : 0;
+         if(Math.abs(_loc16_) >= 0.3)
+         {
+            param4.push([param3.x * THEME_STEP,param3.y * THEME_STEP,_loc5_ * THEME_STEP,param3.height * THEME_STEP,_loc16_ > 0 ? THEME_SLANT : -THEME_SLANT,
+               footAt(_loc7_,0,_loc5_,_loc16_ > 0 ? THEME_SLANT : -THEME_SLANT),param3.x * THEME_STEP,footAt(_loc6_,0,_loc5_,_loc16_ > 0 ? THEME_SLANT : -THEME_SLANT) - THEME_STEP]);
+            return;
+         }
+         // else two walls meeting (or a wall straight on): each column's
+         // slant, from the edges either side of it
+         _loc8_ = 0;
+         while(_loc8_ < _loc5_)
+         {
+            _loc14_ = Math.max(0,_loc8_ - _loc12_);
+            _loc15_ = Math.min(_loc5_ - 1,_loc8_ + _loc12_);
+            _loc16_ = 0;
+            if(_loc15_ > _loc14_ && _loc6_[_loc14_] >= 0 && _loc6_[_loc15_] >= 0)
+            {
+               _loc16_ = (_loc6_[_loc15_] - _loc6_[_loc14_] + _loc7_[_loc15_] - _loc7_[_loc14_]) / (2 * (_loc15_ - _loc14_));
+            }
+            _loc13_.push(_loc16_ < -THEME_SLANT * 0.5 ? -THEME_SLANT : (_loc16_ > THEME_SLANT * 0.5 ? THEME_SLANT : 0));
+            _loc8_++;
+         }
+         // the most common slant near each column: rough edges (a window, a
+         // torn corner) do not turn the wall
+         _loc8_ = 0;
+         while(_loc8_ < _loc5_)
+         {
+            _loc18_ = [0,0,0];
+            _loc9_ = Math.max(0,_loc8_ - 8);
+            while(_loc9_ <= Math.min(_loc5_ - 1,_loc8_ + 8))
+            {
+               _loc18_[_loc13_[_loc9_] < 0 ? 0 : (_loc13_[_loc9_] > 0 ? 2 : 1)]++;
+               _loc9_++;
+            }
+            _loc17_.push(_loc18_[0] > _loc18_[1] && _loc18_[0] >= _loc18_[2] ? -THEME_SLANT : (_loc18_[2] > _loc18_[1] ? THEME_SLANT : 0));
+            _loc8_++;
+         }
+         // runs of one slant, full size
+         _loc8_ = 1;
+         while(_loc8_ <= _loc5_)
+         {
+            if(_loc8_ == _loc5_ || _loc17_[_loc8_] != _loc17_[_loc19_])
+            {
+               param4.push([(param3.x + _loc19_) * THEME_STEP,param3.y * THEME_STEP,(_loc8_ - _loc19_) * THEME_STEP,param3.height * THEME_STEP,_loc17_[_loc19_],
+                  footAt(_loc7_,_loc19_,_loc8_,_loc17_[_loc19_]),(param3.x + _loc19_) * THEME_STEP,footAt(_loc6_,_loc19_,_loc8_,_loc17_[_loc19_]) - THEME_STEP]);
+               _loc19_ = _loc8_;
+            }
+            _loc8_++;
+         }
+      }
+
+      // the foot of a wall, full size, at the left of its columns `param2`
+      // to `param3` (of `param1`, each column's lowest wall pixel, at a
+      // quarter size, -1 for none), slanted `param4`: the middling one of
+      // the foot each column puts there, so a ragged bit does not move it.
+      // given each column's highest pixel, less a quarter-size step, it is
+      // the wall's top (its head) the same way
+      private static function footAt(param1:Array, param2:int, param3:int, param4:Number) : Number
+      {
+         var _loc5_:Array = [];
+         var _loc6_:int = param2;
+         while(_loc6_ < param3)
+         {
+            if(param1[_loc6_] >= 0)
+            {
+               _loc5_.push(param1[_loc6_] - param4 * (_loc6_ - param2));
+            }
+            _loc6_++;
+         }
+         if(_loc5_.length == 0)
+         {
+            return 0;
+         }
+         _loc5_.sort(Array.NUMERIC);
+         return (Number(_loc5_[int(_loc5_.length / 2)]) + 1) * THEME_STEP;
+      }
+
+      // the base's light and shade over the picture: its brightness, blurred
+      // past its own pattern, as a grey about the middle laid over (lighter
+      // tops, darker bottoms, the darker rim); then the base's exact outline
+      // and a thin dark edge inside it, as every den piece has
+      private static function themeShade(param1:BitmapData, param2:BitmapData) : void
+      {
+         var _loc3_:BitmapData = new BitmapData(param2.width,param2.height,false,0);
+         var _loc4_:Number = 0;
+         var _loc5_:Number = 0;
+         var _loc6_:int = 0;
+         var _loc7_:int = 0;
+         var _loc8_:uint = 0;
+         // the base's average brightness, where it is drawn
+         while(_loc7_ < param2.height)
+         {
+            _loc6_ = 0;
+            while(_loc6_ < param2.width)
+            {
+               _loc8_ = param2.getPixel32(_loc6_,_loc7_);
+               if(_loc8_ >>> 24 > 128)
+               {
+                  _loc4_ += 0.3 * (_loc8_ >> 16 & 255) + 0.59 * (_loc8_ >> 8 & 255) + 0.11 * (_loc8_ & 255);
+                  _loc5_++;
+               }
+               _loc6_ += THEME_STEP;
+            }
+            _loc7_ += THEME_STEP;
+         }
+         var _loc9_:Number = _loc5_ > 0 ? _loc4_ / _loc5_ : 128;
+         _loc3_.draw(param2);
+         // grey: (brightness - average) * 1.5 + 128
+         var _loc10_:Number = 1.5;
+         var _loc11_:Number = 128 - _loc9_ * _loc10_;
+         _loc3_.applyFilter(_loc3_,_loc3_.rect,new Point(0,0),new ColorMatrixFilter([0.3 * _loc10_,0.59 * _loc10_,0.11 * _loc10_,0,_loc11_,0.3 * _loc10_,0.59 * _loc10_,0.11 * _loc10_,0,_loc11_,0.3 * _loc10_,0.59 * _loc10_,0.11 * _loc10_,0,_loc11_,0,0,0,1,0]));
+         _loc3_.applyFilter(_loc3_,_loc3_.rect,new Point(0,0),new BlurFilter(28,28,2));
+         param1.draw(_loc3_,null,null,"overlay");
+         _loc3_.dispose();
+         param1.copyChannel(param2,param1.rect,new Point(0,0),8,8);
+         param1.applyFilter(param1,param1.rect,new Point(0,0),new GlowFilter(0,0.45,5,5,2,2,true));
+      }
+
       private function onUniqueImageIdLoaded(param1:Sprite) : void
       {
          if(_masterpieceDefHelper)

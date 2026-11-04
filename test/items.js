@@ -245,6 +245,13 @@ const first = async () => {
   assert.deepStrictEqual([chairRow.id, chairRow.abbrName, chairRow.name, chairRow.nameStrId], ["50000", "BeanBagChair", "Test Chair", "9200000"]);
   assert.strictEqual((await shopList(pat.client, pat.roomId, ODD_DEN_SHOP))[0], "50000");
   assert.strictEqual(byId(await pack(1030), 50000).abbrName, "BeanBagChair");
+  // its art is its base's, for each file the game asks for (here its icon,
+  // and a den's version as a wallpaper's would be): customItems.baseFileFor
+  for (const low of [1, 29]) {
+    const fileOf = id => fetch(`${BASE}/${cdn.hashedPath(`items/${((id << 16) | low) >>> 0}`)}`).then(async res => [res.status, Buffer.from(await res.arrayBuffer()).toString("hex")]);
+    assert.deepStrictEqual(await fileOf(50000), await fileOf(1));
+  }
+  assert.strictEqual((await fetch(`${BASE}/${cdn.hashedPath(`items/${((1 << 16) | 1) >>> 0}`)}`)).status, 200);
 
   // the item finder has them
   const found = await (await fetch(`${BASE}/api/search?kind=all&q=50000`)).json();
@@ -501,6 +508,25 @@ const first = async () => {
   const wornAs = await maker("info");
   assert.strictEqual(wornAs.mine.find(entry => entry.kind === "clothing" && entry.id === hatEntry.id).artMode, "texture");
   assert.match((await maker("look", "clothing", hatEntry.id, "melted")).said, /sticker or texture/);
+  // a wallpaper's looks are a pattern or segments, a floor's a pattern only
+  // (lib/customitems.js LOOKS_BY_USE); made here and taken away again
+  const madeDen = async (base, name) => {
+    const made = await dev("/mod/api/items", {action: "create", kind: "den", base, name, cost: 5});
+    return Number(/den item (\d+)/.exec(made.data.ok)[1]);
+  };
+  const wallId = await madeDen(335, "Test Wallpaper");
+  const floorId = await madeDen(330, "Test Floor");
+  const looksOf = async id => (await dev("/mod/api/items")).data.items.find(entry => entry.kind === "den" && entry.id === id);
+  assert.deepStrictEqual([(await looksOf(wallId)).artMode, (await looksOf(wallId)).looks], ["pattern", ["pattern", "segments"]]);
+  assert.deepStrictEqual([(await looksOf(floorId)).artMode, (await looksOf(floorId)).looks], ["pattern", ["pattern"]]);
+  assert.match((await dev("/mod/api/items", {action: "look", kind: "den", id: wallId, look: "segments"})).data.ok, /look is now segments/);
+  assert.strictEqual((await looksOf(wallId)).artMode, "segments");
+  assert.match((await dev("/mod/api/items", {action: "look", kind: "den", id: wallId, look: "texture"})).data.error, /pattern or segments/);
+  assert.match((await dev("/mod/api/items", {action: "look", kind: "den", id: floorId, look: "segments"})).data.error, /always pattern/);
+  assert.match((await dev("/mod/api/items", {action: "look", kind: "clothing", id: hatEntry.id, look: "segments"})).data.error, /sticker or texture/);
+  for (const id of [wallId, floorId]) {
+    assert.ok((await dev("/mod/api/items", {action: "delete", kind: "den", id})).data.ok);
+  }
 
   // --- animal wear rules: a live custom item keeps its xdi-only name and
   // picture, existing use is removed, and neither packet nor saved-outfit

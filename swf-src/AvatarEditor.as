@@ -38,6 +38,10 @@ package gui
    import flash.events.MouseEvent;
    import flash.geom.Matrix;
    import flash.geom.Point;
+   import flash.net.URLLoader;
+   import flash.net.URLRequest;
+   import flash.utils.getTimer;
+   import flash.utils.setTimeout;
    import gui.itemWindows.ItemWindowNameBarIcon;
    import gui.itemWindows.ItemWindowOriginal;
    import inventory.Iitem;
@@ -784,6 +788,8 @@ package gui
             LocalizationManager.updateToFit(avEditor.titleTxt,DenXtCommManager.getDenItemDef(_mannequinDenItemHelper.defId).name);
          }
          avEditor.searchBar.mouse.searchTxt.visible = false;
+         // room for an outfit code pasted in (onSearchTextInput)
+         avEditor.searchBar.mouse.searchTxt.maxChars = 0;
          avEditor.searchBar.shortTextWidth = avEditor.searchBar.mouse.txt.width + 10;
          avEditor.searchBar.wideTextWidth = avEditor.searchBar.mouse.searchTxt.width + 10;
          avEditor.searchBar.mouse.b.xBtn.visible = false;
@@ -3134,9 +3140,176 @@ package gui
       
       private function onSearchTextInput(param1:Event) : void
       {
+         if(param1 != null && isOutfitCode(avEditor.searchBar.mouse.searchTxt.text))
+         {
+            askOutfitImport(avEditor.searchBar.mouse.searchTxt.text.replace(/\s+/g,""));
+            return;
+         }
          if(_itemClothingWindows)
          {
             _itemClothingWindows.handleSearchInput(avEditor.searchBar.mouse.searchTxt.text);
+         }
+      }
+      
+      // ---- outfit codes from the Burrow outfit tool, pasted into the search
+      // bar: base64 of {"a":..,"w":[[item, colours]..]}, so it starts
+      // "eyJ" ('{"'). the server (lib/admin.js, POST /api/outfit) counts
+      // the items first, for the question, then puts them in the inventory
+      // in their colours; the list is then drawn again as after the shop.
+      private var _outfitCode:String = null;
+      
+      private var _outfitBusy:Boolean = false;
+      
+      private var _outfitWaitFor:int = 0;
+      
+      private var _outfitWaitUntil:int = 0;
+      
+      private var _outfitResult:Object = null;
+      
+      private static function isOutfitCode(param1:String) : Boolean
+      {
+         var _loc2_:String = param1.replace(/\s+/g,"");
+         return _loc2_.length >= 24 && /^eyJ[A-Za-z0-9+\/]+=*$/.test(_loc2_);
+      }
+      
+      private function outfitRequest(param1:Boolean, param2:Function) : void
+      {
+         var _loc3_:URLRequest = new URLRequest(gMainFrame.clientInfo.websiteURL + "api/outfit");
+         var _loc4_:URLLoader = new URLLoader();
+         _loc3_.method = "POST";
+         _loc3_.contentType = "application/json";
+         _loc3_.data = JSON.stringify({
+            "username":gMainFrame.server.userName,
+            "token":gMainFrame.clientInfo.authToken,
+            "code":_outfitCode,
+            "check":param1
+         });
+         _loc4_.addEventListener("complete",param2);
+         _loc4_.addEventListener("ioError",onOutfitFailed);
+         _loc4_.addEventListener("securityError",onOutfitFailed);
+         _outfitBusy = true;
+         DarkenManager.showLoadingSpiral(true);
+         _loc4_.load(_loc3_);
+      }
+      
+      private function askOutfitImport(param1:String) : void
+      {
+         // the search bar shuts, as its x does: the code is not a search
+         onSearchBarDown(null);
+         if(_outfitBusy || _avatarEditorView == null || _mannequinDenItemHelper)
+         {
+            return;
+         }
+         _outfitCode = param1;
+         outfitRequest(true,onOutfitChecked);
+      }
+      
+      private static function itemsText(param1:int) : String
+      {
+         return param1 + (param1 == 1 ? " item" : " items");
+      }
+      
+      private function onOutfitChecked(param1:Event) : void
+      {
+         var _loc2_:Object = null;
+         var _loc3_:String = null;
+         _outfitBusy = false;
+         DarkenManager.showLoadingSpiral(false);
+         if(_avatarEditorView == null)
+         {
+            return;
+         }
+         try
+         {
+            _loc2_ = JSON.parse(String(URLLoader(param1.target).data));
+         }
+         catch(e:Error)
+         {
+            onOutfitFailed(null);
+            return;
+         }
+         if(int(_loc2_.added) == 0)
+         {
+            _loc3_ = int(_loc2_.owned) > 0 ? "You already have every item in this outfit." : "There are no items from the game in this outfit.";
+            new SBOkPopup(_guiLayer,_loc3_);
+            return;
+         }
+         _loc3_ = "Add " + itemsText(int(_loc2_.added)) + " from this outfit to your clothes?";
+         if(int(_loc2_.owned) > 0)
+         {
+            _loc3_ += "\n(" + itemsText(int(_loc2_.owned)) + " you have already.)";
+         }
+         new SBYesNoPopup(_guiLayer,_loc3_,true,onOutfitConfirm);
+      }
+      
+      private function onOutfitConfirm(param1:Object) : void
+      {
+         if(param1.status && _avatarEditorView != null && !_outfitBusy)
+         {
+            outfitRequest(false,onOutfitImported);
+         }
+      }
+      
+      private function onOutfitImported(param1:Event) : void
+      {
+         _outfitBusy = false;
+         try
+         {
+            _outfitResult = JSON.parse(String(URLLoader(param1.target).data));
+         }
+         catch(e:Error)
+         {
+            DarkenManager.showLoadingSpiral(false);
+            onOutfitFailed(null);
+            return;
+         }
+         // the items come over the game's own connection ("il"), which may
+         // be a moment behind this answer: wait for them, a while at most.
+         _outfitWaitFor = gMainFrame.userInfo.playerAvatarInfo.getFullItems().length + int(_outfitResult.added);
+         _outfitWaitUntil = getTimer() + 3000;
+         _outfitBusy = true;
+         onOutfitWait();
+      }
+      
+      private function onOutfitWait() : void
+      {
+         var _loc1_:String = null;
+         if(_avatarEditorView == null)
+         {
+            _outfitBusy = false;
+            DarkenManager.showLoadingSpiral(false);
+            return;
+         }
+         if(int(_outfitResult.added) > 0 && gMainFrame.userInfo.playerAvatarInfo.getFullItems().length < _outfitWaitFor && getTimer() < _outfitWaitUntil)
+         {
+            setTimeout(onOutfitWait,100);
+            return;
+         }
+         _outfitBusy = false;
+         DarkenManager.showLoadingSpiral(false);
+         if(int(_outfitResult.added) > 0)
+         {
+            onShopClose(true);
+         }
+         _loc1_ = int(_outfitResult.added) > 0 ? "Added " + itemsText(int(_outfitResult.added)) + " to your clothes!" : "Nothing was added.";
+         if(_outfitResult.full)
+         {
+            _loc1_ += "\nYour clothes are full, so the rest could not be added.";
+         }
+         else if(_outfitResult.limited)
+         {
+            _loc1_ += "\nThat is a lot at once. Paste the code again in a minute for the rest.";
+         }
+         new SBOkPopup(_guiLayer,_loc1_);
+      }
+      
+      private function onOutfitFailed(param1:Event) : void
+      {
+         _outfitBusy = false;
+         DarkenManager.showLoadingSpiral(false);
+         if(_avatarEditorView != null)
+         {
+            new SBOkPopup(_guiLayer,"That outfit code could not be read.");
          }
       }
       

@@ -8,10 +8,10 @@ For each class: the methods changed and added against the untouched original (co
 
 ### AJClient
 
-- `swf-src/AJClient.as`, 5384 lines
+- `swf-src/AJClient.as`, 5421 lines
 - original: `tools/decompiled/AJClient.as`
 - **changed:** `addedToStageHandler`, `setupGamePlay`
-- **added:** `setupItemFinder`, `reportTheatreScreen`, `theatreCover`, `openTool`, `lastSeenText`, `setTheme`, `ownedSuffix`, `noteLastSeen`, `lastSeenShort`, `joinedText`, `hasGameFont`, `makePill`, `onItemDefs`, `customArtOn`, `petFormOn`, `artOf`, `customArtMode`, `customArtKey`, `customArtBitmap`, `customArtUrl`, `loadArt`, `placeEach`, `loadArtUncached`, `onStaff`, `onStaffUi`, `onTheatreVideo`, `placeTheatreButton`, `onTheatreButton`, `openTheatreControl`, `placeTheatreBox`, `buildTheatreControl`, `theatreControlButton`, `onTheatreKey`, `onTheatreControl`, `sendTheatreVideo`, `openRoomControl`, `buildRoomControl`, `roomControlButton`, `onRoomControl`, `theatreCloseButton`, `onTheatreClose`, `staffMay`, `canModerate`, `openModerate`, `showMessage`, `onStaffGoto`, `onInvisible`, `noteTyping`, `typingSent`, `onTyping`, `askYesNo`, `onYesNo`, `onWhisper`, `whisperTint`, `makeRenamable`, `onRenameHostDown`, `startRename`, `onRenameKey`, `onRenameFocusOut`, `endRename`, `onRenamed`, `pickKey`, `isPicked`, `setPicked`, `pickedItems`, `clearPicked`, `setHudShown`, `settingOf`, `smoothOn`, `performanceProfile`, `performanceProfileLabel`, `frameRate`, `cameraEases`, `onSmoothFrame`, `onSmoothTimer`, `wasdOn`, `moveKey`, `makeTextMenu`, `onTextMenuPick`, `runCommand`, `onThemeFailed`, `filterPlain`, `filterSquash`, `filterEntries`, `loadFilterLists`, `onFilterListLoaded`, `onFilterListFailed`, `onFilterState`, `onFilterAsk`, `filterHit`, `filterText`, `filterName`, `filterOrNote`, `buildChatFilter`, `filterWordsTyped`, `drawChatFilter`, `onFilterTyped`, `rulesHtml`, `loadRules`, `onRulesLoaded`, `onRulesFailed`, `buildRules`, `showRules`, `onRulesArrow`, `onRulesCloseClick`, `openRules`, `closeRules`, `showChatFilter`, `onFilterPick`, `saveChatFilter`, `onFilterSaveClick`, `onFilterCloseClick`, `finderButtonText`, `finderSearchBar`, `onFinderTyped`, `buildItemFinder`, `finderLink`, `showItemFinder`, `onFinderMouse`, `onFinderCloseClick`, `modText`, `modButton`, `paintFlatButton`, `modSetLabel`, `onFlatHover`, `modSection`, `buildModerate`, `onModerateTyped`, `showModerate`, `showModerateReason`, `hideModerate`, `onModerateCloseClick`, `onModerateButton`, `charsOfHex`, `emojiTable`, `emojiShortcodes`, `emojiToTokens`, `emojiAsNames`, `mentionStarts`, `mentionsFound`, `resolveMentions`, `onMentions`, `styleMentions`, `mentionAt`, `openProfile`, `mentionLinks`, `drawMentionBacks`, `musicLevel`, `sfxLevel`, `soundVolume`, `volumeFrom`, `loadSoundSettings`, `setSoundVolume`, `saveSoundSettings`, `applySoundSettings`, `presenceRoom`, `startEmojiButton`, `shownOnStage`, `placeEmojiButton`, `onEmojiButton`, `buildEmojiPanel`, `onEmojiHover`, `onEmojiPick`, `onEmojiStageDown`, `onItemMaker`, `makerButton`, `buildItemMaker`, `showItemMaker`, `makerMode`, `makerSay`, `makerSearch`, `onMakerFailed`, `onMakerResults`, `makerList`, `makerRows`, `makerShort`, `makerAnswer`, `makerName`, `onMakerButton`, `makerPickPicture`, `onMakerPictureRead`, `shrunkPng`, `crc32`, `pngChunk`, `encodePng`, `makerSendPicture`, `onFinderKey`, `onFinderKindClick`, `finderSearch`, `onFinderFailed`, `onFinderSearchDone`, `finderRowText`, `renderFinderRows`, `onFinderPrevClick`, `onFinderNextClick`, `onFinderColourClick`, `onFinderGiveClick`, `finderHexColours`, `finderPreviewColour`, `finderPreview`, `recolourFinderPreview`, `onFinderColourTyped`, `onFinderGiveDone`
+- **added:** `setupItemFinder`, `reportTheatreScreen`, `theatreCover`, `openTool`, `lastSeenText`, `setTheme`, `ownedSuffix`, `noteLastSeen`, `lastSeenShort`, `joinedText`, `hasGameFont`, `makePill`, `onItemDefs`, `customArtOn`, `petFormOn`, `artOf`, `customArtMode`, `customArtKey`, `customArtBitmap`, `customArtUrl`, `loadArt`, `placeEach`, `loadArtUncached`, `onStaff`, `onStaffUi`, `onTheatreVideo`, `placeTheatreButton`, `onTheatreButton`, `openTheatreControl`, `placeTheatreBox`, `buildTheatreControl`, `theatreControlButton`, `onTheatreKey`, `onTheatreControl`, `sendTheatreVideo`, `openRoomControl`, `buildRoomControl`, `roomControlButton`, `onRoomControl`, `theatreCloseButton`, `onTheatreClose`, `staffMay`, `canModerate`, `openModerate`, `showMessage`, `onStaffGoto`, `onInvisible`, `noteTyping`, `typingSent`, `onTyping`, `askYesNo`, `onYesNo`, `onWhisper`, `whisperTint`, `makeRenamable`, `onRenameHostDown`, `startRename`, `onRenameKey`, `onRenameFocusOut`, `endRename`, `onRenamed`, `pickKey`, `isPicked`, `setPicked`, `pickedItems`, `clearPicked`, `setHudShown`, `settingOf`, `smoothOn`, `performanceProfile`, `performanceProfileLabel`, `frameRate`, `cameraEases`, `onSmoothFrame`, `onSmoothTimer`, `wasdOn`, `moveKey`, `makeTextMenu`, `onTextMenuPick`, `runCommand`, `onThemeFailed`, `filterPlain`, `filterSquash`, `filterEntries`, `loadFilterLists`, `onFilterListLoaded`, `onFilterListFailed`, `onFilterState`, `onFilterAsk`, `filterHit`, `filterText`, `filterName`, `filterOrNote`, `buildChatFilter`, `filterWordsTyped`, `drawChatFilter`, `onFilterTyped`, `rulesHtml`, `loadRules`, `onRulesLoaded`, `onRulesFailed`, `buildRules`, `showRules`, `onRulesArrow`, `onRulesCloseClick`, `openRules`, `closeRules`, `showChatFilter`, `onFilterPick`, `saveChatFilter`, `onFilterSaveClick`, `onFilterCloseClick`, `finderButtonText`, `finderSearchBar`, `onFinderTyped`, `buildItemFinder`, `finderLink`, `showItemFinder`, `onFinderMouse`, `onFinderCloseClick`, `modText`, `modButton`, `paintFlatButton`, `modSetLabel`, `onFlatHover`, `modSection`, `buildModerate`, `onModerateTyped`, `showModerate`, `showModerateReason`, `hideModerate`, `onModerateCloseClick`, `onModerateButton`, `charsOfHex`, `emojiTable`, `emojiShortcodes`, `emojiToTokens`, `emojiAsNames`, `mentionStarts`, `mentionsFound`, `resolveMentions`, `onMentions`, `styleMentions`, `mentionAt`, `openProfile`, `mentionLinks`, `drawMentionBacks`, `musicLevel`, `sfxLevel`, `soundVolume`, `volumeFrom`, `loadSoundSettings`, `setSoundVolume`, `saveSoundSettings`, `applySoundSettings`, `presenceRoom`, `startEmojiButton`, `shownOnStage`, `placeEmojiButton`, `onEmojiButton`, `buildEmojiPanel`, `onEmojiHover`, `onEmojiPick`, `onEmojiStageDown`, `onItemMaker`, `makerButton`, `buildItemMaker`, `showItemMaker`, `makerMode`, `makerSay`, `makerSearch`, `onMakerFailed`, `onMakerResults`, `makerList`, `makerRows`, `makerShort`, `makerAnswer`, `makerName`, `onMakerButton`, `makerPickPicture`, `makerMaxWidth`, `makerMaxHeight`, `onMakerPictureRead`, `shrunkPng`, `crc32`, `pngChunk`, `encodePng`, `makerSendPicture`, `onFinderKey`, `onFinderKindClick`, `finderSearch`, `onFinderFailed`, `onFinderSearchDone`, `finderRowText`, `renderFinderRows`, `onFinderPrevClick`, `onFinderNextClick`, `onFinderColourClick`, `onFinderGiveClick`, `finderHexColours`, `finderPreviewColour`, `finderPreview`, `recolourFinderPreview`, `onFinderColourTyped`, `onFinderGiveDone`
 
 > the staff's window for one player (openModerate), and what the signed-in role may do ("xsp" from the server; empty for players). Staff-only YouTube control for the theatre. The video itself is a browser overlay, called through ExternalInterface below.
 
@@ -96,9 +96,9 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.GuiManager
 
-- `swf-src/GuiManager.as`, 3743 lines
+- `swf-src/GuiManager.as`, 3759 lines
 - original: `tools/decompiled/gui/GuiManager.as`
-- **changed:** `setupSharedObject`, `displayRulesPopup`, `openAvatarCreator`, `showHudAvt`, `onHudViewChanged`, `onEmoteClick`, `setRoomNameDisplay`
+- **changed:** `setupSharedObject`, `displayRulesPopup`, `openAvatarCreator`, `showHudAvt`, `onHudViewChanged`, `activateDenHud`, `onEmoteClick`, `setRoomNameDisplay`
 - **added:** `isPlayingAsPet`, `setPersonalPetMode`
 
 > music and sound effects apart (AJClient's sound settings) the game's rules popup is this server's rules (AJClient.openRules) the last one may have been destroyed already by the way it was closed, which left this pointing at it (#1009 in its destroy)
@@ -257,12 +257,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.AvatarEditor
 
-- `swf-src/AvatarEditor.as`, 3473 lines
+- `swf-src/AvatarEditor.as`, 3646 lines
 - original: `tools/decompiled/gui/AvatarEditor.as`
-- **changed:** `destroy`, `openColorTablePatternEyesTab`, `createPatternsAndEyesArrays`, `createItemWindows`, `onTradeItemSelectClose`, `sortByHandler`
-- **added:** `showSortMenu`, `onSortWord`, `sortByName`, `sortByType`
+- **changed:** `destroy`, `setInitAssetVisibility`, `openColorTablePatternEyesTab`, `createPatternsAndEyesArrays`, `createItemWindows`, `onTradeItemSelectClose`, `sortByHandler`, `onSearchTextInput`
+- **added:** `showSortMenu`, `onSortWord`, `sortByName`, `sortByType`, `isOutfitCode`, `outfitRequest`, `askOutfitImport`, `itemsText`, `onOutfitChecked`, `onOutfitConfirm`, `onOutfitImported`, `onOutfitWait`, `onOutfitFailed`
 
-> the editor can be destroyed (leaving the room) before its artwork came, or after setting it up threw halfway (#1009, #2025 below) special animals get the pattern colour table too, in place of their icon: any colour, as for the others. the arrows still
+> the editor can be destroyed (leaving the room) before its artwork came, or after setting it up threw halfway (#1009, #2025 below) room for an outfit code pasted in (onSearchTextInput) special animals get the pattern colour table too, in place of
 
 ### gui.PetInventory
 
@@ -281,12 +281,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.DenEditor
 
-- `swf-src/DenEditor.as`, 2218 lines
+- `swf-src/DenEditor.as`, 2254 lines
 - original: `tools/decompiled/gui/DenEditor.as`
 - **changed:** `init`, `destroy`, `showDenEditor`, `setupTabsVisibilityAndPosition`, `resetWindowsAndTabsToNormal`, `drawItemWindows`, `scrollBtnHandler`, `toggleBottomHudVisibility`, `toggleEditorHud`, `tabBtnHandler`, `onSearchTextInput`
-- **added:** `placePrefabTab`, `onPrefabTab`, `onPrefabTabOver`, `hudTop`, `placePrefabItems`, `onPrefabReply`
+- **added:** `placePrefabTab`, `onPrefabTab`, `onPrefabTabOver`, `hudTop`, `markPlaced`, `placePrefabItems`, `onPrefabReply`
 
-> this server's additions: the layers panel (with its pick bar) and the prefab tab stays open (its items were just added) ---- the prefab tab and the layers panel (this server) ---- the top of the den editor's tabs, on the screen: the layers panel
+> this server's additions: the layers panel (with its pick bar) and this server's parts (the layers panel, prefabs) go first, each on its own: whatever goes wrong in them, the editor itself is still taken away below (or it would stay up in the next room, and save
 
 ### gui.TradeManager
 
@@ -555,10 +555,10 @@ For each class: the methods changed and added against the untouched original (co
 
 ### loader.DenItemHelper
 
-- `swf-src/DenItemHelper.as`, 838 lines
+- `swf-src/DenItemHelper.as`, 1333 lines
 - original: `tools/decompiled/loader/DenItemHelper.as`
-- **changed:** `get sortOffset`, `init`, `initDS`, `initGeneric`, `loadUniqueImage`, `rebuildMannequinView`
-- **added:** `loadCustomArt`, `fetchArtBytes`, `customArtBytesReceived`, `onCustomArtLoaded`, `onCustomArtFailed`, `loadBaseArt`
+- **changed:** `get sortOffset`, `init`, `initDS`, `initGeneric`, `destroy`, `loadUniqueImage`, `rebuildMannequinView`, `onBytesLoaded`
+- **added:** `loadCustomArt`, `fetchArtBytes`, `customArtBytesReceived`, `onCustomArtLoaded`, `onCustomArtFailed`, `loadBaseArt`, `finishLoad`, `onThemeTileBytes`, `onThemeTileFailed`, `onThemeTileLoaded`, `themeTexture`, `floorMatrix`, `wallMatrix`, `wallRuns`, `stackRuns`, `pieceRuns`, `footAt`, `themeShade`
 
 > The low two flip bits are used by the original client.  Den editing also uses bits 2-3 as the item's player depth: 1 = always behind players and 2 = always in front (a very large offset wins over the normal y-position depth sort without visibly moving the item), and
 
@@ -578,19 +578,19 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.DenLayersPanel
 
-- `swf-src/DenLayersPanel.as`, 1638 lines
+- `swf-src/DenLayersPanel.as`, 1684 lines
 
 > the den editor's layers panel (this server): every item in the den, front first, in four bands (above players, by position, below players, on the floor), groups as rows that open to their items. a row is clicked to choose its item (even one that is locked, hidden or
 
 ### gui.DenPrefabs
 
-- `swf-src/DenPrefabs.as`, 1309 lines
+- `swf-src/DenPrefabs.as`, 1357 lines
 
 > the den editor's prefab tab (this server): items laid out together, saved from the den (the pick bar's "Save prefab", or this tab's first tile), and put down again as one group in the middle of the screen. what the player has none of free is added to their den items first, free,
 
 ### room.DenItemHolder
 
-- `tools/decompiled/room/DenItemHolder.as`, 2889 lines
+- `tools/decompiled/room/DenItemHolder.as`, 3042 lines
 - original: `tools/decompiled/room/DenItemHolder.as`
 - no method changed
 
