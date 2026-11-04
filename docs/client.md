@@ -555,10 +555,10 @@ For each class: the methods changed and added against the untouched original (co
 
 ### loader.DenItemHelper
 
-- `swf-src/DenItemHelper.as`, 1333 lines
+- `swf-src/DenItemHelper.as`, 1356 lines
 - original: `tools/decompiled/loader/DenItemHelper.as`
 - **changed:** `get sortOffset`, `init`, `initDS`, `initGeneric`, `destroy`, `loadUniqueImage`, `rebuildMannequinView`, `onBytesLoaded`
-- **added:** `loadCustomArt`, `fetchArtBytes`, `customArtBytesReceived`, `onCustomArtLoaded`, `onCustomArtFailed`, `loadBaseArt`, `finishLoad`, `onThemeTileBytes`, `onThemeTileFailed`, `onThemeTileLoaded`, `themeTexture`, `floorMatrix`, `wallMatrix`, `wallRuns`, `stackRuns`, `pieceRuns`, `footAt`, `themeShade`
+- **added:** `loadCustomArt`, `fetchArtBytes`, `customArtBytesReceived`, `onCustomArtLoaded`, `onCustomArtFailed`, `loadBaseArt`, `finishLoad`, `onThemeTileBytes`, `onThemeTileFailed`, `onThemeTileLoaded`, `themeTexture`, `floorMatrix`, `wallMatrix`, `wallRuns`, `stackRuns`, `pieceRuns`, `footAt`, `grey`, `themeShade`
 
 > The low two flip bits are used by the original client.  Den editing also uses bits 2-3 as the item's player depth: 1 = always behind players and 2 = always in front (a very large offset wins over the normal y-position depth sort without visibly moving the item), and
 
