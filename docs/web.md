@@ -224,6 +224,7 @@ Calls `/account/api/<route>` (through `/dashboard/api/...` for the dashboards), 
 | `POST /api/ban` | lib/admin.js |
 | `POST /api/command` | lib/admin.js |
 | `POST /api/give` | lib/admin.js |
+| `POST /api/outfit` | lib/admin.js |
 | `POST /api/register` | lib/admin.js |
 | `GET /api/saved` | lib/admin.js |
 | `GET /api/search` | lib/admin.js |

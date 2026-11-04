@@ -1184,24 +1184,75 @@ package room
          param1.stopPropagation();
          if(_dragItem && !isLocked(_dragItem))
          {
-            if(param1.currentTarget == _flipBtn)
+            // bit 0: mirrored left to right; bit 1: turned upside down
+            var _loc2_:int = param1.currentTarget == _flipBtnVer ? 2 : 1;
+            var _loc3_:Array = moveSet(_dragItem);
+            if(_loc3_.length > 1 && !anyLocked(_loc3_))
             {
-               _dragItem.flipped = !BitUtility.isBitSetForNumber(0,_dragItem.flipped) ? _dragItem.flipped ^ 1 : _dragItem.flipped ^ 1;
-               setItemMatrix(_dragItem,_dragItem.x,_dragItem.y,_dragItem.flipped);
+               flipSet(_loc3_,_loc2_);
             }
-            else if(param1.currentTarget == _flipBtnVer)
+            else
             {
-               if(!BitUtility.isBitSetForNumber(1,_dragItem.flipped))
-               {
-                  _dragItem.flipped |= 2;
-               }
-               else
-               {
-                  _dragItem.flipped = !BitUtility.isBitSetForNumber(1,_dragItem.flipped) ? _dragItem.flipped | 2 : _dragItem.flipped ^ 2;
-               }
+               _dragItem.flipped ^= _loc2_;
                setItemMatrix(_dragItem,_dragItem.x,_dragItem.y,_dragItem.flipped);
             }
          }
+      }
+
+      // a group (or the picked items) flipped as one, as drag moves them:
+      // each item flips, and its place is mirrored across the middle of
+      // them all, left to right (bit 1), or turned about it (bit 2: upside
+      // down is left to right and top to bottom at once). places are by
+      // what each item shows, so it is the same whatever its art's origin.
+      private function flipSet(param1:Array, param2:int) : void
+      {
+         var _loc3_:Array = [];
+         var _loc4_:Rectangle = null;
+         var _loc5_:DenStateItem = null;
+         var _loc6_:Rectangle = null;
+         var _loc7_:Rectangle = null;
+         var _loc8_:int = 0;
+         var _loc9_:Number = NaN;
+         var _loc10_:Number = NaN;
+         for each(_loc5_ in param1)
+         {
+            _loc6_ = shownBounds(_loc5_);
+            _loc3_.push(_loc6_);
+            if(_loc6_ != null)
+            {
+               _loc4_ = _loc4_ == null ? _loc6_.clone() : _loc4_.union(_loc6_);
+            }
+         }
+         while(_loc8_ < param1.length)
+         {
+            _loc5_ = param1[_loc8_];
+            _loc6_ = _loc3_[_loc8_];
+            _loc5_.flipped ^= param2;
+            setItemMatrix(_loc5_,_loc5_.x,_loc5_.y,_loc5_.flipped);
+            _loc7_ = shownBounds(_loc5_);
+            if(_loc4_ != null && _loc6_ != null && _loc7_ != null)
+            {
+               // where its left (and top) edge goes, mirrored about the middle
+               _loc9_ = _loc4_.x + _loc4_.right - _loc6_.right - _loc7_.x;
+               _loc10_ = param2 == 2 ? _loc4_.y + _loc4_.bottom - _loc6_.bottom - _loc7_.y : _loc6_.y - _loc7_.y;
+               setItemMatrix(_loc5_,_loc5_.x + _loc9_,_loc5_.y + _loc10_,_loc5_.flipped);
+            }
+            _loc8_++;
+         }
+         setBtnPos(_dragItem.x + _dragItem.denItemHelper.contentWidth - 30,_dragItem.y);
+         changed();
+      }
+
+      // what the item shows, where its place (x, y) is counted
+      private function shownBounds(param1:DenStateItem) : Rectangle
+      {
+         var _loc2_:DisplayObject = param1.denItemHelper ? param1.denItemHelper.displayObject : null;
+         if(_loc2_ == null || _loc2_.parent == null)
+         {
+            return null;
+         }
+         var _loc3_:Rectangle = _loc2_.getBounds(_loc2_.parent);
+         return _loc3_.width > 0 || _loc3_.height > 0 ? _loc3_ : null;
       }
       
       private function onLinkBtn(param1:MouseEvent) : void

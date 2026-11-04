@@ -742,7 +742,7 @@ package
                if(_loc3_.art)
                {
                   _customArt[String(param1[2]) + ":" + _loc3_.id] = String(_loc3_.art);
-                  _customArtMode[String(param1[2]) + ":" + _loc3_.id] = _loc3_.artMode == "texture" ? "texture" : "sticker";
+                  _customArtMode[String(param1[2]) + ":" + _loc3_.id] = ART_LOOKS.indexOf(String(_loc3_.artMode)) >= 0 ? String(_loc3_.artMode) : "sticker";
                }
                else
                {
@@ -770,10 +770,24 @@ package
       // item's icon, and for a den item also for the item placed in a den.
       private static var _customArt:Object = {};
 
-      // how a custom clothing item with a picture is worn ("artMode" in its
-      // def row): "sticker", the picture itself where the item would be, or
-      // "texture", the item's own shape painted with the picture.
+      // how a custom item with a picture is drawn ("artMode" in its def row;
+      // which an item may have is the server's lib/customitems.js
+      // LOOKS_BY_USE). clothing: "sticker", the picture itself where the
+      // item would be, or "texture", the item's own shape painted with it.
+      // wallpapers: "pattern" (the picture as a tile) or "segments" (floor
+      // to ceiling, side by side along each wall); floors: "pattern"
+      // (loader.DenItemHelper.themeTexture).
       private static var _customArtMode:Object = {};
+
+      private static const ART_LOOKS:Array = ["sticker","texture","pattern","segments"];
+
+      // what the Item Maker calls each look
+      private static const LOOK_WORDS:Object = {
+         "sticker":"sticker",
+         "texture":"texture",
+         "pattern":"pattern",
+         "segments":"segments"
+      };
 
       // the pictures as bitmaps, for wearing: "kind:id" -> {bmp, art, waiting}
       private static var _artBitmaps:Object = {};
@@ -4546,7 +4560,7 @@ package
             _loc3_.name = "row" + _loc2_;
             _loc3_.currTxt.mouseEnabled = false;
             var _loc5_:Boolean = _makerChosen != null && _makerChosen.id == _loc4_.id && _makerChosen.kind == _loc4_.kind;
-            _loc3_.currTxt.text = (_loc5_ ? "> " : "") + makerShort(String(_loc4_.name || "(no name)"),24) + (_makerMode == "mine" ? (_loc4_.waiting == "item" ? "  (waiting)" : _loc4_.waiting == "picture" ? "  (picture waiting)" : _loc4_.art ? (_loc4_.kind == "clothing" ? (_loc4_.artMode == "texture" ? "  (texture)" : "  (sticker)") : "  (picture)") : "") : "   #" + _loc4_.id);
+            _loc3_.currTxt.text = (_loc5_ ? "> " : "") + makerShort(String(_loc4_.name || "(no name)"),24) + (_makerMode == "mine" ? (_loc4_.waiting == "item" ? "  (waiting)" : _loc4_.waiting == "picture" ? "  (picture waiting)" : _loc4_.art ? (_loc4_.looks is Array && _loc4_.looks.length > 0 ? "  (" + (LOOK_WORDS[_loc4_.artMode] || _loc4_.artMode) + ")" : "  (picture)") : "") : "   #" + _loc4_.id);
             _loc3_.addEventListener("mouseDown",onMakerButton);
             _makerRowsSprite.addChild(_loc3_);
             _makerRowsSprite.addChild(finderPreview(_loc4_,_loc2_,186,_loc3_.y));
@@ -4706,16 +4720,22 @@ package
          {
             makerPickPicture(_makerChosen);
          }
-         // how a clothing item with a picture is worn: the picture itself
-         // (a sticker) or the item's shape painted with it (a texture)
+         // how an item with a picture is drawn: the next of the looks its
+         // kind may have (the server says which: "looks")
          else if(_loc2_ == "look")
          {
-            if(_makerChosen.kind != "clothing" || !_makerChosen.art)
+            var _loc9_:Array = _makerChosen.looks is Array ? _makerChosen.looks : [];
+            if(_loc9_.length < 2)
             {
-               makerSay(_makerChosen.kind != "clothing" ? "A den item stands as its picture." : "Give it a picture first.");
+               makerSay(_loc9_.length == 1 ? "This one is always a " + (LOOK_WORDS[_loc9_[0]] || _loc9_[0]) + "." : "A den item stands as its picture.");
                return;
             }
-            gMainFrame.server.setXtObject_Str("xcm",["look",_makerChosen.kind,_makerChosen.id,_makerChosen.artMode == "texture" ? "sticker" : "texture"]);
+            if(!_makerChosen.art)
+            {
+               makerSay("Give it a picture first.");
+               return;
+            }
+            gMainFrame.server.setXtObject_Str("xcm",["look",_makerChosen.kind,_makerChosen.id,_loc9_[(_loc9_.indexOf(_makerChosen.artMode) + 1) % _loc9_.length]]);
          }
       }
 
@@ -4747,6 +4767,21 @@ package
       // too big is drawn smaller here and sent as a PNG.
       private static const MAKER_PICTURE_SIDE:int = 512;
 
+      // a wallpaper's (it may have the "segments" look) may be taller (as wide)
+      private static const MAKER_PICTURE_TALL:int = 768;
+
+      private static const MAKER_PICTURE_WIDE:int = 1024;
+
+      private static function makerMaxWidth(param1:Object) : int
+      {
+         return makerMaxHeight(param1) == MAKER_PICTURE_TALL ? MAKER_PICTURE_WIDE : MAKER_PICTURE_SIDE;
+      }
+
+      private static function makerMaxHeight(param1:Object) : int
+      {
+         return param1 != null && param1.looks is Array && param1.looks.indexOf("segments") >= 0 ? MAKER_PICTURE_TALL : MAKER_PICTURE_SIDE;
+      }
+
       private static const MAKER_PICTURE_BYTES:int = 300 * 1024;
 
       private function onMakerPictureRead(param1:Event) : void
@@ -4765,14 +4800,14 @@ package
             {
                makerSay("That picture could not be read. Try a PNG, JPEG or GIF.");
             }
-            else if(_loc2_.width <= MAKER_PICTURE_SIDE && _loc2_.height <= MAKER_PICTURE_SIDE && _makerFile.data.length <= MAKER_PICTURE_BYTES)
+            else if(_loc2_.width <= makerMaxWidth(_makerUploading) && _loc2_.height <= makerMaxHeight(_makerUploading) && _makerFile.data.length <= MAKER_PICTURE_BYTES)
             {
                makerSendPicture(_makerFile.data);
             }
             else
             {
                makerSay("Making the picture smaller...");
-               makerSendPicture(shrunkPng(_loc2_));
+               makerSendPicture(shrunkPng(_loc2_,makerMaxWidth(_makerUploading),makerMaxHeight(_makerUploading)));
             }
          });
          _loc3_.contentLoaderInfo.addEventListener("ioError",function(param1:Event):void
@@ -4784,12 +4819,14 @@ package
 
       // a PNG of the picture fitted in MAKER_PICTURE_SIDE, smaller until it is
       // no more than MAKER_PICTURE_BYTES
-      private static function shrunkPng(param1:BitmapData) : ByteArray
+      // shrunk evenly to fit `param2` by `param3`, smaller each time round
+      // for the file's size
+      private static function shrunkPng(param1:BitmapData, param2:int = 512, param3:int = 512) : ByteArray
       {
          var _loc2_:ByteArray = null;
          for each(var _loc3_:int in [MAKER_PICTURE_SIDE,384,256,128])
          {
-            var _loc4_:Number = Math.min(1,_loc3_ / param1.width,_loc3_ / param1.height);
+            var _loc4_:Number = Math.min(1,_loc3_ * param2 / MAKER_PICTURE_SIDE / param1.width,_loc3_ * param3 / MAKER_PICTURE_SIDE / param1.height);
             var _loc5_:BitmapData = new BitmapData(Math.max(1,Math.round(param1.width * _loc4_)),Math.max(1,Math.round(param1.height * _loc4_)),true,0);
             _loc5_.draw(param1,new Matrix(_loc4_,0,0,_loc4_),null,null,null,true);
             _loc2_ = encodePng(_loc5_);

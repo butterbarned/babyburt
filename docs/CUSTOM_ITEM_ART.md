@@ -20,6 +20,12 @@ moderator look at new pictures first, and some check them with an automatic filt
   between. Dark parts of the original are never painted over.
 - **Den items (furniture and decorations).** Your picture simply replaces the item. It is shown as a still image,
   standing on the spot where you put it. It won't move, animate, or do anything special.
+- **Wallpapers and floors.** One picture fits every den, slanted to match its walls (or laid flat on its floor),
+  with the den's own light and shade on top. A wallpaper has two looks: **pattern** (your picture is a *tile*,
+  repeated across and down) or **segments** (your picture stands on the floor of each wall at its own size, copy
+  after copy along it, cut off at the top of the wall). A floor is a pattern. (The game's own wallpapers are
+  neither: each is drawn by hand for every den. A custom one cannot be, so it is fitted to each den instead.)
+  See [section 9a](#9a-wallpapers-and-floors-a-guide-for-makers) for what pictures work.
 - **Icons.** In your inventory and the shop, the item shows your picture as it is.
 
 **Things to know before you make one:**
@@ -92,7 +98,7 @@ while it is running. Each row carries `art` (a version string, empty if none) an
    APP1 to APP15 and comment segments (EXIF, XMP). GIF keeps image blocks, graphic-control blocks and the loop
    block, and loses comments. A BMP (1, 4, 8, 24 or 32 bit, uncompressed or bit fields, up to 4096 px) is converted
    to PNG and, if larger than 512 px, shrunk by box averaging.
-3. After cleaning the file must be **300 KB or less**, and each side **8 to 512 px**. Larger PNG/JPEG/GIF are
+3. After cleaning the file must be **300 KB or less**, and each side **8 to 512 px** (a wallpaper's up to 1024 wide and 768 tall, for its segments). Larger PNG/JPEG/GIF are
    rejected, not resized. (The web pages and the in-game maker shrink big pictures before uploading.)
 4. Optionally scanned by Google Vision SafeSearch if a key is configured. "Likely" adult or racy is blocked.
    If the scanner is enabled but unreachable, the upload fails closed.
@@ -252,6 +258,48 @@ item's art.
 - A mannequin base (type 4): the mannequin view is built from the base's loaded SWF, which is skipped here.
   Expect a custom mannequin picture to be only a picture, not a dressable mannequin (not tested).
 
+### 8a. Wallpapers and floors
+
+Code: `DenItemHelper.initDS` and `themeTexture` (and the functions after it). A wallpaper (`sortCat` 3) or floor
+(`sortCat` 2) is not one picture: its file is asked for as `defId << 16 | denCatId`, so the CDN sends art drawn
+for the den it is in (every room's walls, or floor, in one file). A picture standing in for it the way other den
+pictures do would be a 160 px still in the room's corner. So, **in a den only** (`initDS`; shop and inventory
+icons still show the plain picture):
+
+1. The base's own file for this den is loaded as ever (`loadBaseArt`). It is the **stencil**. The custom item
+   keeps its own id, so the game asks for `items/<custom id << 16 | denCatId>`, which the CDN does not have: the
+   server answers every such request with the base's file of the same low number (`customItems.baseFileFor`,
+   used in `lib/http.js`). The same goes for a custom den item's icon and a mannequin's poses, and for anyone
+   who has "Custom pictures" off.
+2. The picture's bytes are fetched (the same cache as other den pictures) and decoded.
+3. The base is drawn into a bitmap at full size (a den over 12 million pixels, or 8000 px a side, keeps its base).
+4. **Floors:** the picture is tiled over all of it, turned 45 degrees and squashed to half height (the game's
+   2:1 floors). **Walls:** the stencil is read at a quarter size, each separate piece of wall is found
+   (`floodFill`), and its slant is the median of the slants of its top and bottom edges (columns 5 apart). At
+   least 0.3 one way or the other, the whole piece is tiled with `y' = y + 0.5x` or `y' = y - 0.5x`. Nearer
+   flat (two walls meeting with no gap, or a wall seen straight on), each column gets its own slant, -0.5, 0 or
+   0.5, the most common within 8 columns winning, and runs of one slant are tiled separately.
+   **Walls in segments** (the look `segments`, `AJClient.customArtMode`): the same runs, each with its *foot*
+   (the median, over its columns, of the lowest wall pixel less the slant, so ragged bits do not move it) and its
+   *head* the same way from the top. A run whose head is no more than 64 px under another's foot, with the same
+   slant and overlapping by a third of the narrower, is a band of that wall the den's art draws apart (a rail, a
+   wainscot): it takes the lower one's foot and its segment origin, so a segment goes up through both
+   (`stackRuns`). Each run is then filled with the picture at its own size, not repeated, its bottom on the foot
+   line and sheared with the slant, one copy every picture-width from the origin. A copy is not repeated, so
+   above the picture its top row carries on up (Flash extends a fill's edges).
+5. **Shading:** the base's brightness, blurred 28 px (past its own pattern), is turned into a grey centred on the
+   base's average brightness (`(lum - mean) * 1.5 + 128`) and laid over the tiles with `overlay`. That brings
+   back lighter tops, darker feet and the darker rim. The base's alpha is then copied in exactly, and a thin
+   inner dark edge (an inner `GlowFilter`, 5 px, 45%) drawn.
+6. The result is a smoothed `Bitmap` at the base's bounds; the base's `Loader` stays (invisible) so that
+   anything that reads the item's content still finds it. Anything that fails on the way shows the base.
+
+Known limits: a seam can show where two walls meet with no gap between them; a wall the den draws in two
+pieces far apart (more than 64 px) gets a row of segments in each; the base's animation (if any) is
+lost; a picture's see-through parts become dark (they take the base's alpha but have no colour); a GIF is its
+first frame. The tiles are anchored to the room's coordinates, not to each wall, so they line up along a wall
+but a pattern does not start at a wall's corner.
+
 ## 9. Design guidance for makers
 
 Clothing:
@@ -269,6 +317,44 @@ Den items:
 - Picture at most 160 x 160 for predictable results, anything larger is scaled down to that. Bottom edge is the
   floor contact, so leave no empty margin below the object.
 - It is a still image. Do not expect movement or states.
+
+### 9a. Wallpapers and floors: a guide for makers
+
+Make the item in the Item Maker as any den item: pick a wallpaper or floor as the base, then add your picture.
+The base only gives the shape of each den's walls (or floor) and their shading, so any wallpaper works for a
+wallpaper and any floor for a floor. For a wallpaper, **Look** switches between *pattern* and *segments* (the
+account page and the staff panels have it too).
+
+How tall are the den's walls? Measured on one wallpaper in all 54 dens that have one: walls run from 16 px
+(trims, frames) to about 400 px high, and in 33 dens some part of a wall (an arch, a gable, a cave roof) is at
+least 1.6 times as high as the rest of it. That is why segments stand on the floor and are cut at the top, and
+why a wallpaper's picture may be up to **1024 wide and 768 tall** (any other item's, 512 each way). A bigger one
+is shrunk evenly to fit before it is sent, keeping its shape: 2000 x 1000 becomes 1024 x 512, 600 x 900 becomes
+512 x 768.
+
+![Making a wallpaper or floor picture: seamless tiles work; seams, see-through parts, and words or faces do not](img/den-themes-tiles.png)
+
+![How the tile is laid in the den: on walls up stays up and lines follow each wall's slant; on floors the tile is turned and squashed, so squares become diamonds](img/den-themes-fit.png)
+
+![Colour and detail: mid-tones, bold simple shapes and any base work; pure black or white, fine detail and moving pictures do not](img/den-themes-colour.png)
+
+![Wallpapers in segments: the picture stands on the floor of each wall at its own size; the bottom is always seen, the top only on tall walls](img/den-themes-segments.png)
+
+In short:
+
+| | Do | Don't |
+|---|---|---|
+| Size | A square PNG, **64 to 256 px** a side. It is drawn at its own size and repeated, never stretched. | Over 512 px a side for a floor, 1024 x 768 for a wallpaper, or 300 KB (shrunk to fit when sent from the game or the website; refused otherwise). Very small tiles (under 32 px) repeat so often they read as noise. |
+| Edges | **Seamless**: the right edge runs on into the left, the top into the bottom. | Frames, borders, or a light side and a dark side: each copy shows as a block. |
+| Pixels | Fill every pixel. | See-through or half-see-through parts: they come out as dark patches. |
+| Content | Patterns, small motifs, stripes, checks, textures (wood, brick, grass). | Words, faces, logos, single pictures: they are slanted on walls, turned on floors and repeated. |
+| Colour | Mid-tones. The den adds light at the top of walls and shade at the foot and edges. | Pure black or pure white: the shading has nothing to work on. |
+| Detail | Bold shapes, about 12 px and up. | Thin lines, noise and photos: they shimmer and break up on slants. |
+| Segments | Put what matters at the **bottom**: it is on every wall. Let the top fade into something plain (sky, a colour, a trim), since its top row is stretched up on the tallest walls. Make the left and right edges meet. | Anything important near the top: on low walls it is cut off. |
+| On floors | Remember the 45 degree turn and half height: a 128 px tile becomes a diamond about 181 x 90 px. Stripes run corner to corner. | Expecting squares or straight rows across the floor. |
+
+The pictures above were made with the same steps the game uses, on the Planet wallpaper and Grass Carpet floor
+of one den, by a script that is not part of the server (so there may be small differences in the game itself).
 
 ## 10. Recreating it elsewhere
 

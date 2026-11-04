@@ -14,7 +14,7 @@ In each module: **Uses** are the modules it loads, **Used by** the ones that loa
 - **Places and events**: [`lib/parties.js`](#lib-parties-js), [`lib/epicdens.js`](#lib-epicdens-js), [`lib/adventures.js`](#lib-adventures-js), [`lib/adventures/training-grounds.js`](#lib-adventures-training-grounds-js), [`lib/adventures/return-of-the-phantoms.js`](#lib-adventures-return-of-the-phantoms-js), [`lib/minigames.js`](#lib-minigames-js), [`lib/buddygames.js`](#lib-buddygames-js), [`lib/journeybook.js`](#lib-journeybook-js), [`lib/theatre.js`](#lib-theatre-js), [`lib/theatrevideos.js`](#lib-theatrevideos-js), [`lib/masterpieces.js`](#lib-masterpieces-js), [`lib/jpegprint.js`](#lib-jpegprint-js), [`lib/walls.js`](#lib-walls-js), [`lib/ecards.js`](#lib-ecards-js), [`lib/emoji.js`](#lib-emoji-js)
 - **Chat and safety**: [`lib/chatfilter.js`](#lib-chatfilter-js), [`lib/chatspam.js`](#lib-chatspam-js), [`lib/chatlog.js`](#lib-chatlog-js), [`lib/moderation.js`](#lib-moderation-js), [`lib/reports.js`](#lib-reports-js), [`lib/bans.js`](#lib-bans-js), [`lib/image-moderation.js`](#lib-image-moderation-js), [`lib/modnotes.js`](#lib-modnotes-js), [`lib/modlog.js`](#lib-modlog-js), [`lib/support.js`](#lib-support-js)
 - **Staff and the dashboards**: [`lib/panel.js`](#lib-panel-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/staff.js`](#lib-staff-js), [`lib/roles.js`](#lib-roles-js), [`lib/discordbot.js`](#lib-discordbot-js), [`lib/announcemedia.js`](#lib-announcemedia-js)
-- **Other**: [`lib/creatorlimits.js`](#lib-creatorlimits-js), [`lib/denprefabs.js`](#lib-denprefabs-js)
+- **Other**: [`lib/creatorlimits.js`](#lib-creatorlimits-js), [`lib/denprefabs.js`](#lib-denprefabs-js), [`lib/outfitcodes.js`](#lib-outfitcodes-js)
 - **Data files in lib/**: `lib/games.json`, `lib/journeybook.json`, `lib/shop-stock.json`, `lib/sale-dates.json`, `lib/ecard-art.json`, `lib/wall-art.json`, `lib/chat-filter.txt`, `lib/reserved-names.txt`, `lib/sexual-names.txt`
 
 ## The core
@@ -33,7 +33,7 @@ What every request and message passes through.
 **Every setting, with its environment variable and its default.**
 
 - 412 lines
-- **Used by** [`server.js`](#server-js), [`lib/accounts.js`](#lib-accounts-js), [`lib/admin.js`](#lib-admin-js), [`lib/adventures.js`](#lib-adventures-js), [`lib/captcha.js`](#lib-captcha-js), [`lib/cdn.js`](#lib-cdn-js), [`lib/chatlog.js`](#lib-chatlog-js), [`lib/colours.js`](#lib-colours-js), [`lib/commands.js`](#lib-commands-js), [`lib/custommusic.js`](#lib-custommusic-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/devices.js`](#lib-devices-js), [`lib/discord.js`](#lib-discord-js), [`lib/discordbot.js`](#lib-discordbot-js), [`lib/emoji.js`](#lib-emoji-js), [`lib/image-moderation.js`](#lib-image-moderation-js), [`lib/limits.js`](#lib-limits-js), [`lib/manage.js`](#lib-manage-js), [`lib/moderation.js`](#lib-moderation-js), [`lib/names.js`](#lib-names-js), [`lib/parties.js`](#lib-parties-js), [`lib/playeritems.js`](#lib-playeritems-js), [`lib/recoverymail.js`](#lib-recoverymail-js), [`lib/retention.js`](#lib-retention-js), [`lib/sfs.js`](#lib-sfs-js), [`lib/signup.js`](#lib-signup-js), [`lib/stats.js`](#lib-stats-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/theatrevideos.js`](#lib-theatrevideos-js), [`lib/itemart.js`](#lib-itemart-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/announcemedia.js`](#lib-announcemedia-js), [`lib/gamefiles.js`](#lib-gamefiles-js), [`lib/invitehook.js`](#lib-invitehook-js), [`lib/creatorlimits.js`](#lib-creatorlimits-js), [`lib/masterpieces.js`](#lib-masterpieces-js), [`lib/panel.js`](#lib-panel-js), [`lib/dens.js`](#lib-dens-js)
+- **Used by** [`server.js`](#server-js), [`lib/accounts.js`](#lib-accounts-js), [`lib/admin.js`](#lib-admin-js), [`lib/adventures.js`](#lib-adventures-js), [`lib/captcha.js`](#lib-captcha-js), [`lib/cdn.js`](#lib-cdn-js), [`lib/chatlog.js`](#lib-chatlog-js), [`lib/colours.js`](#lib-colours-js), [`lib/commands.js`](#lib-commands-js), [`lib/custommusic.js`](#lib-custommusic-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/devices.js`](#lib-devices-js), [`lib/discord.js`](#lib-discord-js), [`lib/discordbot.js`](#lib-discordbot-js), [`lib/emoji.js`](#lib-emoji-js), [`lib/image-moderation.js`](#lib-image-moderation-js), [`lib/limits.js`](#lib-limits-js), [`lib/manage.js`](#lib-manage-js), [`lib/moderation.js`](#lib-moderation-js), [`lib/names.js`](#lib-names-js), [`lib/parties.js`](#lib-parties-js), [`lib/playeritems.js`](#lib-playeritems-js), [`lib/recoverymail.js`](#lib-recoverymail-js), [`lib/retention.js`](#lib-retention-js), [`lib/sfs.js`](#lib-sfs-js), [`lib/signup.js`](#lib-signup-js), [`lib/stats.js`](#lib-stats-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/theatrevideos.js`](#lib-theatrevideos-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/announcemedia.js`](#lib-announcemedia-js), [`lib/gamefiles.js`](#lib-gamefiles-js), [`lib/invitehook.js`](#lib-invitehook-js), [`lib/creatorlimits.js`](#lib-creatorlimits-js), [`lib/masterpieces.js`](#lib-masterpieces-js), [`lib/panel.js`](#lib-panel-js), [`lib/dens.js`](#lib-dens-js), [`lib/itemart.js`](#lib-itemart-js)
 
 ### lib/sfs.js
 
@@ -68,7 +68,7 @@ game logic behind the socket. field orders below mirror the client's parsers; th
 
 stands in for every web service the launcher and the SWF talk to: www (flashvars), authenticator, player-session-data, ajelectronapi, the game host page and the content CDN.
 
-- 1413 lines
+- 1415 lines
 - **Uses** [`lib/accounts.js`](#lib-accounts-js), [`lib/customitems.js`](#lib-customitems-js), [`lib/itemart.js`](#lib-itemart-js), [`lib/emoji.js`](#lib-emoji-js), [`lib/modlog.js`](#lib-modlog-js), [`lib/roles.js`](#lib-roles-js), [`lib/admin.js`](#lib-admin-js), [`lib/bans.js`](#lib-bans-js), [`lib/captcha.js`](#lib-captcha-js), [`lib/cdn.js`](#lib-cdn-js), [`lib/devices.js`](#lib-devices-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/limits.js`](#lib-limits-js), [`lib/manage.js`](#lib-manage-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/discordbot.js`](#lib-discordbot-js), [`lib/badges.js`](#lib-badges-js), [`lib/extramusic.js`](#lib-extramusic-js), [`lib/custommusic.js`](#lib-custommusic-js), [`lib/theatrevideos.js`](#lib-theatrevideos-js), [`lib/announcemedia.js`](#lib-announcemedia-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/masterpieces.js`](#lib-masterpieces-js), [`lib/denprefabs.js`](#lib-denprefabs-js), [`lib/panel.js`](#lib-panel-js), [`lib/totp.js`](#lib-totp-js), [`lib/world.js`](#lib-world-js), [`lib/playeritems.js`](#lib-playeritems-js)
 - **Used by** [`server.js`](#server-js)
 - **Game files** `audio/`, `assets/`
@@ -102,7 +102,7 @@ features this server does not have, answered with the "nothing here" reply each 
 small in-memory rate limits for the parts of the server that strangers can reach: logins, sign-ups, error reports and the game socket; and who a web request is from.
 
 - 138 lines
-- **Used by** [`lib/admin.js`](#lib-admin-js), [`lib/bans.js`](#lib-bans-js), [`lib/buddies.js`](#lib-buddies-js), [`lib/captcha.js`](#lib-captcha-js), [`lib/customitems.js`](#lib-customitems-js), [`lib/ecards.js`](#lib-ecards-js), [`lib/manage.js`](#lib-manage-js), [`lib/minigames.js`](#lib-minigames-js), [`lib/playeritems.js`](#lib-playeritems-js), [`lib/reports.js`](#lib-reports-js), [`lib/sfs.js`](#lib-sfs-js), [`lib/signup.js`](#lib-signup-js), [`lib/staff.js`](#lib-staff-js), [`lib/walls.js`](#lib-walls-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/masterpieces.js`](#lib-masterpieces-js), [`lib/panel.js`](#lib-panel-js), [`lib/dens.js`](#lib-dens-js)
+- **Used by** [`lib/admin.js`](#lib-admin-js), [`lib/bans.js`](#lib-bans-js), [`lib/buddies.js`](#lib-buddies-js), [`lib/captcha.js`](#lib-captcha-js), [`lib/ecards.js`](#lib-ecards-js), [`lib/manage.js`](#lib-manage-js), [`lib/minigames.js`](#lib-minigames-js), [`lib/playeritems.js`](#lib-playeritems-js), [`lib/reports.js`](#lib-reports-js), [`lib/sfs.js`](#lib-sfs-js), [`lib/signup.js`](#lib-signup-js), [`lib/staff.js`](#lib-staff-js), [`lib/walls.js`](#lib-walls-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/masterpieces.js`](#lib-masterpieces-js), [`lib/panel.js`](#lib-panel-js), [`lib/dens.js`](#lib-dens-js), [`lib/customitems.js`](#lib-customitems-js)
 
 ### lib/log.js
 
@@ -120,7 +120,7 @@ keeps the most recent lines the server printed, for the admin panel's log view. 
 a value from outside (a username, an address, what a client sent) as it may go into a line of the server's log: on one line, and with no control characters, so that it cannot pass for a line of the server's own (a name with a line break in it, "...\n[admin] signed in") or move the terminal's cursor about. (U+2028 and U+2029, which end a line too, are in the second.)
 
 - 18 lines
-- **Used by** [`lib/accounts.js`](#lib-accounts-js), [`lib/adventures.js`](#lib-adventures-js), [`lib/bans.js`](#lib-bans-js), [`lib/captcha.js`](#lib-captcha-js), [`lib/cdn.js`](#lib-cdn-js), [`lib/chatfilter.js`](#lib-chatfilter-js), [`lib/colours.js`](#lib-colours-js), [`lib/customitems.js`](#lib-customitems-js), [`lib/custommusic.js`](#lib-custommusic-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/devices.js`](#lib-devices-js), [`lib/discord.js`](#lib-discord-js), [`lib/discordbot.js`](#lib-discordbot-js), [`lib/ecards.js`](#lib-ecards-js), [`lib/emoji.js`](#lib-emoji-js), [`lib/manage.js`](#lib-manage-js), [`lib/modlog.js`](#lib-modlog-js), [`lib/parties.js`](#lib-parties-js), [`lib/reports.js`](#lib-reports-js), [`lib/roominfo.js`](#lib-roominfo-js), [`lib/sfs.js`](#lib-sfs-js), [`lib/signup.js`](#lib-signup-js), [`lib/support.js`](#lib-support-js), [`lib/walls.js`](#lib-walls-js), [`lib/theatre.js`](#lib-theatre-js), [`lib/theatrevideos.js`](#lib-theatrevideos-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/announcemedia.js`](#lib-announcemedia-js), [`lib/panel.js`](#lib-panel-js), [`lib/dens.js`](#lib-dens-js)
+- **Used by** [`lib/accounts.js`](#lib-accounts-js), [`lib/adventures.js`](#lib-adventures-js), [`lib/bans.js`](#lib-bans-js), [`lib/captcha.js`](#lib-captcha-js), [`lib/cdn.js`](#lib-cdn-js), [`lib/chatfilter.js`](#lib-chatfilter-js), [`lib/colours.js`](#lib-colours-js), [`lib/custommusic.js`](#lib-custommusic-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/devices.js`](#lib-devices-js), [`lib/discord.js`](#lib-discord-js), [`lib/discordbot.js`](#lib-discordbot-js), [`lib/ecards.js`](#lib-ecards-js), [`lib/emoji.js`](#lib-emoji-js), [`lib/manage.js`](#lib-manage-js), [`lib/modlog.js`](#lib-modlog-js), [`lib/parties.js`](#lib-parties-js), [`lib/reports.js`](#lib-reports-js), [`lib/roominfo.js`](#lib-roominfo-js), [`lib/sfs.js`](#lib-sfs-js), [`lib/signup.js`](#lib-signup-js), [`lib/support.js`](#lib-support-js), [`lib/walls.js`](#lib-walls-js), [`lib/theatre.js`](#lib-theatre-js), [`lib/theatrevideos.js`](#lib-theatrevideos-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/announcemedia.js`](#lib-announcemedia-js), [`lib/panel.js`](#lib-panel-js), [`lib/dens.js`](#lib-dens-js), [`lib/customitems.js`](#lib-customitems-js)
 
 ### lib/stats.js
 
@@ -154,7 +154,7 @@ Reading the game's tables and files; see game-files.md.
 mirrors LoaderCache.hashItV2 in the client: the last path component of every versioned asset is obfuscated this way before it is requested.
 
 - 205 lines
-- **Used by** [`lib/badges.js`](#lib-badges-js), [`lib/custommusic.js`](#lib-custommusic-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/extramusic.js`](#lib-extramusic-js), [`lib/roominfo.js`](#lib-roominfo-js), [`lib/http.js`](#lib-http-js), [`lib/gamefiles.js`](#lib-gamefiles-js)
+- **Used by** [`lib/badges.js`](#lib-badges-js), [`lib/custommusic.js`](#lib-custommusic-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/extramusic.js`](#lib-extramusic-js), [`lib/roominfo.js`](#lib-roominfo-js), [`lib/http.js`](#lib-http-js), [`lib/gamefiles.js`](#lib-gamefiles-js), [`lib/customitems.js`](#lib-customitems-js)
 - **Game files** `defPacks/`
 
 ### lib/amf3.js
@@ -172,7 +172,7 @@ minimal AMF3 reader, enough for the game's defPacks (objects, arrays, strings an
 
 - 691 lines
 - **Uses** [`lib/amf3.js`](#lib-amf3-js), [`lib/cdn.js`](#lib-cdn-js), [`lib/sales.js`](#lib-sales-js), [`lib/badges.js`](#lib-badges-js), [`lib/extramusic.js`](#lib-extramusic-js), [`lib/wearrules.js`](#lib-wearrules-js)
-- **Used by** [`server.js`](#server-js), [`lib/accounts.js`](#lib-accounts-js), [`lib/achievements.js`](#lib-achievements-js), [`lib/admin.js`](#lib-admin-js), [`lib/adopt.js`](#lib-adopt-js), [`lib/avatars.js`](#lib-avatars-js), [`lib/commands.js`](#lib-commands-js), [`lib/customitems.js`](#lib-customitems-js), [`lib/disguises.js`](#lib-disguises-js), [`lib/ecards.js`](#lib-ecards-js), [`lib/epicdens.js`](#lib-epicdens-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/items.js`](#lib-items-js), [`lib/manage.js`](#lib-manage-js), [`lib/minigames.js`](#lib-minigames-js), [`lib/parties.js`](#lib-parties-js), [`lib/pets.js`](#lib-pets-js), [`lib/player.js`](#lib-player-js), [`lib/roominfo.js`](#lib-roominfo-js), [`lib/shopstock.js`](#lib-shopstock-js), [`lib/trades.js`](#lib-trades-js), [`lib/worlditems.js`](#lib-worlditems-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/gamefiles.js`](#lib-gamefiles-js), [`lib/panel.js`](#lib-panel-js), [`lib/dens.js`](#lib-dens-js)
+- **Used by** [`server.js`](#server-js), [`lib/accounts.js`](#lib-accounts-js), [`lib/achievements.js`](#lib-achievements-js), [`lib/admin.js`](#lib-admin-js), [`lib/adopt.js`](#lib-adopt-js), [`lib/avatars.js`](#lib-avatars-js), [`lib/commands.js`](#lib-commands-js), [`lib/disguises.js`](#lib-disguises-js), [`lib/ecards.js`](#lib-ecards-js), [`lib/epicdens.js`](#lib-epicdens-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/items.js`](#lib-items-js), [`lib/manage.js`](#lib-manage-js), [`lib/minigames.js`](#lib-minigames-js), [`lib/parties.js`](#lib-parties-js), [`lib/pets.js`](#lib-pets-js), [`lib/player.js`](#lib-player-js), [`lib/roominfo.js`](#lib-roominfo-js), [`lib/shopstock.js`](#lib-shopstock-js), [`lib/trades.js`](#lib-trades-js), [`lib/worlditems.js`](#lib-worlditems-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/gamefiles.js`](#lib-gamefiles-js), [`lib/panel.js`](#lib-panel-js), [`lib/dens.js`](#lib-dens-js), [`lib/customitems.js`](#lib-customitems-js)
 - **Def packs** 1000 (items), 1003 (animals), 1011 (rooms), 1025 (NPCs), 1030 (den items), 1036 (emoticons), 1038 (generic lists), 1040 (den types), 1042 (achievements), 1046 (pets), 1047 (parties), 1049 (name tag badges), 1051 (currency exchange), 1054 (diamond shop), 1057 (special animals), 1061 (Adopt-A-Pet), 1062 (pet food), 1063 (pet toys), 1064 (world items), 10230 (English text)
 - **Game files** `defPacks/`
 
@@ -221,7 +221,7 @@ every account is held in memory while the server runs. game code changes those o
 
 - 1052 lines
 - **Uses** [`lib/defpacks.js`](#lib-defpacks-js), [`lib/names.js`](#lib-names-js)
-- **Used by** [`server.js`](#server-js), [`lib/achievements.js`](#lib-achievements-js), [`lib/admin.js`](#lib-admin-js), [`lib/adopt.js`](#lib-adopt-js), [`lib/adventures.js`](#lib-adventures-js), [`lib/avatars.js`](#lib-avatars-js), [`lib/bans.js`](#lib-bans-js), [`lib/buddies.js`](#lib-buddies-js), [`lib/chatlog.js`](#lib-chatlog-js), [`lib/colours.js`](#lib-colours-js), [`lib/commands.js`](#lib-commands-js), [`lib/customitems.js`](#lib-customitems-js), [`lib/devices.js`](#lib-devices-js), [`lib/discord.js`](#lib-discord-js), [`lib/discordbot.js`](#lib-discordbot-js), [`lib/disguises.js`](#lib-disguises-js), [`lib/ecards.js`](#lib-ecards-js), [`lib/erase.js`](#lib-erase-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/items.js`](#lib-items-js), [`lib/manage.js`](#lib-manage-js), [`lib/minigames.js`](#lib-minigames-js), [`lib/moderation.js`](#lib-moderation-js), [`lib/modlog.js`](#lib-modlog-js), [`lib/modnotes.js`](#lib-modnotes-js), [`lib/parties.js`](#lib-parties-js), [`lib/pets.js`](#lib-pets-js), [`lib/playeritems.js`](#lib-playeritems-js), [`lib/reports.js`](#lib-reports-js), [`lib/retention.js`](#lib-retention-js), [`lib/signup.js`](#lib-signup-js), [`lib/staff.js`](#lib-staff-js), [`lib/stats.js`](#lib-stats-js), [`lib/support.js`](#lib-support-js), [`lib/trades.js`](#lib-trades-js), [`lib/walls.js`](#lib-walls-js), [`lib/wearrules.js`](#lib-wearrules-js), [`lib/worlditems.js`](#lib-worlditems-js), [`lib/roles.js`](#lib-roles-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/tints.js`](#lib-tints-js), [`lib/creatorlimits.js`](#lib-creatorlimits-js), [`lib/masterpieces.js`](#lib-masterpieces-js), [`lib/panel.js`](#lib-panel-js), [`lib/denprefabs.js`](#lib-denprefabs-js), [`lib/dens.js`](#lib-dens-js)
+- **Used by** [`server.js`](#server-js), [`lib/achievements.js`](#lib-achievements-js), [`lib/admin.js`](#lib-admin-js), [`lib/adopt.js`](#lib-adopt-js), [`lib/adventures.js`](#lib-adventures-js), [`lib/avatars.js`](#lib-avatars-js), [`lib/bans.js`](#lib-bans-js), [`lib/buddies.js`](#lib-buddies-js), [`lib/chatlog.js`](#lib-chatlog-js), [`lib/colours.js`](#lib-colours-js), [`lib/commands.js`](#lib-commands-js), [`lib/devices.js`](#lib-devices-js), [`lib/discord.js`](#lib-discord-js), [`lib/discordbot.js`](#lib-discordbot-js), [`lib/disguises.js`](#lib-disguises-js), [`lib/ecards.js`](#lib-ecards-js), [`lib/erase.js`](#lib-erase-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/items.js`](#lib-items-js), [`lib/manage.js`](#lib-manage-js), [`lib/minigames.js`](#lib-minigames-js), [`lib/moderation.js`](#lib-moderation-js), [`lib/modlog.js`](#lib-modlog-js), [`lib/modnotes.js`](#lib-modnotes-js), [`lib/parties.js`](#lib-parties-js), [`lib/pets.js`](#lib-pets-js), [`lib/playeritems.js`](#lib-playeritems-js), [`lib/reports.js`](#lib-reports-js), [`lib/retention.js`](#lib-retention-js), [`lib/signup.js`](#lib-signup-js), [`lib/staff.js`](#lib-staff-js), [`lib/stats.js`](#lib-stats-js), [`lib/support.js`](#lib-support-js), [`lib/trades.js`](#lib-trades-js), [`lib/walls.js`](#lib-walls-js), [`lib/wearrules.js`](#lib-wearrules-js), [`lib/worlditems.js`](#lib-worlditems-js), [`lib/roles.js`](#lib-roles-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/tints.js`](#lib-tints-js), [`lib/creatorlimits.js`](#lib-creatorlimits-js), [`lib/masterpieces.js`](#lib-masterpieces-js), [`lib/panel.js`](#lib-panel-js), [`lib/denprefabs.js`](#lib-denprefabs-js), [`lib/dens.js`](#lib-dens-js), [`lib/customitems.js`](#lib-customitems-js)
 - **Data** `data/backups`
 
 ### lib/signup.js
@@ -569,8 +569,8 @@ the official game rewrote an item's window each time the item came back, and lib
 
 backs the item finder page (/shop): look any item up by id or name and put it straight into an account, since in-game shops only stock a slice each.
 
-- 314 lines
-- **Uses** [`lib/accounts.js`](#lib-accounts-js), [`lib/bans.js`](#lib-bans-js), [`lib/captcha.js`](#lib-captcha-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/devices.js`](#lib-devices-js), [`lib/roles.js`](#lib-roles-js), [`lib/dens.js`](#lib-dens-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/customitems.js`](#lib-customitems-js), [`lib/limits.js`](#lib-limits-js), [`lib/world.js`](#lib-world-js), [`lib/player.js`](#lib-player-js)
+- 377 lines
+- **Uses** [`lib/accounts.js`](#lib-accounts-js), [`lib/bans.js`](#lib-bans-js), [`lib/captcha.js`](#lib-captcha-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/devices.js`](#lib-devices-js), [`lib/roles.js`](#lib-roles-js), [`lib/dens.js`](#lib-dens-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/customitems.js`](#lib-customitems-js), [`lib/limits.js`](#lib-limits-js), [`lib/world.js`](#lib-world-js), [`lib/outfitcodes.js`](#lib-outfitcodes-js), [`lib/player.js`](#lib-player-js)
 - **Used by** [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js)
 
 ### lib/customitems.js
@@ -581,10 +581,10 @@ items the staff make while the server runs, with no restart of the server or of 
 
 an item can be taken out of the shop, renamed and repriced, or deleted: then it goes from every inventory too (lib/itemcontrol.js).
 
-- 466 lines
-- **Uses** [`lib/accounts.js`](#lib-accounts-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/limits.js`](#lib-limits-js)
-- **Used by** [`server.js`](#server-js), [`lib/admin.js`](#lib-admin-js), [`lib/commands.js`](#lib-commands-js), [`lib/custommusic.js`](#lib-custommusic-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/manage.js`](#lib-manage-js), [`lib/playeritems.js`](#lib-playeritems-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/itemart.js`](#lib-itemart-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js)
-- **Game files** `audio/`
+- 522 lines
+- **Uses** [`lib/accounts.js`](#lib-accounts-js), [`lib/cdn.js`](#lib-cdn-js), [`lib/defpacks.js`](#lib-defpacks-js), [`lib/limits.js`](#lib-limits-js)
+- **Used by** [`server.js`](#server-js), [`lib/admin.js`](#lib-admin-js), [`lib/commands.js`](#lib-commands-js), [`lib/custommusic.js`](#lib-custommusic-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/manage.js`](#lib-manage-js), [`lib/playeritems.js`](#lib-playeritems-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/itemart.js`](#lib-itemart-js)
+- **Game files** `audio/`, `items/`
 
 ### lib/playeritems.js
 
@@ -592,9 +592,9 @@ an item can be taken out of the shop, renamed and repriced, or deleted: then it 
 
 items players make for themselves (the patched client's Item Maker, in the settings menu): one of the game's clothing pieces or den items under a name of their own, as staff make them (lib/customitems.js), but free, never in a shop, and in the item finder for its maker only. the maker is given one at once; it can be worn, placed and traded like any other. a maker may delete their own; staff may delete anyone's (the moderator panel).
 
-"xcm" from the client: ["info"], ["make", kind, baseId, name], ["rename", kind, id, name], ["look", kind, id, "sticker" | "texture"] (how one with a picture is worn) or ["delete", kind, id]. its picture is uploaded over HTTP (lib/itemart.js, POST /api/itemart). the answer is always "xcm" [ok 1 | 0, what to say, left today, left in all, the maker's items as JSON]
+"xcm" from the client: ["info"], ["make", kind, baseId, name], ["rename", kind, id, name], ["look", kind, id, a look of lib/customitems.js LOOKS_BY_USE] (how one with a picture is worn) or ["delete", kind, id]. its picture is uploaded over HTTP (lib/itemart.js, POST /api/itemart). the answer is always "xcm" [ok 1 | 0, what to say, left today, left in all, the maker's items as JSON]
 
-- 307 lines
+- 315 lines
 - **Uses** [`lib/accounts.js`](#lib-accounts-js), [`lib/creatorlimits.js`](#lib-creatorlimits-js), [`lib/customitems.js`](#lib-customitems-js), [`lib/dens.js`](#lib-dens-js), [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/modlog.js`](#lib-modlog-js), [`lib/names.js`](#lib-names-js), [`lib/player.js`](#lib-player-js), [`lib/itemart.js`](#lib-itemart-js), [`lib/limits.js`](#lib-limits-js)
 - **Used by** [`lib/manage.js`](#lib-manage-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js), [`lib/world.js`](#lib-world-js), [`lib/panel.js`](#lib-panel-js)
 
@@ -625,7 +625,7 @@ custom items' own pictures: uploaded by the item's maker (or staff), shown by th
 
 a picture is checked before it is kept: a PNG, a JPEG or a GIF by its own bytes (whatever it is called), of a sensible size, and kept without what else such files carry (a photo's EXIF, with where it was taken; PNG text; GIF comments). a BMP is made a PNG. (the pages and the game turn other kinds, and pictures too big, into a PNG before they send them.) kept as data/itemart/<kind>-<id>.<png|jpg|gif>; its version, a hash, is on the item (customItems.setArt), so a new picture is a new address.
 
-- 412 lines
+- 422 lines
 - **Uses** [`lib/customitems.js`](#lib-customitems-js), [`lib/image-moderation.js`](#lib-image-moderation-js)
 - **Used by** [`lib/itemcontrol.js`](#lib-itemcontrol-js), [`lib/manage.js`](#lib-manage-js), [`lib/playeritems.js`](#lib-playeritems-js), [`lib/modpanel.js`](#lib-modpanel-js), [`lib/http.js`](#lib-http-js)
 - **Data** `data/itemart/<kind>-<id>.<png|jpg|gif>`
@@ -962,7 +962,7 @@ an address ban is for good, and is of the address alone: the accounts that were 
 Google Cloud Vision SafeSearch detects adult and racy material.  We keep this dependency-free and use its REST API so deploying the server needs no service-account files or Google SDK in node_modules.
 
 - 53 lines
-- **Used by** [`lib/itemart.js`](#lib-itemart-js), [`lib/masterpieces.js`](#lib-masterpieces-js)
+- **Used by** [`lib/masterpieces.js`](#lib-masterpieces-js), [`lib/itemart.js`](#lib-itemart-js)
 
 ### lib/modnotes.js
 
@@ -1091,6 +1091,13 @@ a prefab can be shared: it gets a code that anyone can type in to copy it to the
 - 197 lines
 - **Uses** [`lib/accounts.js`](#lib-accounts-js)
 - **Used by** [`server.js`](#server-js), [`lib/erase.js`](#lib-erase-js), [`lib/http.js`](#lib-http-js), [`lib/dens.js`](#lib-dens-js)
+
+### lib/outfitcodes.js
+
+outfit codes from the Burrow outfit tool (github.com/sharkinthedark/burrow-outfit-tool): base64 of JSON {a: animal, c: [3 colours], p: pattern, e: eyes, w: [[item id, [four palette indexes]], ...]}. the item ids are the game's clothing def ids, and the four indexes pack into the game's colour id (the tool's pack(): one byte each, the first highest). items the tool's players made for themselves have ids that are not numbers.
+
+- 55 lines
+- **Used by** [`lib/admin.js`](#lib-admin-js)
 
 ## Data files in lib/
 

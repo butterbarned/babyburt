@@ -2492,8 +2492,9 @@
               await refresh();
             }), " ",
             button("Picture", () => pickPicture(item)), " ",
-            ...(item.artUrl && item.kind === "clothing" ? [button(item.artMode === "texture" ? "Worn: texture" : "Worn: sticker", async () => {
-              const result = await api("items", {action: "look", kind: item.kind, id: item.id, look: item.artMode === "texture" ? "sticker" : "texture"});
+            // the looks its kind of item may have (lib/customitems.js), in turn
+            ...(item.artUrl && (item.looks || []).length > 1 ? [button(`Look: ${item.artMode}`, async () => {
+              const result = await api("items", {action: "look", kind: item.kind, id: item.id, look: item.looks[(item.looks.indexOf(item.artMode) + 1) % item.looks.length]});
               setStatus($("item-status"), said(result), !result.ok);
               await refresh();
             }), " "] : []),
@@ -2531,8 +2532,12 @@
       // enough. any picture this browser can open will do (WebP, AVIF, BMP...).
       // null when it cannot be read at all.
       const PICTURE_SIDE = 512;
+      const PICTURE_TALL = 768; // a wallpaper's (it may have the "segments" look) may be this tall
+      const PICTURE_WIDE = 1024; // and this wide
       const PICTURE_BYTES = 300 * 1024;
-      const preparePicture = async file => {
+      const preparePicture = async (file, tall = false) => {
+        const maxHeight = tall ? PICTURE_TALL : PICTURE_SIDE;
+        const maxWidth = tall ? PICTURE_WIDE : PICTURE_SIDE;
         const kept = ["image/png", "image/jpeg", "image/gif"].includes(file.type);
         let image = null;
         try {
@@ -2541,12 +2546,13 @@
         catch (err) {
           return kept ? file : null;
         }
-        if (kept && file.size <= PICTURE_BYTES && image.width <= PICTURE_SIDE && image.height <= PICTURE_SIDE) {
+        if (kept && file.size <= PICTURE_BYTES && image.width <= maxWidth && image.height <= maxHeight) {
           image.close();
           return file;
         }
         for (const side of [PICTURE_SIDE, 384, 256, 128]) {
-          const scale = Math.min(1, side / image.width, side / image.height);
+          // shrunk evenly till it fits, smaller each time round for the file's size
+          const scale = Math.min(1, side * maxWidth / PICTURE_SIDE / image.width, side * maxHeight / PICTURE_SIDE / image.height);
           const canvas = document.createElement("canvas");
           canvas.width = Math.max(1, Math.round(image.width * scale));
           canvas.height = Math.max(1, Math.round(image.height * scale));
@@ -2562,7 +2568,7 @@
       };
 
       const sendPicture = async (item, chosen) => {
-        const file = chosen ? await preparePicture(chosen) : null;
+        const file = chosen ? await preparePicture(chosen, (item.looks || []).includes("segments")) : null;
         if (chosen && !file) {
           setStatus($("item-status"), "That picture could not be read. Try a PNG, JPEG or GIF.", true);
           return;
