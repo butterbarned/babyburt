@@ -100,14 +100,26 @@ package gui
 
       public function destroy() : void
       {
-         close();
-         closeDetails();
          for each(var _loc1_:MovieClip in [_tabDn,_tabUp])
          {
             if(_loc1_ && _loc1_.parent)
             {
                _loc1_.parent.removeChild(_loc1_);
             }
+         }
+         try
+         {
+            close();
+         }
+         catch(e:Error)
+         {
+         }
+         try
+         {
+            closeDetails();
+         }
+         catch(e:Error)
+         {
          }
       }
 
