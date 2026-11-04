@@ -138,6 +138,83 @@ package den
          gMainFrame.server.setXtObject_Str("ds",_loc4_);
       }
       
+      // den prefabs and colours (this server): the answers go to
+      // prefabCallback (the whole message), see gui.DenPrefabs
+      public static var prefabCallback:Function;
+
+      private static function prefabText(param1:String) : String
+      {
+         return String(param1).split("%").join("");
+      }
+
+      public static function requestPrefabList() : void
+      {
+         gMainFrame.server.setXtObject_Str("dpl",[]);
+      }
+
+      public static function requestPrefab(param1:String) : void
+      {
+         gMainFrame.server.setXtObject_Str("dpo",[param1]);
+      }
+
+      // param3: [[def, version, x, y, flip]...]
+      public static function requestPrefabSave(param1:String, param2:String, param3:Array) : void
+      {
+         var _loc4_:Array = [prefabText(param1),param2,param3.length];
+         for each(var _loc5_:Array in param3)
+         {
+            _loc4_.push(_loc5_[0],_loc5_[1],_loc5_[2],_loc5_[3],_loc5_[4]);
+         }
+         gMainFrame.server.setXtObject_Str("dps",_loc4_);
+      }
+
+      public static function requestPrefabRename(param1:String, param2:String) : void
+      {
+         gMainFrame.server.setXtObject_Str("dpn",[param1,prefabText(param2)]);
+      }
+
+      public static function requestPrefabDelete(param1:String) : void
+      {
+         gMainFrame.server.setXtObject_Str("dpd",[param1]);
+      }
+
+      public static function requestPrefabShare(param1:String) : void
+      {
+         gMainFrame.server.setXtObject_Str("dpx",[param1]);
+      }
+
+      public static function requestPrefabImport(param1:String) : void
+      {
+         gMainFrame.server.setXtObject_Str("dpi",[prefabText(param1)]);
+      }
+
+      public static function requestPrefabGive(param1:String) : void
+      {
+         gMainFrame.server.setXtObject_Str("dpg",[param1]);
+      }
+
+      public static function requestPrefabDuplicate(param1:String) : void
+      {
+         gMainFrame.server.setXtObject_Str("dpc",[param1]);
+      }
+
+      // den items being duplicated: those of [[def, version, ...]...] not
+      // had free are given
+      public static function requestItemsGive(param1:Array) : void
+      {
+         var _loc2_:Array = [param1.length];
+         for each(var _loc3_:Array in param1)
+         {
+            _loc2_.push(_loc3_[0],_loc3_[1]);
+         }
+         gMainFrame.server.setXtObject_Str("ddg",_loc2_);
+      }
+
+      public static function requestItemColour(param1:int, param2:int) : void
+      {
+         gMainFrame.server.setXtObject_Str("dvc",[param1,param2]);
+      }
+
       public static function requestDenItems(param1:Function = null) : void
       {
          _denItemsCallback = param1;
@@ -331,6 +408,24 @@ package den
                break;
             case "dEc":
                denEcoConsumerResponse(_loc2_);
+               break;
+            // den prefabs and colours (this server: lib/dens.js), for the
+            // den editor (gui.DenPrefabs)
+            case "dpl":
+            case "dpo":
+            case "dps":
+            case "dpn":
+            case "dpd":
+            case "dpx":
+            case "dpi":
+            case "dpg":
+            case "ddg":
+            case "dpc":
+            case "dvc":
+               if(prefabCallback != null)
+               {
+                  prefabCallback(_loc2_);
+               }
                break;
             default:
                ShopToSellXtCommManager.handleXtReply(param1);

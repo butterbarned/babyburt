@@ -135,11 +135,11 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.PredictiveTextManager
 
-- `swf-src/PredictiveTextManager.as`, 1002 lines
+- `swf-src/PredictiveTextManager.as`, 1008 lines
 - original: `tools/decompiled/gui/PredictiveTextManager.as`
-- **changed:** `init`, `isAllowedFreeChat`, `onTextFieldChanged`
+- **changed:** `init`, `isAllowedFreeChat`, `onTextFieldChanged`, `onKeyDown`
 
-> free typing in the chat bar (0) and on Jammer Walls (2), whose posts go through each reader's own filter (playerWall.PostMessage).
+> free typing in the chat bar (0) and on Jammer Walls (2), whose posts go through each reader's own filter (playerWall.PostMessage). shift, ctrl, alt, caps lock and the windows keys type nothing (shift is held to pick den items), so they make no sound
 
 ### avatar.UserCommXtCommManager
 
@@ -281,9 +281,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.DenEditor
 
-- `swf-src/DenEditor.as`, 1989 lines
+- `swf-src/DenEditor.as`, 2218 lines
 - original: `tools/decompiled/gui/DenEditor.as`
-- **changed:** `init`
+- **changed:** `init`, `destroy`, `showDenEditor`, `setupTabsVisibilityAndPosition`, `resetWindowsAndTabsToNormal`, `drawItemWindows`, `scrollBtnHandler`, `toggleBottomHudVisibility`, `toggleEditorHud`, `tabBtnHandler`, `onSearchTextInput`
+- **added:** `placePrefabTab`, `onPrefabTab`, `onPrefabTabOver`, `hudTop`, `placePrefabItems`, `onPrefabReply`
+
+> this server's additions: the layers panel (with its pick bar) and the prefab tab stays open (its items were just added) ---- the prefab tab and the layers panel (this server) ---- the top of the den editor's tabs, on the screen: the layers panel
 
 ### gui.TradeManager
 
@@ -512,12 +515,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### den.DenXtCommManager
 
-- `swf-src/DenXtCommManager.as`, 1552 lines
+- `swf-src/DenXtCommManager.as`, 1647 lines
 - original: `tools/decompiled/den/DenXtCommManager.as`
-- **changed:** `denItemsResponse`, `denRoomCount`, `denRoomResponse`, `relocalizeDenRooms`, `denStateResponse`, `denPhantomResponse`, `denItemDefsResponse`, `relocalizeDenItems`, `enviroItems`
-- **added:** `addDenItemDefs`, `addDenItemDef`
+- **changed:** `handleXtReply`, `denItemsResponse`, `denRoomCount`, `denRoomResponse`, `relocalizeDenRooms`, `denStateResponse`, `denPhantomResponse`, `denItemDefsResponse`, `relocalizeDenItems`, `enviroItems`
+- **added:** `prefabText`, `requestPrefabList`, `requestPrefab`, `requestPrefabSave`, `requestPrefabRename`, `requestPrefabDelete`, `requestPrefabShare`, `requestPrefabImport`, `requestPrefabGive`, `requestPrefabDuplicate`, `requestItemsGive`, `requestItemColour`, `addDenItemDefs`, `addDenItemDef`
 
-> Burrow: as ItemXtCommManager.addItemDefs, for den items ("xdi").
+> den prefabs and colours (this server): the answers go to prefabCallback (the whole message), see gui.DenPrefabs param3: [[def, version, x, y, flip]...] den items being duplicated: those of [[def, version, ...]...] not
 
 ### gui.ActionManager
 
@@ -552,12 +555,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### loader.DenItemHelper
 
-- `swf-src/DenItemHelper.as`, 832 lines
+- `swf-src/DenItemHelper.as`, 838 lines
 - original: `tools/decompiled/loader/DenItemHelper.as`
 - **changed:** `get sortOffset`, `init`, `initDS`, `initGeneric`, `loadUniqueImage`, `rebuildMannequinView`
 - **added:** `loadCustomArt`, `fetchArtBytes`, `customArtBytesReceived`, `onCustomArtLoaded`, `onCustomArtFailed`, `loadBaseArt`
 
-> The low two flip bits are used by the original client.  Den editing also uses bits 2-3 as an explicit stacking choice: 1 = behind and 2 = in front.  A very large offset lets that choice win over the normal y-position depth sort without visibly moving the item.
+> The low two flip bits are used by the original client.  Den editing also uses bits 2-3 as the item's player depth: 1 = always behind players and 2 = always in front (a very large offset wins over the normal y-position depth sort without visibly moving the item), and
 
 ### den.DenItem
 
@@ -567,13 +570,31 @@ For each class: the methods changed and added against the untouched original (co
 
 > a custom item's picture (DenItemHelper.loadCustomArt) is a Bitmap, not a MovieClip: no "icon" frame, and nothing to tell the mouse
 
+### gui.DenUi
+
+- `swf-src/DenUi.as`, 450 lines
+
+> the look of this server's den editor additions (the layers panel, the pick bar, prefabs), drawn to match the game's own den editor (HUDAssets' DenEditorAsset and DenAudioPopupSkin): a wooden frame, a cream inside, a gold title strip, brown words in the game's font, and
+
+### gui.DenLayersPanel
+
+- `swf-src/DenLayersPanel.as`, 1638 lines
+
+> the den editor's layers panel (this server): every item in the den, front first, in four bands (above players, by position, below players, on the floor), groups as rows that open to their items. a row is clicked to choose its item (even one that is locked, hidden or
+
+### gui.DenPrefabs
+
+- `swf-src/DenPrefabs.as`, 1309 lines
+
+> the den editor's prefab tab (this server): items laid out together, saved from the den (the pick bar's "Save prefab", or this tab's first tile), and put down again as one group in the middle of the screen. what the player has none of free is added to their den items first, free,
+
 ### room.DenItemHolder
 
-- `tools/decompiled/room/DenItemHolder.as`, 2150 lines
+- `tools/decompiled/room/DenItemHolder.as`, 2889 lines
 - original: `tools/decompiled/room/DenItemHolder.as`
 - no method changed
 
-> Groups and locks (this server). Both are kept in the item's saved `flipped` value, which the server stores as it is: bits 0-1 are the game's flips, 2-3 an old stacking choice, bit 4 locked, bits 8-15 the group (0 for none). Shift+click picks items; "Group" joins the
+> Groups, locks, player depth and layer order (this server). All are kept in the item's saved `flipped` value, which the server stores as bits 0-1   the game's flips bits 2-3   player depth: 0 by position (as the game draws), 1 always
 
 
 ## Replaced as P-code
