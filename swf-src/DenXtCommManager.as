@@ -147,6 +147,32 @@ package den
          return String(param1).split("%").join("");
       }
 
+      // the content shop (this server: lib/contentshop.js): the answers go
+      // to contentCallback (the whole message), see gui.DenContentShop
+      public static var contentCallback:Function;
+
+      public static function requestContentCatalog() : void
+      {
+         gMainFrame.server.setXtObject_Str("dcc",[]);
+      }
+
+      // [collection id, category id, words, page, items a page]
+      public static function requestContentItems(param1:String, param2:String, param3:String, param4:int, param5:int) : void
+      {
+         gMainFrame.server.setXtObject_Str("dcq",[prefabText(param1),prefabText(param2),prefabText(param3),param4,param5]);
+      }
+
+      // [[defId, quantity]...]
+      public static function requestContentBuy(param1:Array) : void
+      {
+         var _loc2_:Array = [param1.length];
+         for each(var _loc3_:Array in param1)
+         {
+            _loc2_.push(_loc3_[0],_loc3_[1]);
+         }
+         gMainFrame.server.setXtObject_Str("dcb",_loc2_);
+      }
+
       public static function requestPrefabList() : void
       {
          gMainFrame.server.setXtObject_Str("dpl",[]);
@@ -425,6 +451,16 @@ package den
                if(prefabCallback != null)
                {
                   prefabCallback(_loc2_);
+               }
+               break;
+            // the content shop (this server: lib/contentshop.js), for
+            // gui.DenContentShop
+            case "dcc":
+            case "dcq":
+            case "dcb":
+               if(contentCallback != null)
+               {
+                  contentCallback(_loc2_);
                }
                break;
             default:

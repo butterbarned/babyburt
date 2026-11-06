@@ -281,12 +281,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.DenEditor
 
-- `swf-src/DenEditor.as`, 2254 lines
+- `swf-src/DenEditor.as`, 2594 lines
 - original: `tools/decompiled/gui/DenEditor.as`
-- **changed:** `init`, `destroy`, `showDenEditor`, `setupTabsVisibilityAndPosition`, `resetWindowsAndTabsToNormal`, `drawItemWindows`, `scrollBtnHandler`, `toggleBottomHudVisibility`, `toggleEditorHud`, `tabBtnHandler`, `onSearchTextInput`
-- **added:** `placePrefabTab`, `onPrefabTab`, `onPrefabTabOver`, `hudTop`, `markPlaced`, `placePrefabItems`, `onPrefabReply`
+- **changed:** `init`, `destroy`, `showDenEditor`, `setupPlayerItems`, `setupTabsVisibilityAndPosition`, `resetWindowsAndTabsToNormal`, `drawItemWindows`, `scrollBtnHandler`, `toggleBottomHudVisibility`, `toggleEditorHud`, `setupTabs`, `tabBtnHandler`, `onSearchTextInput`
+- **added:** `placePrefabTab`, `isContentItem`, `splitContentItems`, `makeContentTabs`, `shopTabIcon`, `onContentTab`, `showContentTab`, `leaveContentTab`, `onContentTabOver`, `makeShopContentBtn`, `showShopContentBtn`, `onShopContentBtn`, `onShopContentBtnOver`, `onShopContentBtnOut`, `onContentBought`, `onPrefabTab`, `onPrefabTabOver`, `hudTop`, `markPlaced`, `placePrefabItems`, `onPrefabReply`
 
-> this server's additions: the layers panel (with its pick bar) and this server's parts (the layers panel, prefabs) go first, each on its own: whatever goes wrong in them, the editor itself is still taken away below (or it would stay up in the next room, and save
+> this server's additions: the layers panel (with its pick bar) and the content shop (gui.DenContentShop): its button at the top right, and the Custom tab (to the right of the prefab tab) with the player's content shop items, which the other tabs leave out
 
 ### gui.TradeManager
 
@@ -515,12 +515,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### den.DenXtCommManager
 
-- `swf-src/DenXtCommManager.as`, 1647 lines
+- `swf-src/DenXtCommManager.as`, 1683 lines
 - original: `tools/decompiled/den/DenXtCommManager.as`
 - **changed:** `handleXtReply`, `denItemsResponse`, `denRoomCount`, `denRoomResponse`, `relocalizeDenRooms`, `denStateResponse`, `denPhantomResponse`, `denItemDefsResponse`, `relocalizeDenItems`, `enviroItems`
-- **added:** `prefabText`, `requestPrefabList`, `requestPrefab`, `requestPrefabSave`, `requestPrefabRename`, `requestPrefabDelete`, `requestPrefabShare`, `requestPrefabImport`, `requestPrefabGive`, `requestPrefabDuplicate`, `requestItemsGive`, `requestItemColour`, `addDenItemDefs`, `addDenItemDef`
+- **added:** `prefabText`, `requestContentCatalog`, `requestContentItems`, `requestContentBuy`, `requestPrefabList`, `requestPrefab`, `requestPrefabSave`, `requestPrefabRename`, `requestPrefabDelete`, `requestPrefabShare`, `requestPrefabImport`, `requestPrefabGive`, `requestPrefabDuplicate`, `requestItemsGive`, `requestItemColour`, `addDenItemDefs`, `addDenItemDef`
 
-> den prefabs and colours (this server): the answers go to prefabCallback (the whole message), see gui.DenPrefabs param3: [[def, version, x, y, flip]...] den items being duplicated: those of [[def, version, ...]...] not
+> den prefabs and colours (this server): the answers go to prefabCallback (the whole message), see gui.DenPrefabs the content shop (this server: lib/contentshop.js): the answers go to contentCallback (the whole message), see gui.DenContentShop
 
 ### gui.ActionManager
 
@@ -555,7 +555,7 @@ For each class: the methods changed and added against the untouched original (co
 
 ### loader.DenItemHelper
 
-- `swf-src/DenItemHelper.as`, 1356 lines
+- `swf-src/DenItemHelper.as`, 1357 lines
 - original: `tools/decompiled/loader/DenItemHelper.as`
 - **changed:** `get sortOffset`, `init`, `initDS`, `initGeneric`, `destroy`, `loadUniqueImage`, `rebuildMannequinView`, `onBytesLoaded`
 - **added:** `loadCustomArt`, `fetchArtBytes`, `customArtBytesReceived`, `onCustomArtLoaded`, `onCustomArtFailed`, `loadBaseArt`, `finishLoad`, `onThemeTileBytes`, `onThemeTileFailed`, `onThemeTileLoaded`, `themeTexture`, `floorMatrix`, `wallMatrix`, `wallRuns`, `stackRuns`, `pieceRuns`, `footAt`, `grey`, `themeShade`
@@ -588,9 +588,15 @@ For each class: the methods changed and added against the untouched original (co
 
 > the den editor's prefab tab (this server): items laid out together, saved from the den (the pick bar's "Save prefab", or this tab's first tile), and put down again as one group in the middle of the screen. what the player has none of free is added to their den items first, free,
 
+### gui.DenContentShop
+
+- `swf-src/DenContentShop.as`, 1424 lines
+
+> the content shop (this server): its own den items (lib/contentpacks.js), opened from the den editor's top right. a game-styled frame laid out like a web shop: collections down the left, a search box, category chips, a page of item cards, a details box, and a cart that is bought
+
 ### room.DenItemHolder
 
-- `tools/decompiled/room/DenItemHolder.as`, 3042 lines
+- `tools/decompiled/room/DenItemHolder.as`, 3128 lines
 - original: `tools/decompiled/room/DenItemHolder.as`
 - no method changed
 

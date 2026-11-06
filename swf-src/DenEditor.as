@@ -14,11 +14,16 @@ package gui
    import den.DenMannequinInventory;
    import den.DenStateItem;
    import den.DenXtCommManager;
+   import flash.display.DisplayObject;
+   import flash.display.DisplayObjectContainer;
    import flash.display.MovieClip;
+   import flash.display.Shape;
    import flash.display.Sprite;
    import flash.events.Event;
    import flash.events.MouseEvent;
    import flash.events.TimerEvent;
+   import flash.filters.GlowFilter;
+   import flash.geom.ColorTransform;
    import flash.geom.Point;
    import flash.geom.Rectangle;
    import flash.text.TextField;
@@ -150,6 +155,24 @@ package gui
 
       private var _prefabs:DenPrefabs;
 
+      // the content shop (gui.DenContentShop): its button at the top right,
+      // and the Custom tab (to the right of the prefab tab) with the
+      // player's content shop items, which the other tabs leave out
+      private var _contentShop:DenContentShop;
+
+      private var _shopContentBtn:Sprite;
+
+      private var _contentTabDn:MovieClip;
+
+      private var _contentTabUp:MovieClip;
+
+      private var _contentOpen:Boolean;
+
+      private var _contentItems:DenItemCollection;
+
+      // every den item but the content shop's: what the first tab shows
+      private var _normalShown:DenItemCollection;
+
       private var _searchBarX:Number = NaN;
 
       
@@ -180,6 +203,15 @@ package gui
          _layers = new DenLayersPanel(_denItemHolder,_guiLayer,hudTop,_prefabs.saveNew,_prefabs.duplicateItems);
          _denItemHolder.onDuplicate = _prefabs.duplicateItems;
          DenXtCommManager.prefabCallback = onPrefabReply;
+         try
+         {
+            makeContentTabs();
+            _contentShop = new DenContentShop(_guiLayer,onContentBought);
+            makeShopContentBtn();
+         }
+         catch(e:Error)
+         {
+         }
          setupTabsVisibilityAndPosition();
          addListeners();
          _layers.show(_denEditor.bottomHud.visible);
@@ -217,6 +249,22 @@ package gui
          {
          }
          _prefabs = null;
+         try
+         {
+            if(_contentShop)
+            {
+               _contentShop.destroy();
+            }
+            if(_shopContentBtn && _shopContentBtn.parent)
+            {
+               _shopContentBtn.parent.removeChild(_shopContentBtn);
+            }
+         }
+         catch(e:Error)
+         {
+         }
+         _contentShop = null;
+         _shopContentBtn = null;
          removeListeners();
          _guiLayer.removeChild(_denEditor);
          if(_denLockPopup)
@@ -552,11 +600,12 @@ package gui
                }
                _loc2_++;
             }
-            _themeItems = Utility.sortItems(_allNormalDenItems,2,3,-1,-1,true) as DenItemCollection;
-            _toyItems = Utility.sortItems(_allNormalDenItems,6,-1,-1,-1,true) as DenItemCollection;
-            _plantItems = Utility.sortItems(_allNormalDenItems,5,-1,-1,-1,true) as DenItemCollection;
-            _furnitureItems = Utility.sortItems(_allNormalDenItems,0,-1,-1,-1,true) as DenItemCollection;
-            _wallItems = Utility.sortItems(_allNormalDenItems,1,-1,-1,-1,true) as DenItemCollection;
+            splitContentItems();
+            _themeItems = Utility.sortItems(_normalShown,2,3,-1,-1,true) as DenItemCollection;
+            _toyItems = Utility.sortItems(_normalShown,6,-1,-1,-1,true) as DenItemCollection;
+            _plantItems = Utility.sortItems(_normalShown,5,-1,-1,-1,true) as DenItemCollection;
+            _furnitureItems = Utility.sortItems(_normalShown,0,-1,-1,-1,true) as DenItemCollection;
+            _wallItems = Utility.sortItems(_normalShown,1,-1,-1,-1,true) as DenItemCollection;
             setupTabsVisibilityAndPosition();
             _loc3_ = null;
             if(_denEditor.normBtnUp.visible)
@@ -598,6 +647,8 @@ package gui
             _denEditor.themeBtnUp.visible = false;
             _denEditor.petBtnUp.visible = false;
             _allNormalDenItems = new DenItemCollection();
+            _normalShown = new DenItemCollection();
+            _contentItems = new DenItemCollection();
             _themeItems = new DenItemCollection();
             _audioItems = new DenItemCollection();
             _plantItems = new DenItemCollection();
@@ -690,12 +741,21 @@ package gui
          _prefabs.tabDn.y = _denEditor.normBtnDn.y;
          _prefabs.tabUp.x = _prefabs.tabDn.x;
          _prefabs.tabUp.y = _prefabs.tabDn.y;
+         var _loc6_:MovieClip = _prefabs.tabDn;
+         if(_contentTabDn != null)
+         {
+            _contentTabDn.x = _denEditor.normBtnDn.x + 44.2 * (param1 + 1);
+            _contentTabDn.y = _denEditor.normBtnDn.y;
+            _contentTabUp.x = _contentTabDn.x;
+            _contentTabUp.y = _contentTabDn.y;
+            _loc6_ = _contentTabDn;
+         }
          var _loc2_:Object = _denEditor.searchBar;
          if(isNaN(_searchBarX))
          {
             _searchBarX = _loc2_.x;
          }
-         var _loc3_:Rectangle = _prefabs.tabDn.getBounds(_loc2_.parent);
+         var _loc3_:Rectangle = _loc6_.getBounds(_loc2_.parent);
          var _loc4_:Rectangle = _loc2_.getBounds(_loc2_.parent);
          var _loc5_:Number = _loc4_.left - _loc2_.x;
          _loc2_.x = Math.max(_searchBarX,_loc3_.right + 6 - _loc5_);
@@ -724,6 +784,14 @@ package gui
             setupPlayerItems();
             return;
          }
+         if(_contentOpen)
+         {
+            // the Custom tab stays open (items were just bought)
+            clearItemWindows();
+            setupPlayerItems();
+            showContentTab();
+            return;
+         }
          _denEditor.normBtnUp.visible = true;
          _denEditor.themeBtnUp.visible = false;
          _denEditor.petBtnUp.visible = false;
@@ -731,9 +799,9 @@ package gui
          _denEditor.plantBtnUp.visible = false;
          _denEditor.furnitureBtnUp.visible = false;
          _denEditor.wallBtnUp.visible = false;
-         if(_allNormalDenItems && _allNormalDenItems.length > 0)
+         if(_normalShown)
          {
-            _currItems = _allNormalDenItems;
+            _currItems = _normalShown;
          }
          clearItemWindows();
          setupPlayerItems();
@@ -828,6 +896,7 @@ package gui
          _denEditor.bottomHud.visible = !_denEditor.bottomHud.visible;
          _mainHud.visible = !_denEditor.bottomHud.visible;
          _mainHud.furnBtn.visible = _mainHud.visible;
+         showShopContentBtn();
          if(_denEditor.bottomHud.visible)
          {
             _roomMgr.setRoomMode(1);
@@ -865,10 +934,23 @@ package gui
             {
                _prefabs.close();
                _denEditor.normBtnUp.visible = true;
-               if(_allNormalDenItems)
+               if(_normalShown)
                {
-                  _currItems = _allNormalDenItems;
+                  _currItems = _normalShown;
                }
+            }
+            if(_contentOpen)
+            {
+               leaveContentTab();
+               _denEditor.normBtnUp.visible = true;
+               if(_normalShown)
+               {
+                  _currItems = _normalShown;
+               }
+            }
+            if(_contentShop)
+            {
+               _contentShop.close();
             }
             if(_itemWindow != null)
             {
@@ -891,6 +973,7 @@ package gui
       public function toggleEditorHud(param1:Boolean) : void
       {
          _denEditor.bottomHud.visible = param1;
+         showShopContentBtn();
          if(_layers)
          {
             _layers.show(param1 && _denItemHolder.inEditMode);
@@ -914,7 +997,7 @@ package gui
                   _denEditor.normBtnUp.visible = true;
                }
                _denEditor.itemCountTxt.text = _allNormalDenItems.length + "/" + ShopManager.maxDenItems;
-               _currItems = _allNormalDenItems;
+               _currItems = _normalShown;
                break;
             case _denEditor.themeBtnDn:
             case _denEditor.themeBtnUp:
@@ -999,6 +1082,7 @@ package gui
          {
             _prefabs.close();
          }
+         leaveContentTab();
          _denEditor.normBtnUp.visible = false;
          _denEditor.themeBtnUp.visible = false;
          _denEditor.petBtnUp.visible = false;
@@ -1304,6 +1388,261 @@ package gui
       
       // ---- the prefab tab and the layers panel (this server) ----
 
+      // ---- the content shop (this server) ----
+
+      // content shop items (lib/contentpacks.js: den ids 55000 on) go in the
+      // Custom tab only
+      private static function isContentItem(param1:DenItem) : Boolean
+      {
+         return param1 != null && param1.defId >= 55000 && param1.defId <= 65535;
+      }
+
+      private function splitContentItems() : void
+      {
+         _normalShown = new DenItemCollection();
+         _contentItems = new DenItemCollection();
+         var _loc1_:int = 0;
+         while(_allNormalDenItems && _loc1_ < _allNormalDenItems.length)
+         {
+            var _loc2_:DenItem = _allNormalDenItems.getDenItem(_loc1_);
+            if(isContentItem(_loc2_))
+            {
+               _contentItems.pushDenItem(_loc2_);
+            }
+            else
+            {
+               _normalShown.pushDenItem(_loc2_);
+            }
+            _loc1_++;
+         }
+      }
+
+      private function makeContentTabs() : void
+      {
+         try
+         {
+            _contentTabDn = GETDEFINITIONBYNAME("petBtnDown_icon");
+            _contentTabUp = GETDEFINITIONBYNAME("petBtnDown_icon");
+         }
+         catch(e:Error)
+         {
+            _contentTabDn = new MovieClip();
+            _contentTabUp = new MovieClip();
+            DenUi.woodBox(_contentTabDn.graphics,40,34,3);
+            DenUi.woodBox(_contentTabUp.graphics,40,34,3);
+         }
+         shopTabIcon(_contentTabDn,false);
+         shopTabIcon(_contentTabUp,true);
+         var _loc1_:MovieClip = _denEditor.petBtnDn;
+         var _loc2_:MovieClip = _denEditor.petBtnUp;
+         _contentTabDn.transform.matrix = _loc1_.transform.matrix;
+         _contentTabUp.transform.matrix = _loc1_.transform.matrix;
+         _contentTabUp.mouseEnabled = false;
+         _contentTabUp.mouseChildren = false;
+         _contentTabUp.visible = false;
+         // at the game's own tabs' depth, as the prefab tab
+         _loc1_.parent.addChildAt(_contentTabDn,_loc1_.parent.getChildIndex(_loc1_) + 1);
+         _loc2_.parent.addChildAt(_contentTabUp,_loc2_.parent.getChildIndex(_loc2_) + 1);
+         _contentTabDn.buttonMode = true;
+         _contentTabDn.addEventListener("mouseDown",onContentTab,false,0,true);
+         _contentTabDn.addEventListener("mouseOver",onContentTabOver,false,0,true);
+         _contentTabDn.addEventListener("mouseOut",btnOutHandler,false,0,true);
+      }
+
+      // the tab's butterfly swapped for a shop bag; the selected one cream,
+      // as the game's selected tabs are (as DenPrefabs' crates)
+      private function shopTabIcon(param1:DisplayObjectContainer, param2:Boolean) : void
+      {
+         if(param1.numChildren == 3 && param1.getChildAt(2) is DisplayObjectContainer && !(param1.getChildAt(2) is MovieClip && MovieClip(param1.getChildAt(2)).totalFrames > 1))
+         {
+            var _loc3_:DisplayObject = param1.getChildAt(2);
+            var _loc4_:Rectangle = _loc3_.getBounds(param1);
+            _loc3_.visible = false;
+            var _loc5_:Shape = new Shape();
+            DenContentShop.drawShopIcon(_loc5_.graphics,0,0,1.1);
+            _loc5_.x = _loc4_.x + _loc4_.width * 0.5;
+            _loc5_.y = _loc4_.y + _loc4_.height * 0.5 + 1;
+            param1.addChild(_loc5_);
+            if(param2)
+            {
+               param1.getChildAt(1).transform.colorTransform = new ColorTransform(0,0,0,1,0xEA,0xDC,0xB0,0);
+            }
+            return;
+         }
+         var _loc6_:int = 0;
+         while(_loc6_ < param1.numChildren)
+         {
+            var _loc7_:DisplayObjectContainer = param1.getChildAt(_loc6_) as DisplayObjectContainer;
+            if(_loc7_ != null)
+            {
+               shopTabIcon(_loc7_,param2);
+            }
+            _loc6_++;
+         }
+      }
+
+      private function onContentTab(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         if(_contentOpen)
+         {
+            return;
+         }
+         AJAudio.playSubMenuBtnClick();
+         if(_prefabs && _prefabs.isOpen)
+         {
+            _prefabs.close();
+         }
+         showContentTab();
+      }
+
+      private function showContentTab() : void
+      {
+         _denEditor.normBtnUp.visible = false;
+         _denEditor.themeBtnUp.visible = false;
+         _denEditor.petBtnUp.visible = false;
+         _denEditor.toyBtnUp.visible = false;
+         _denEditor.plantBtnUp.visible = false;
+         _denEditor.furnitureBtnUp.visible = false;
+         _denEditor.wallBtnUp.visible = false;
+         if(_contentItems == null)
+         {
+            _contentItems = new DenItemCollection();
+         }
+         _contentOpen = true;
+         if(_contentTabUp)
+         {
+            _contentTabUp.visible = true;
+         }
+         _currItems = _contentItems;
+         _numItems = _currItems.length;
+         _denEditor.itemCountTxt.text = String(_contentItems.length);
+         drawItemWindows();
+      }
+
+      private function leaveContentTab() : void
+      {
+         _contentOpen = false;
+         if(_contentTabUp)
+         {
+            _contentTabUp.visible = false;
+         }
+      }
+
+      private function onContentTabOver(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         var _loc2_:Point = param1.currentTarget.localToGlobal(new Point(param1.currentTarget.width * 0.5,-10));
+         GuiManager.toolTip.init(_guiLayer,"Custom",_loc2_.x,_loc2_.y);
+         GuiManager.toolTip.startTimer(param1);
+      }
+
+      // the shop's button: a wooden tag with a shop bag, at the top right,
+      // below whatever of the editor is there already
+      private function makeShopContentBtn() : void
+      {
+         _shopContentBtn = new Sprite();
+         _shopContentBtn.buttonMode = true;
+         _shopContentBtn.mouseChildren = false;
+         var _loc1_:TextField = DenUi.title("Shop",14);
+         var _loc2_:Number = _loc1_.width + 52;
+         DenUi.woodBox(_shopContentBtn.graphics,_loc2_,36,4);
+         var _loc3_:Shape = new Shape();
+         DenContentShop.drawShopIcon(_loc3_.graphics,20,19,1);
+         _shopContentBtn.addChild(_loc3_);
+         _loc1_.x = 36;
+         _loc1_.y = int((36 - _loc1_.height) * 0.5);
+         _shopContentBtn.addChild(_loc1_);
+         _shopContentBtn.addEventListener("mouseDown",onShopContentBtn,false,0,true);
+         _shopContentBtn.addEventListener("mouseOver",onShopContentBtnOver,false,0,true);
+         _shopContentBtn.addEventListener("mouseOut",onShopContentBtnOut,false,0,true);
+         _shopContentBtn.visible = false;
+         _guiLayer.addChild(_shopContentBtn);
+      }
+
+      private function showShopContentBtn() : void
+      {
+         if(_shopContentBtn == null)
+         {
+            return;
+         }
+         _shopContentBtn.visible = _denEditor != null && _denEditor.bottomHud.visible;
+         if(!_shopContentBtn.visible)
+         {
+            if(_contentShop)
+            {
+               _contentShop.close();
+            }
+            return;
+         }
+         // the top right corner, moved down past any of the editor's own
+         // parts that are there
+         _shopContentBtn.x = 900 - _shopContentBtn.width - 10;
+         _shopContentBtn.y = 10;
+         var _loc1_:Boolean = true;
+         var _loc2_:int = 0;
+         while(_loc1_ && _loc2_ < 10)
+         {
+            _loc1_ = false;
+            var _loc3_:Rectangle = _shopContentBtn.getBounds(gMainFrame.stage);
+            var _loc4_:int = 0;
+            while(_loc4_ < _denEditor.numChildren)
+            {
+               var _loc5_:DisplayObject = _denEditor.getChildAt(_loc4_);
+               if(_loc5_.visible && _loc5_ != _denEditor.bottomHud && _loc5_.width > 0)
+               {
+                  var _loc6_:Rectangle = _loc5_.getBounds(gMainFrame.stage);
+                  if(_loc6_.intersects(_loc3_) && _loc6_.bottom < 300)
+                  {
+                     _shopContentBtn.y = _loc6_.bottom + 6;
+                     _loc1_ = true;
+                  }
+               }
+               _loc4_++;
+            }
+            _loc2_++;
+         }
+         _guiLayer.setChildIndex(_shopContentBtn,_guiLayer.numChildren - 1);
+      }
+
+      private function onShopContentBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         AJAudio.playSubMenuBtnClick();
+         GuiManager.toolTip.resetTimerAndSetVisibility();
+         if(_contentShop)
+         {
+            _contentShop.open();
+         }
+      }
+
+      private function onShopContentBtnOver(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         _shopContentBtn.filters = [new GlowFilter(0xFFFFFF,0.8,8,8,2)];
+         AJAudio.playSubMenuBtnRollover();
+         GuiManager.toolTip.init(_guiLayer,"Custom content shop",_shopContentBtn.x + _shopContentBtn.width * 0.5,_shopContentBtn.y + _shopContentBtn.height + 22);
+         GuiManager.toolTip.startTimer(param1);
+      }
+
+      private function onShopContentBtnOut(param1:MouseEvent) : void
+      {
+         _shopContentBtn.filters = [];
+         GuiManager.toolTip.resetTimerAndSetVisibility();
+      }
+
+      // the den item list ("di") comes before the shop's answer, and has
+      // already been taken in: the Custom tab shows the new items
+      private function onContentBought() : void
+      {
+         if(_contentOpen)
+         {
+            clearItemWindows();
+            setupPlayerItems();
+            showContentTab();
+         }
+      }
+
       private function onPrefabTab(param1:MouseEvent) : void
       {
          param1.stopPropagation();
@@ -1312,6 +1651,7 @@ package gui
             return;
          }
          AJAudio.playSubMenuBtnClick();
+         leaveContentTab();
          _denEditor.normBtnUp.visible = false;
          _denEditor.themeBtnUp.visible = false;
          _denEditor.petBtnUp.visible = false;
@@ -1362,7 +1702,7 @@ package gui
       // there would be put down twice
       private function markPlaced(param1:int, param2:int) : void
       {
-         var _loc3_:Array = [gMainFrame.userInfo.playerUserInfo.denItemsFull,_themeItems,_toyItems,_plantItems,_furnitureItems,_wallItems,_currItems,_allNormalDenItems];
+         var _loc3_:Array = [gMainFrame.userInfo.playerUserInfo.denItemsFull,_themeItems,_toyItems,_plantItems,_furnitureItems,_wallItems,_currItems,_allNormalDenItems,_normalShown,_contentItems];
          for each(var _loc4_:DenItemCollection in _loc3_)
          {
             var _loc5_:int = 0;
@@ -1428,7 +1768,7 @@ package gui
             }
             // the tabs (themes, toys, plants, furniture, walls) hold copies
             // of the den items (Utility.sortItems clones them): those too
-            for each(var _loc6_:DenItemCollection in [_themeItems,_toyItems,_plantItems,_furnitureItems,_wallItems,_currItems,_allNormalDenItems])
+            for each(var _loc6_:DenItemCollection in [_themeItems,_toyItems,_plantItems,_furnitureItems,_wallItems,_currItems,_allNormalDenItems,_normalShown,_contentItems])
             {
                var _loc7_:int = 0;
                while(_loc6_ && _loc7_ < _loc6_.length)
