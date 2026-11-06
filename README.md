@@ -76,3 +76,5 @@ are listed in `.gitignore`. **Never commit `data/`.**
 npm test
 node .github/scripts/invariants.js
 ```
+## Assets
+To get assets, go here: https://ajcps-files.straw.page
