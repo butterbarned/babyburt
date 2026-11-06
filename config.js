@@ -189,6 +189,10 @@ module.exports = {
   hudAssetsSwf: path.join(__dirname, "swf", "HUDAssets.swf"),
   dataDir: env.AJ_DATA_DIR || path.join(__dirname, "data"),
   cacheDir: path.join(__dirname, "cache"),
+  // the content shop's packs of den items (lib/contentpacks.js): pictures
+  // and their lists, made by the tools in tools/content/. not in the
+  // repository (they are big): copied to a server by hand.
+  contentDir: env.AJ_CONTENT_DIR || path.join(__dirname, "content-packs"),
   // updates for installed clients, served at /client/ (the client's
   // tools/make-update.js writes them here; they are in the repository)
   clientUpdatesDir: env.AJ_CLIENT_UPDATES_DIR || path.join(__dirname, "client-updates"),

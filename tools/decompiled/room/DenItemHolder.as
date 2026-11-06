@@ -102,6 +102,8 @@ package room
       //              room (it is chosen from the layers panel), moved,
       //              flipped or put away
       //   bit 5      its group's items are chosen one by one, not as one
+      //   bits 6-7   its size: SIZES (1, 1.5, 2 or 3 times), from the
+      //              point it stands on (the middle of its bottom edge)
       //   bits 8-15  the group (0 for none)
       //   bits 16-30 layer nudge, signed pixels: drawn so much further in
       //              front (more) or behind (less) than where it stands says;
@@ -117,6 +119,14 @@ package room
       public static const DEPTH_LABELS:Array = ["Auto depth","Below players","Above players"];
 
       public static const MAX_NUDGE:int = 16383;
+
+      public static const SIZES:Array = [1,1.5,2,3];
+
+      public static const SIZE_LABELS:Array = ["Size 1x","Size 1.5x","Size 2x","Size 3x"];
+
+      private static const SIZE_SHIFT:int = 6;
+
+      private static const SIZE_MASK:int = 3 << 6;
 
       private static const DEPTH_MASK:int = 12;
 
@@ -165,6 +175,8 @@ package room
 
       private var _lockBtn:Sprite;
 
+      private var _sizeBtn:Sprite;
+
       private var _pickHint:Sprite;
       
       public function DenItemHolder(param1:LayerManager)
@@ -188,6 +200,7 @@ package room
          _ungroupBtn = makeGroupButton("Ungroup",onUngroupBtn);
          _duplicateBtn = makeGroupButton("Duplicate",onDuplicateBtn);
          _lockBtn = makeGroupButton("Lock",onLockBtn);
+         _sizeBtn = makeGroupButton(SIZE_LABELS[0],onSizeBtn);
          // a little tag in the look of the layers panel: wood around cream
          _pickHint = new Sprite();
          _pickHint.mouseEnabled = false;
@@ -1391,6 +1404,26 @@ package room
          var _loc5_:DisplayObject = param1.denItemHelper.displayObject;
          param1.x = param2;
          param1.y = param3;
+         // its width and height read as the art's own, not as a size (or
+         // flip) last given made them
+         _loc5_.transform.matrix = new Matrix();
+         _loc5_.rotation = 0;
+         var _loc15_:Number = sizeOf(param4);
+         if(_loc15_ != 1 && !param1.denItemHelper.bFlipLabel && !param1.denItemHelper.isUniqueImageItem && !BitUtility.isBitSetForNumber(1,param4))
+         {
+            // bigger, about the middle of its bottom edge (where it stands),
+            // mirrored when flipped: (param2, param3) is where its unsized
+            // art's origin goes
+            var _loc16_:Rectangle = _loc5_.getBounds(_loc5_);
+            var _loc17_:Number = param2 + _loc16_.x + _loc16_.width * 0.5;
+            var _loc18_:Number = param3 + _loc16_.bottom;
+            var _loc19_:Boolean = BitUtility.isBitSetForNumber(0,param4);
+            var _loc20_:Matrix = new Matrix();
+            _loc20_.scale(_loc19_ ? -_loc15_ : _loc15_,_loc15_);
+            _loc20_.translate(_loc17_ - _loc16_.width * _loc15_ * 0.5 + (_loc19_ ? _loc15_ * _loc16_.right : -_loc15_ * _loc16_.x),_loc18_ - _loc15_ * _loc16_.bottom);
+            _loc5_.transform.matrix = _loc20_;
+            return;
+         }
          var _loc9_:Matrix = _loc5_.transform.matrix;
          _loc9_.identity();
          var _loc6_:Number = param2;
@@ -1471,6 +1504,42 @@ package room
       public static function depthOf(param1:int) : int
       {
          return param1 >> 2 & 3;
+      }
+
+      // an item's size: its place in SIZES, and how many times
+      public static function sizeIndexOf(param1:int) : int
+      {
+         return param1 >> SIZE_SHIFT & 3;
+      }
+
+      public static function sizeOf(param1:int) : Number
+      {
+         return SIZES[param1 >> SIZE_SHIFT & 3];
+      }
+
+      // what can be made bigger: not wallpapers and floors (they fit the
+      // den), nor items the game draws by labels of their own (flip frames,
+      // paintings)
+      private function sizable(param1:DenStateItem) : Boolean
+      {
+         return param1 != null && param1.sortCatId != 2 && param1.sortCatId != 3 && param1.sortCatId != 4 && param1.denItemHelper != null
+            && !param1.denItemHelper.bFlipLabel && !param1.denItemHelper.isUniqueImageItem;
+      }
+
+      // the items' size made SIZES[param2], each from the point it stands on
+      public function setSize(param1:Array, param2:int) : void
+      {
+         for each(var _loc3_:DenStateItem in param1)
+         {
+            if(sizable(_loc3_) && !isLocked(_loc3_))
+            {
+               _loc3_.flipped = _loc3_.flipped & ~SIZE_MASK | (param2 & 3) << SIZE_SHIFT;
+               setItemMatrix(_loc3_,_loc3_.x,_loc3_.y,_loc3_.flipped);
+               resort(_loc3_);
+            }
+         }
+         updateCloseBtn();
+         changed();
       }
 
       public static function nudgeOf(param1:int) : int
@@ -1769,7 +1838,7 @@ package room
          {
             _loc5_ = _dragItem.denItemHelper.displayObject.getBounds(_layerManager.room_avatars);
          }
-         for each(var _loc3_:DisplayObject in [_closeBtn,_flipBtn,_flipBtnVer,_linkBtn,_depthBtn,_ungroupBtn,_duplicateBtn,_lockBtn])
+         for each(var _loc3_:DisplayObject in [_closeBtn,_flipBtn,_flipBtnVer,_linkBtn,_depthBtn,_sizeBtn,_ungroupBtn,_duplicateBtn,_lockBtn])
          {
             if(_loc3_.parent)
             {
@@ -1888,7 +1957,7 @@ package room
 
       private function hideGroupControls() : void
       {
-         for each(var _loc1_:DisplayObject in [_depthBtn,_ungroupBtn,_duplicateBtn,_lockBtn,_pickHint])
+         for each(var _loc1_:DisplayObject in [_depthBtn,_sizeBtn,_ungroupBtn,_duplicateBtn,_lockBtn,_pickHint])
          {
             if(_loc1_.parent)
             {
@@ -1911,6 +1980,11 @@ package room
          {
             setGroupButtonText(_depthBtn,DEPTH_LABELS[depthOf(_dragItem.flipped)],depthOf(_dragItem.flipped) != DEPTH_AUTO);
             _layerManager.room_chat.addChild(_depthBtn);
+            if(sizable(_dragItem))
+            {
+               setGroupButtonText(_sizeBtn,SIZE_LABELS[sizeIndexOf(_dragItem.flipped)],sizeIndexOf(_dragItem.flipped) != 0);
+               _layerManager.room_chat.addChild(_sizeBtn);
+            }
          }
          setGroupButtonText(_lockBtn,isLocked(_dragItem) ? "Unlock" : "Lock",isLocked(_dragItem));
          _layerManager.room_chat.addChild(_lockBtn);
@@ -1932,7 +2006,7 @@ package room
       private function placeGroupControls(param1:Number, param2:Number) : void
       {
          var _loc3_:Number = param2;
-         for each(var _loc4_:DisplayObject in [_depthBtn,_lockBtn,_ungroupBtn,_duplicateBtn,_pickHint])
+         for each(var _loc4_:DisplayObject in [_depthBtn,_sizeBtn,_lockBtn,_ungroupBtn,_duplicateBtn,_pickHint])
          {
             if(_loc4_.parent)
             {
@@ -1966,6 +2040,18 @@ package room
          {
             param1.flipped &= ~LOOSE_BIT;
          }
+      }
+
+      // bigger: 1x, 1.5x, 2x, 3x, and round again
+      private function onSizeBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         if(_dragItem == null || isLocked(_dragItem) || !sizable(_dragItem))
+         {
+            return;
+         }
+         setSize(moveSet(_dragItem),(sizeIndexOf(_dragItem.flipped) + 1) % SIZES.length);
+         showGroupControls();
       }
 
       private function onDepthBtn(param1:MouseEvent) : void

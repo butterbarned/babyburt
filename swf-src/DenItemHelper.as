@@ -119,7 +119,8 @@ package loader
          if(_denStateItem != null)
          {
             var _loc1_:int = DenItemHolder.depthOf(_denStateItem.flipped);
-            var _loc2_:int = _sortOffset - DenItemHolder.nudgeOf(_denStateItem.flipped);
+            // bits 6-7, its size (DenItemHolder.sizeOf): the sort line grows with it
+            var _loc2_:int = Math.round(_sortOffset * DenItemHolder.sizeOf(_denStateItem.flipped)) - DenItemHolder.nudgeOf(_denStateItem.flipped);
             if(_loc1_ == 1)
             {
                return _loc2_ + 1000000;

@@ -14,6 +14,7 @@ const modlog = require("./lib/modlog.js");
 const retention = require("./lib/retention.js");
 const colours = require("./lib/colours.js");
 const customItems = require("./lib/customitems.js");
+const contentPacks = require("./lib/contentpacks.js");
 const customMusic = require("./lib/custommusic.js");
 const theatreVideos = require("./lib/theatrevideos.js");
 const config = require("./config.js");
@@ -46,6 +47,7 @@ const main = async () => {
   accounts.startBackups();
   colours.load();
   customItems.load();
+  contentPacks.load();
   customMusic.load();
   theatreVideos.load();
   reports.load();

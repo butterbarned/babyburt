@@ -4,6 +4,9 @@
 # assets mirrored from the official CDN
 /cache/
 
+# the content shop's packs of den items (config.contentDir)
+/content-packs/
+
 # decompiler
 tools/ffdec/
 tools/hud/hud.xml
