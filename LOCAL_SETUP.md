@@ -74,6 +74,16 @@ To use a different server, either set `AJ_SERVER` (`AJ_SERVER=http://127.0.0.1:8
 shell as in step 3) or type the address in the server box on the client's start screen. Log in with the account
 from step 5.
 
+### Or play in a browser
+Fetch the browser Flash player ([Ruffle](https://ruffle.rs)) once:
+```sh
+node tools/fetch-ruffle.js
+```
+Then sign in at <http://127.0.0.1:8080/account> and click **Play in browser** (or go straight to
+`/account/play`). The game runs in the page, with no download. The client must be a build from
+`tools/build-client.sh`, because it carries the fixes Ruffle needs. Some parts of the game may still not
+work in a browser; the desktop client stays the main way to play. `AJ_BROWSER_PLAY=0` turns browser play off.
+
 ## 7. Useful settings for local use
 Set these before `npm start` (see the shell table in step 3):
 
@@ -83,7 +93,8 @@ Set these before `npm start` (see the shell table in step 3):
 | `AJ_DATA_DIR=/path/to/data` | Keep the database somewhere else (handy for throwaway tests). |
 | `AJ_OFFLINE=1` | Serve only from the local cache; never fetch from the internet. |
 | `AJ_QUIET=1` | Less logging. (Packet logging is on by default locally, off when the server is public; `AJ_QUIET=0` forces it on.) |
-| `AJ_REQUIRE_DEVICE=0` | Accept clients that don't send device IDs (quick local experiments only). |
+| `AJ_BROWSER_PLAY=0` | Turn off playing in a browser (`/account/play`). |
+| `AJ_REQUIRE_DEVICE=1` | Refuse clients that don't send device IDs (old launchers, browsers). Off by default. |
 
 ## 8. Where things are saved
 Everything the server writes goes under `data/` (the SQLite database `game.sqlite`, daily `backups/`, logs).
@@ -192,8 +203,8 @@ restore your accounts if something goes wrong.
 - **Port already in use:** change `AJ_HTTP_PORT` / `AJ_GAME_PORT`, or stop the other program.
 - **The client says it cannot connect:** make sure the server is running and the client's address is exactly
   `http://127.0.0.1:8080`, not `https` (there is no certificate locally).
-- **The client says it is outdated or is refused at login:** only a Dusklight client that sends device IDs is
-  accepted. For quick local experiments you can start the server with `AJ_REQUIRE_DEVICE=0`.
+- **The client says it is outdated or is refused at login:** the server was started with `AJ_REQUIRE_DEVICE=1`,
+  which accepts only a Dusklight client that sends device IDs. Start it without that setting to let others in.
 - **Friends can't connect (step 10):** test from outside your network first. Check that the server was started
   with `AJ_BIND=0.0.0.0` and an `AJ_PUBLIC_URL` that matches the address friends use, that both ports (8080 and
   9339) are open in the firewall and forwarded on the router, and that your ISP doesn't use CGNAT.

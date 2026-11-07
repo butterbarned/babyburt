@@ -58,6 +58,17 @@ if [ -f "$dir/package-lock.json" ] && { ! git diff --quiet "$old" "$new" -- pack
   fi
 fi
 
+# Ruffle, for playing in a browser (/account/play): fetched again when its
+# pinned release changed, or when it never was. the server looks for it on
+# every request, so no restart is needed; a failed fetch leaves browser play off.
+if [ -f "$dir/tools/fetch-ruffle.js" ] && { ! git diff --quiet "$old" "$new" -- tools/fetch-ruffle.js || [ ! -f "$dir/cache/ruffle/ruffle.js" ]; }; then
+  if runuser -u "$user" -- node "$dir/tools/fetch-ruffle.js"; then
+    echo "ruffle fetched"
+  else
+    echo "ruffle could not be fetched; playing in a browser stays off" >&2
+  fi
+fi
+
 # public/ is read from disk on every request; the rest is loaded once, at start.
 # the list is taken whole first: piped straight into grep -q, a long one (a
 # push of many files) had git cut off mid-write ("Broken pipe"), which

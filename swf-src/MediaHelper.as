@@ -2,6 +2,7 @@ package loader
 {
    import com.sbi.loader.FileServerEvent;
    import com.sbi.loader.LoaderCache;
+   import com.sbi.loader.SwfImports;
    import flash.display.Loader;
    import flash.display.LoaderInfo;
    import flash.display.MovieClip;
@@ -96,7 +97,7 @@ package loader
             _loader.contentLoaderInfo.addEventListener("progress",onLoadProgress);
             _loc2_ = new LoaderContext();
             _loc2_.allowCodeImport = true;
-            _loader.loadBytes(param1.data,_loc2_);
+            _loader.loadBytes(SwfImports.strip(param1.data),_loc2_);
          }
       }
       
@@ -177,7 +178,7 @@ package loader
          _loader.contentLoaderInfo.addEventListener("ioError",onBytesFailed);
          _loc2_ = new LoaderContext();
          _loc2_.allowCodeImport = true;
-         _loader.loadBytes(_mediaBytes,_loc2_);
+         _loader.loadBytes(SwfImports.strip(_mediaBytes),_loc2_);
       }
       
       private function onBytesLoaded(param1:Event) : void

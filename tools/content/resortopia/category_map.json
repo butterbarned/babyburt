@@ -23,7 +23,7 @@
   },
   "_sizes": "allScale (every item), categoryScale (by chip id) and collectionScale (by collection id) multiply buildingScale; the preview's 'copy sizes' button writes them",
   "allScale": 0.9,
-  "categoryScale": {},
+  "categoryScale": {"sofas": 1.25, "seating": 1.15},
   "collectionScale": {},
   "buildingScale": {
     "Garden": 0.8,

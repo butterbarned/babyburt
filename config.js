@@ -32,6 +32,9 @@ const isPublic = Boolean(publicUrl) || !LOOPBACK_NAMES.includes(bindAddress) || 
 // reaches the web port, and the visitor's address is the last one in the
 // X-Forwarded-For header it sets. without it every visitor behind a proxy
 // has the proxy's address, and the per-address limits see one address.
+// the proxy must also pass WebSocket upgrades through on /game-socket, for
+// playing in a browser (nginx: proxy_http_version 1.1, and the Upgrade and
+// Connection headers set).
 const trustedProxy = env.AJ_TRUSTED_PROXY === "1";
 // the game port can listen wider than the web port: a proxy (cloudflare, say)
 // carries web pages but not the game's own protocol
@@ -122,12 +125,19 @@ module.exports = {
   // emoji pictures for chat (lib/emoji.js): Twemoji's, at one version
   emojiUpstream: env.AJ_EMOJI_UPSTREAM || "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/",
   offline: env.AJ_OFFLINE === "1",
-  // the client's device ids (lib/devices.js): a game whose launcher sent none
-  // (a client from before 1.3.0, the official launcher, or one that left
-  // them out) is turned away at its login, its popup saying to update.
-  // AJ_REQUIRE_DEVICE=0 lets them in (an account seen on banned hardware
-  // before is still kept out).
-  requireDevice: env.AJ_REQUIRE_DEVICE !== "0",
+  // the client's device ids (lib/devices.js): with AJ_REQUIRE_DEVICE=1 a game
+  // whose launcher sent none (a client from before 1.3.0, the official
+  // launcher, a browser, or one that left them out) is turned away at its
+  // login, its popup saying to update. off by default: they are let in, and
+  // an account seen on banned hardware before is still kept out.
+  requireDevice: env.AJ_REQUIRE_DEVICE === "1",
+  // playing in a web browser (/account/play): the client run by Ruffle, its
+  // game socket carried over a WebSocket on the web port. on once Ruffle is
+  // in ruffleDir (`node tools/fetch-ruffle.js`); AJ_BROWSER_PLAY=0 turns it
+  // off. a browser has no device ids to send: the hardware bans on an account
+  // still hold, and with requireDevice on, only an account seen on the desktop
+  // client in the last 90 days may play this way (lib/world.js).
+  browserPlay: env.AJ_BROWSER_PLAY !== "0",
   // Discord (lib/discord.js): an application's id and secret for linking a
   // player's Discord account on the account page and for allowed accounts to
   // sign in to /dashboard/admin (OAuth2 redirects:
@@ -184,11 +194,14 @@ module.exports = {
   // from, see the README).
   clientSwf: env.AJ_CLIENT_SWF || path.join(__dirname, "swf", "ajclient.swf"),
   sharedFontsSwf: path.join(__dirname, "swf", "sharedFonts.swf"),
+  loadScreenSwf: path.join(__dirname, "swf", "loadScreen.swf"),
   // the HUD artwork (assets/HUDAssets.swf on the CDN), served from here
   // because it is changed: see "Rebuild" in the README.
   hudAssetsSwf: path.join(__dirname, "swf", "HUDAssets.swf"),
   dataDir: env.AJ_DATA_DIR || path.join(__dirname, "data"),
   cacheDir: path.join(__dirname, "cache"),
+  // Ruffle, the Flash player for browsers (tools/fetch-ruffle.js puts it here)
+  ruffleDir: env.AJ_RUFFLE_DIR || path.join(__dirname, "cache", "ruffle"),
   // the content shop's packs of den items (lib/contentpacks.js): pictures
   // and their lists, made by the tools in tools/content/. not in the
   // repository (they are big): copied to a server by hand.
