@@ -231,8 +231,10 @@
         <header>
           <img class="mark" src="/logo.png?v=firefly" alt="">
           <h1 id="title"></h1>
+          <button class="primary" id="play-browser" type="button" hidden>Play in browser</button>
           <button id="sign-out" type="button">Sign out</button>
         </header>
+        <p class="status" id="play-status" role="status"></p>
 
         <section class="kept" id="ban-section" hidden>
           <div class="ban-head">
@@ -528,7 +530,7 @@
         ["gameInvites", "Game invites"],
         ["wall", "Jammer Wall"],
       ];
-      const VIA = {game: "Game", launcher: "Client", web: "This page", mod: "Moderator panel"};
+      const VIA = {game: "Game", launcher: "Client", browser: "Browser", web: "This page", mod: "Moderator panel"};
       const ANIMALS = {1: "Tiger", 4: "Wolf", 5: "Koala", 6: "Panda", 7: "Monkey", 8: "Bunny", 13: "Rhino", 18: "Seal", 24: "Penguin"};
 
       let account = null;
@@ -775,6 +777,8 @@
         $("page").hidden = false;
         $("title").textContent = account.username;
         document.title = `${account.username} | your account`;
+        // playing in a browser (/account/play), when the server has it on
+        $("play-browser").hidden = !account.browserPlay || Boolean(account.banned || account.nameRejected);
 
         // A ban, or a rejected username: that and little else (lib/manage.js).
         $("page").classList.toggle("restricted", Boolean(account.banned || account.nameRejected));
@@ -964,11 +968,23 @@
         return result.ok;
       };
 
+      // from /account/play: "signin" (sent here to sign in first, and back to
+      // the game after), "off" (playing in a browser is not on)
+      const playResult = new URLSearchParams(location.search).get("play");
+
       const load = async () => {
         const result = await api("me");
         if (result.ok) {
           account = result.data;
+          if (playResult === "signin" && account.browserPlay && !account.banned && !account.nameRejected) {
+            location.replace("/account/play");
+            return;
+          }
           render();
+          if (playResult === "off") {
+            setStatus("play-status", "Playing in a browser is not on for this server. Use the desktop client.", true);
+            history.replaceState(null, "", location.pathname + location.hash);
+          }
           // back from linking Discord: how it went, once
           if (discordResult && Object.hasOwn(DISCORD_RESULTS, discordResult)) {
             setStatus("discord-status", DISCORD_RESULTS[discordResult], discordResult !== "linked");
@@ -976,9 +992,16 @@
           }
         }
         else {
-          showGate(result.status === 0 ? result.data.error : "");
+          showGate(result.status === 0 ? result.data.error : playResult === "signin" ? "Sign in to play in your browser." : "");
+          if (playResult === "signin") {
+            $("gate-status").classList.remove("bad");
+          }
         }
       };
+
+      $("play-browser").addEventListener("click", () => {
+        location.href = "/account/play";
+      });
 
       $("sign-in").addEventListener("submit", async event => {
         event.preventDefault();

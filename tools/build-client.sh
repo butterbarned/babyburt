@@ -100,13 +100,18 @@ set -- \
   gui.DenLayersPanel DenLayersPanel.as \
   gui.DenPrefabs DenPrefabs.as \
   gui.DenContentShop DenContentShop.as \
+  it.gotoandplay.smartfoxserver.SmartFoxClient SmartFoxClient.as \
+  loadProgress.LoadProgress LoadProgress.as \
+  com.sbi.loader.SceneLoader SceneLoader.as \
+  com.sbi.loader.SwfImports SwfImports.as \
   room.DenItemHolder ../tools/decompiled/room/DenItemHolder.as
 # not in the game: added before the replace (game.ArtStudioKit is Strawberry
 # Jam's, shared by its two art studio painters; gui.SitForwardAction is the
 # action of sitting facing forward; gui.DenUi, gui.DenLayersPanel and
 # gui.DenPrefabs are the den editor's layers panel and prefab tab;
-# gui.DenContentShop is the content shop the den editor opens)
-NEW_CLASSES="game.ArtStudioKit gui.SitForwardAction gui.DenUi gui.DenLayersPanel gui.DenPrefabs gui.DenContentShop"
+# gui.DenContentShop is the content shop the den editor opens;
+# com.sbi.loader.SwfImports takes out what Ruffle cannot load, in a browser)
+NEW_CLASSES="game.ArtStudioKit gui.SitForwardAction gui.DenUi gui.DenLayersPanel gui.DenPrefabs gui.DenContentShop com.sbi.loader.SwfImports"
 args=""
 while [ $# -gt 0 ]; do
   args="$args $1 swf-src/$2"

@@ -299,6 +299,143 @@
       }
     </style>
     <embed id="flash-content"></embed>
+    <script>
+      "use strict";
+
+      // in a web browser (/account/play) there is no desktop client around
+      // this page: Ruffle plays the game in place of Flash, and this stands in
+      // for the client's side of window.ipc. the game's socket goes over a
+      // WebSocket on this server (lib/websocket.js). the script below is the
+      // same as in the desktop client.
+      if (!window.ipc && document.documentElement.dataset.browserPlay === "on" && window.RufflePlayer) {
+        (() => {
+          const handlers = new Map();
+          const emit = (name, ...args) => {
+            for (const handler of handlers.get(name) || []) {
+              handler({}, ...args);
+            }
+          };
+          const say = (text, link) => {
+            const box = document.createElement("div");
+            box.setAttribute("role", "alert");
+            box.style.cssText = "position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;"
+              + "background:#1d1630;color:#fff;font:16px/1.4 Arial,Helvetica,sans-serif;text-align:center;padding:24px;z-index:10";
+            const words = document.createElement("p");
+            words.textContent = text;
+            box.append(words);
+            if (link) {
+              const a = document.createElement("a");
+              a.href = link.href;
+              a.textContent = link.text;
+              a.style.color = "#ffd36b";
+              box.append(a);
+            }
+            document.body.append(box);
+          };
+
+          window.ipc = {
+            on(name, handler) {
+              handlers.set(name, [...(handlers.get(name) || []), handler]);
+            },
+            sendToHost(name, ...args) {
+              switch (name) {
+                case "openPage":
+                  window.open(String(args[0]), "_blank", "noopener,noreferrer");
+                  break;
+                // a page needs no client's leave to load a player's own video
+                case "ownVideo":
+                  if (args[0]) {
+                    setTimeout(() => emit("ownVideoReady", args[0]));
+                  }
+                  break;
+                case "reloadGame":
+                  location.reload();
+                  break;
+                case "reportError":
+                  fetch("/v1/reportError", {method: "POST", headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({section: "browser", message: String(args[0]).slice(0, 4000)})}).catch(() => {});
+                  break;
+                case "printImage": {
+                  const picture = window.open("", "_blank");
+                  if (picture) {
+                    picture.document.body.innerHTML = "";
+                    const image = picture.document.createElement("img");
+                    image.src = `data:image/jpeg;base64,${args[0]}`;
+                    image.onload = () => picture.print();
+                    picture.document.body.append(image);
+                  }
+                  break;
+                }
+                // fps, presence, initialized, browser: the desktop client's own
+              }
+            },
+          };
+
+          // the game connects only from the desktop client, which it knows by
+          // "AJClassic/<version>" in the user agent it asks the page for
+          // (Utility.isElectronVersionIncompatible, at least 1.5.3). this page
+          // stands in for that client, so it says so, to this page alone.
+          const userAgent = `${navigator.userAgent} AJClassic/1.5.3`;
+          Object.defineProperty(navigator, "userAgent", {get: () => userAgent, configurable: true});
+
+          // Ruffle's player, where Flash's <embed> was: the script below
+          // finds it by the same id.
+          const player = window.RufflePlayer.newest().createPlayer();
+          player.id = "flash-content";
+          document.getElementById("flash-content").replaceWith(player);
+
+          // the game's fonts, under the names its text asks for
+          // (tools/game-fonts.js): Ruffle has none of the desktop's fonts.
+          // without them it uses its own, and the game looks wrong.
+          const fonts = fetch("/fonts/game/fonts.json").then(res => res.ok ? res.json() : []).catch(() => []);
+
+          Promise.all([fetch("/account/api/play", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"})
+            .then(res => res.json().then(answer => ({status: res.status, answer}))), fonts])
+            .then(([{status, answer}, fontSources]) => {
+              if (status === 401) {
+                location.href = "/account?play=signin";
+                return;
+              }
+              if (!answer.flashVars) {
+                say(answer.error || "The game could not start.", answer.download ? {href: "/download", text: "Get the desktop client"}
+                  : {href: "/account", text: "Back to your account"});
+                return;
+              }
+              const flashVars = answer.flashVars;
+              emit("flashVarsReady", flashVars);
+              const client = new URL(flashVars.clientURL, location.href);
+              player.load({
+                url: location.origin + client.pathname + client.search,
+                parameters: new URLSearchParams(Object.entries(flashVars).map(([key, value]) => [key, String(value)])).toString(),
+                // what the game names relative to its page ("../sharedFonts.swf")
+                // as from where the desktop client's page is
+                base: `${location.origin}/gameClient/game/`,
+                // the game's socket, as the game asks for it, over this server's WebSocket
+                socketProxy: [{host: flashVars.smartfoxServer, port: Number(flashVars.smartfoxPort),
+                  proxyUrl: `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/game-socket`}],
+                fontSources,
+                // text set in a font the game does not have: its usual one
+                defaultFonts: {sans: ["CCDigitalDeliveryRegular"]},
+                allowScriptAccess: true,
+                allowNetworking: "all",
+                wmode: "opaque",
+                autoplay: "on",
+                unmuteOverlay: "hidden",
+                splashScreen: false,
+                letterbox: "on",
+                backgroundColor: "#000000",
+                contextMenu: "rightClickOnly",
+                warnOnUnsupportedContent: false,
+                openUrlMode: "allow",
+                // localStorage.ruffleLog = "warn" (or "info", "debug") in the
+                // browser's console shows more of what Ruffle says
+                logLevel: (() => { try { return localStorage.getItem("ruffleLog") || "error"; } catch (err) { return "error"; } })(),
+              }).catch(err => say(`The game could not start: ${err && err.message ? err.message : err}`));
+            })
+            .catch(() => say("Could not reach the server.", {href: "/account/play", text: "Try again"}));
+        })();
+      }
+    </script>
     <div id="theatre" hidden>
       <iframe id="theatre-video" class="theatre-screen" title="Theatre video" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
       <video id="theatre-file" class="theatre-screen" hidden controls playsinline disablepictureinpicture controlslist="nodownload noplaybackrate"></video>

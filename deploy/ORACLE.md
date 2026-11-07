@@ -151,7 +151,9 @@ Keep that connection open and browse to `https://localhost:8443/admin` (accept t
 4. Visit `https://dusklight.example.com/` and `/register` to check the site works with HTTPS.
 
 ## 9. Connect a game client
-The game client (launcher) must point at `https://dusklight.example.com` with game port `9339`. The server turns away clients that don't send device IDs (`AJ_REQUIRE_DEVICE`), so use your own Dusklight launcher build rather than an old or official one. Set `AJ_DOWNLOAD_URL` in `/etc/flight.env` to show a download link on the home page.
+The game client (launcher) must point at `https://dusklight.example.com` with game port `9339`. With `AJ_REQUIRE_DEVICE=1` the server turns away clients that don't send device IDs (off by default), so use your own Dusklight launcher build rather than an old or official one. Set `AJ_DOWNLOAD_URL` in `/etc/flight.env` to show a download link on the home page.
+
+Players can also play in a browser, with no download: they sign in at `https://dusklight.example.com/account` and click **Play in browser**. Fetch the browser Flash player once with `sudo -u flight node /home/flight/flight/tools/fetch-ruffle.js` (the automatic updater in step 10 fetches it again when its pinned release changes). The game's connection then goes through port 443 as a WebSocket (`/game-socket`), so no other port is needed. Set `AJ_BROWSER_PLAY=0` in `/etc/flight.env` to turn it off.
 
 ## 10. Updates
 Manual:

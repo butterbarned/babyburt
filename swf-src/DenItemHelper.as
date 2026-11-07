@@ -4,6 +4,7 @@ package loader
    import avatar.AvatarManager;
    import avatar.MannequinData;
    import com.sbi.loader.FileServerEvent;
+   import com.sbi.loader.SwfImports;
    import den.DenItem;
    import den.DenStateItem;
    import den.DenXtCommManager;
@@ -708,7 +709,7 @@ package loader
             param1.data.position = 0;
             _loc2_ = param1.data.readObject();
             _sortOffset = _loc2_.so;
-            _loader.loadBytes(_loc2_.ba);
+            _loader.loadBytes(SwfImports.strip(_loc2_.ba));
          }
       }
       
