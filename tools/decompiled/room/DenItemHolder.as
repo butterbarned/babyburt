@@ -7,6 +7,7 @@ package room
    import collection.DenStateItemCollection;
    import com.sbi.bit.BitUtility;
    import com.sbi.graphics.SortLayer;
+   import com.sbi.loader.SwfImports;
    import den.DenItem;
    import den.DenStateItem;
    import den.DenXtCommManager;
@@ -1487,6 +1488,24 @@ package room
             _loc11_.a *= _loc8_;
             _loc11_.b *= _loc12_;
             Object(param1.denItemHelper.content).item1.imageCont.transform.matrix = _loc11_;
+         }
+         // Burrow: in a browser the upside-down turn goes into the matrix.
+         // Ruffle reads a mirrored matrix back as turned 180, so setting
+         // rotation after it (below) made "side" upside down and "up + side"
+         // only mirrored. turning 180 about the origin, as Flash's rotation
+         // does there, is all four of a, b, c, d negated.
+         if(SwfImports.active)
+         {
+            if(BitUtility.isBitSetForNumber(1,param4))
+            {
+               _loc9_.a = -_loc9_.a;
+               _loc9_.b = -_loc9_.b;
+               _loc9_.c = -_loc9_.c;
+               _loc9_.d = -_loc9_.d;
+            }
+            _loc9_.translate(_loc6_,_loc7_);
+            _loc5_.transform.matrix = _loc9_;
+            return;
          }
          _loc9_.translate(_loc6_,_loc7_);
          _loc5_.transform.matrix = _loc9_;

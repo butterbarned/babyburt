@@ -17,6 +17,9 @@ package com.sbi.loader
       // loading screen comes before the start values do.
       private static var _active:Boolean = false;
 
+      // a phone or tablet: from the movie's parameters (noteParameters)
+      private static var _touch:Boolean = false;
+
       public function SwfImports()
       {
          super();
@@ -30,6 +33,10 @@ package com.sbi.loader
          if(param1 && String(param1["browserPlay"]) == "1")
          {
             _active = true;
+         }
+         if(param1 && String(param1["touch"]) == "1")
+         {
+            _touch = true;
          }
       }
 
@@ -46,6 +53,29 @@ package com.sbi.loader
             }
          }
          return _active;
+      }
+
+      // in a browser on a phone or tablet (public/game.html sends touch=1):
+      // there the game does not give the chat box focus by itself, which in
+      // Ruffle opens the screen keyboard (gui.ChatHistory)
+      public static function get touch() : Boolean
+      {
+         if(!active)
+         {
+            return false;
+         }
+         if(_touch)
+         {
+            return true;
+         }
+         try
+         {
+            return String(gMainFrame.clientInfo["touch"]) == "1";
+         }
+         catch(e:Error)
+         {
+         }
+         return false;
       }
 
       // the bytes to load: `swf` itself, or a copy without its empty imports

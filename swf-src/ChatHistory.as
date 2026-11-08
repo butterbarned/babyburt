@@ -5,6 +5,7 @@ package gui
    import avatar.UserInfo;
    import buddy.BuddyManager;
    import com.sbi.analytics.SBTracker;
+   import com.sbi.loader.SwfImports;
    import com.sbi.popup.SBOkPopup;
    import com.sbi.popup.SBYesNoPopup;
    import flash.display.MovieClip;
@@ -506,6 +507,13 @@ package gui
       
       public function setFocusOnMsgText() : void
       {
+         // Burrow: on a phone or tablet in a browser the box is typed in only
+         // once it is tapped: each focus given here opened the screen keyboard
+         // (com.sbi.loader.SwfImports.touch)
+         if(SwfImports.touch)
+         {
+            return;
+         }
          // with W, A, S and D walking, the box is typed in only after a
          // click on it or Enter (room.RoomManagerView).
          if(AJClient.wasdOn())
