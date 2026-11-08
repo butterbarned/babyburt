@@ -410,9 +410,13 @@
                 // what the game names relative to its page ("../sharedFonts.swf")
                 // as from where the desktop client's page is
                 base: `${location.origin}/gameClient/game/`,
-                // the game's socket, as the game asks for it, over this server's WebSocket
-                socketProxy: [{host: flashVars.smartfoxServer, port: Number(flashVars.smartfoxPort),
-                  proxyUrl: `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/game-socket`}],
+                // the game's socket, as the game asks for it, over this server's WebSocket.
+                // the patched client opens it to 127.0.0.1 whatever smartfoxServer
+                // says (swf-src/SmartFoxClient.as, connect), so that name is
+                // mapped too: on a public server the two differ.
+                socketProxy: [...new Set(["127.0.0.1", "localhost", String(flashVars.smartfoxServer)])].map(host => ({
+                  host, port: Number(flashVars.smartfoxPort),
+                  proxyUrl: `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/game-socket`})),
                 fontSources,
                 // text set in a font the game does not have: its usual one
                 defaultFonts: {sans: ["CCDigitalDeliveryRegular"]},
