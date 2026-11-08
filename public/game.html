@@ -401,7 +401,11 @@
                   : {href: "/account", text: "Back to your account"});
                 return;
               }
-              const flashVars = answer.flashVars;
+              // touch: a phone or tablet (a finger is the main pointer), where the
+              // game leaves the chat box alone until it is tapped: in Ruffle each
+              // time it is given focus the screen keyboard opens (swf-src/ChatHistory.as)
+              const flashVars = {...answer.flashVars,
+                touch: window.matchMedia && window.matchMedia("(pointer: coarse)").matches ? "1" : "0"};
               emit("flashVarsReady", flashVars);
               const client = new URL(flashVars.clientURL, location.href);
               player.load({
@@ -430,6 +434,10 @@
                 backgroundColor: "#000000",
                 contextMenu: "rightClickOnly",
                 warnOnUnsupportedContent: false,
+                // seconds a script may run before Ruffle stops it (15 by default).
+                // some minigames build their levels in one go, slower here than
+                // in Flash: Hedge Hog's was stopped and the game never started.
+                maxExecutionDuration: 60,
                 openUrlMode: "allow",
                 // localStorage.ruffleLog = "warn" (or "info", "debug") in the
                 // browser's console shows more of what Ruffle says

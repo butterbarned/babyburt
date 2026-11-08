@@ -60,15 +60,15 @@ package com.sbi.loader
          {
             _loc3_ = _loc5_.s;
             _loc2_ = _loc3_.getBounds(param1);
-            // Burrow: a layer not loaded yet (one loaded when it comes into
-            // view: the world map's mountains_map.png) is empty. Flash gives
-            // an empty thing's bounds at its own place, Ruffle at 0,0, which
-            // put the world map 164 down in a browser; so there it is taken
-            // at its place, as in Flash.
+            // Burrow: an empty layer (one not loaded yet, as the world map's
+            // mountains_map.png, or a sound-only one, as Overflow's at -350)
+            // has bounds far off in Flash (6710886.4 both ways), so it never
+            // sets the offset; Ruffle gives 0,0 and the scene was drawn out
+            // of place (the world map 164 down, Overflow 350, Double Up 165).
+            // So in a browser an empty layer is passed over, as in Flash.
             if(SwfImports.active && _loc2_.width == 0 && _loc2_.height == 0)
             {
-               var _loc6_:Point = param1.globalToLocal(_loc3_.localToGlobal(new Point(0,0)));
-               _loc2_ = new Rectangle(_loc6_.x,_loc6_.y,0,0);
+               continue;
             }
             if(_loc2_.x < _offset.x)
             {

@@ -104,6 +104,8 @@ set -- \
   loadProgress.LoadProgress LoadProgress.as \
   com.sbi.loader.SceneLoader SceneLoader.as \
   com.sbi.loader.SwfImports SwfImports.as \
+  game.GameBase GameBase.as \
+  game.hedgeHog.HedgeHog HedgeHog.as \
   room.DenItemHolder ../tools/decompiled/room/DenItemHolder.as
 # not in the game: added before the replace (game.ArtStudioKit is Strawberry
 # Jam's, shared by its two art studio painters; gui.SitForwardAction is the
