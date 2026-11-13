@@ -61,6 +61,23 @@ saves a screenshot of the game view. it opens a window on the desktop.
 extra arguments go to Electron. uses the Chrome DevTools Protocol.
 ```
 
+## tools/content-ids-dry-run.js
+
+```
+a rehearsal of the move of old content ids (lib/contentmove.js) on a copy
+of a database: the copy is made in a folder of its own, the server's
+start-up loading runs on it (as the server would), what changed is
+printed, the copy is searched for any old id left anywhere, and the copy
+is deleted. the database named is only read, so the server can be running.
+
+  node tools/content-ids-dry-run.js <game.sqlite>
+
+run it from the folder of the new server code (it needs that code and its
+asset cache). exits 1 if anything is left on an old id.
+every value or key in the database (but the move table) that is one of
+`numbers`, as a json path
+```
+
 ## tools/extract-swfs.sh
 
 ```
@@ -171,6 +188,24 @@ videos in a file viewer, and nothing else of the data folder, once:
   sudo setfacl -m u:ubuntu:x /home/flight /home/flight/flight /home/flight/flight/data
   sudo setfacl -R -m u:ubuntu:rwX,m::rwX "$d"
   sudo setfacl -d -m u:ubuntu:rwX,u:flight:rwX "$d"
+```
+
+## tools/item-ids.js
+
+```
+which den and clothing ids are used, and by what: the custom items (PNG
+items made in the mod panel, lib/customitems.js), the content packs
+(lib/contentpacks.js) and the extra music (lib/extramusic.js). reads the
+game's database without changing it, so it can run beside the server.
+needs nothing else of the server's code, so the one file can be copied to
+a server of any version.
+
+  node tools/item-ids.js            the ranges, what is in each, and any clash
+  node tools/item-ids.js 50012 ...  what each id is
+
+AJ_DATA_DIR picks the database, as for the server (default data/).
+the ranges are lib/itemids.js's, copied (this file needs no other).
+no extra music here
 ```
 
 ## tools/make-badges.py

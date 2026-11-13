@@ -40,7 +40,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 FLOOR, WALL, RUG = 'floor', 'wall', 'rug'
 MAX_NAME = 40
-FIRST_ID, LAST_ID = 55000, 65535  # lib/contentpacks.js: every pack's items share these ids
+ID_RANGES = [(10000, 49999)]  # lib/itemids.js CONTENT_DEN: every pack's new items share these ids
 TILE_HALF_H = 20  # half a LINE PLAY floor tile's height (tiles are 80 x 40)
 
 
@@ -271,7 +271,7 @@ def main():
     with open(os.path.join(A.out, 'pack.json'), 'w', encoding='utf8') as f:
         json.dump(pack, f, ensure_ascii=False, indent=1)
 
-    # the id budget every pack shares (lib/contentpacks.js gives each new item one of 55000-65535)
+    # the id budget every pack shares (lib/contentpacks.js gives each new item one of 10000-49999)
     others = 0
     parent = os.path.dirname(os.path.abspath(A.out))
     for d in os.listdir(parent):
@@ -282,7 +282,7 @@ def main():
             others += len(json.load(open(pj, encoding='utf8')).get('items', []))
         except Exception:
             pass
-    budget = LAST_ID - FIRST_ID + 1
+    budget = sum(last - first + 1 for first, last in ID_RANGES)
 
     print(f'{len(items)} items ({sum(len(i["aliases"]) for i in items)} LINE PLAY ids), {len(cols)} collections')
     print('  placement:', dict(collections.Counter(i['placement'] for i in items)))
