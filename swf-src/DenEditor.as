@@ -1390,11 +1390,11 @@ package gui
 
       // ---- the content shop (this server) ----
 
-      // content shop items (lib/contentpacks.js: den ids 55000 on) go in the
-      // Custom tab only
+      // content shop items (lib/itemids.js: den ids 10000 to 49999) go in
+      // the Custom tab only
       private static function isContentItem(param1:DenItem) : Boolean
       {
-         return param1 != null && param1.defId >= 55000 && param1.defId <= 65535;
+         return param1 != null && param1.defId >= 10000 && param1.defId <= 49999;
       }
 
       private function splitContentItems() : void

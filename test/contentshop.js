@@ -2,7 +2,7 @@
 
 // end to end: the content shop (lib/contentshop.js) and its packs
 // (lib/contentpacks.js). a pack in a folder of its own is read at start; its
-// items get ids from 55000 and keep them when the pack is read again; the
+// items get ids from 10000 and keep them when the pack is read again; the
 // catalog, searching and paging; buying a cart (all of it or nothing); the
 // item files made from the pictures; the item finder not finding them; and
 // an item gone from the pack going off sale while its owner keeps it.
@@ -100,7 +100,7 @@ const firstRun = async () => {
   assert.strictEqual(all.total, 4);
   for (const item of all.items) {
     ids[item.name] = item.id;
-    assert.ok(item.id >= 55000 && item.id <= 65535, `${item.name} has a content id`);
+    assert.ok(item.id >= 10000 && item.id <= 49999, `${item.name} has a content id`);
   }
   assert.strictEqual(new Set(Object.values(ids)).size, 4);
   assert.deepStrictEqual(all.items.find(item => item.name === "Hearts Chair"),
