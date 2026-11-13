@@ -24,10 +24,44 @@ package avatar
       private var _holdAnimId:int;
       
       private var _lastAnimToHappen:int;
-      
+
+      // the order its clothes are painted in (AvatarUtility.orderLayers): its
+      // player's (AvatarUtility.layerOrderOf), unless one is set here, as
+      // the avatar editor does for the animal it shows (null: the game's)
+      private var _ownLayerOrder:Boolean;
+
+      private var _layerOrder:Array;
+
       public function AvatarView()
       {
          super();
+      }
+
+      public function setLayerOrder(param1:Array) : void
+      {
+         _ownLayerOrder = true;
+         _layerOrder = param1;
+         refreshLayers();
+      }
+
+      // the layers it was last given, as LayerAnim has them (for the avatar
+      // editor's layers panel: what is worn, in the order painted)
+      public function get currentLayers() : Array
+      {
+         return _layerAnim ? _layerAnim.layers : null;
+      }
+
+      public function refreshLayers() : void
+      {
+         if(_layerAnim && _avatar)
+         {
+            _layerAnim.layers = setLayerHelper();
+         }
+      }
+
+      protected function ordered(param1:Array) : Array
+      {
+         return AvatarUtility.orderLayers(param1,_ownLayerOrder ? _layerOrder : (_avatar ? AvatarUtility.layerOrderOf(_avatar.userName,_avatar.perUserAvId) : null));
       }
       
       public function set lastAnimToHappen(param1:int) : void
@@ -196,7 +230,7 @@ package avatar
                }
             }
          }
-         return AvatarUtility.layerArrayForItemsAndColors(_loc3_,_avatar.colors,_avatar.avInvId,_avatar.roomType,_skipAnimEnviroCheck);
+         return ordered(AvatarUtility.layerArrayForItemsAndColors(_loc3_,_avatar.colors,_avatar.avInvId,_avatar.roomType,_skipAnimEnviroCheck));
       }
       
       public function playAnim(param1:int, param2:Boolean = false, param3:int = 0, param4:Function = null, param5:Boolean = false) : void
@@ -271,15 +305,12 @@ package avatar
                         // gives it: a custom one's own picture goes by it
                         // (LayerAnim, LayerBitmap). without it every new
                         // animation (walking) was painted as the item's base.
-                        _loc10_ = {
-                           "l":_loc12_.accId,
-                           "c":_loc7_,
-                           "d":_loc12_.defId
-                        };
-                        _loc11_.push(_loc10_);
+                        _loc11_.push(AvatarUtility.layerEntry(_loc12_,_loc7_));
                      }
                   }
-                  _layerAnim.layers = _loc11_;
+                  // in the player's own order, as setLayerHelper gives it:
+                  // else every animation would be painted by slot again
+                  _layerAnim.layers = ordered(_loc11_);
                }
                _layerAnim.hFlip = param2;
                _layerAnim.playAnim(param1,param3,param4);

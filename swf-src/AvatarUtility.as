@@ -425,16 +425,192 @@ package avatar
                      _loc6_ = _loc9_.color;
                   }
                   // "d": the item, for a custom one's own picture (LayerAnim, LayerBitmap)
-                  _loc7_ = {
-                     "l":_loc9_.accId,
-                     "c":_loc6_,
-                     "d":_loc9_.defId
-                  };
-                  _loc8_.push(_loc7_);
+                  _loc8_.push(layerEntry(_loc9_,_loc6_));
                }
             }
          }
          return _loc8_;
+      }
+
+      // ---- the player's own order of an animal's clothes (this server) ----
+      // the avatar editor's layers panel (gui.AvatarLayersPanel) puts the
+      // pieces an animal wears in an order of the player's own, and every
+      // client paints them so (LayerBitmap.keyFor). an order is a list of
+      // {d: def id, i: inventory id}, the bottom piece first; the server
+      // keeps one for each animal (lib/items.js, "xlo") and sends it before
+      // each list of what the animal wears (lib/world.js, sendItemList).
+
+      // username (lower case) + "|" + perUserAvId -> order
+      private static var _layerOrders:Object = {};
+
+      // one layer of an animal, as LayerAnim takes it: "l" its art, "c" its
+      // colour, "d" the item (a custom one's own picture goes by it), and
+      // for the order: "i" the item in the inventory, "s" its body slot
+      public static function layerEntry(param1:Item, param2:uint) : Object
+      {
+         return {
+            "l":param1.accId,
+            "c":param2,
+            "d":param1.defId,
+            "i":param1.invIdx,
+            "s":param1.layerId
+         };
+      }
+
+      private static function orderKey(param1:String, param2:int) : String
+      {
+         return (param1 == null ? "" : param1.toLowerCase()) + "|" + param2;
+      }
+
+      // the order a player gave one of their animals' clothes, or null
+      public static function layerOrderOf(param1:String, param2:int) : Array
+      {
+         var _loc3_:Array = _layerOrders[orderKey(param1,param2)];
+         return _loc3_ != null && _loc3_.length > 0 ? _loc3_ : null;
+      }
+
+      public static function setLayerOrder(param1:String, param2:int, param3:Array) : void
+      {
+         if(param3 == null || param3.length == 0)
+         {
+            delete _layerOrders[orderKey(param1,param2)];
+         }
+         else
+         {
+            _layerOrders[orderKey(param1,param2)] = param3;
+         }
+      }
+
+      // "xlo" from the server: [xlo, -1, username, perUserAvId, count, (def, inv)...]
+      // (count 0: the animal is painted in the game's own order again)
+      public static function onLayerOrder(param1:Object) : void
+      {
+         var _loc5_:Array = [];
+         var _loc3_:int = int(param1[4]);
+         var _loc4_:int = 0;
+         while(_loc4_ < _loc3_ && 6 + _loc4_ * 2 < param1.length)
+         {
+            _loc5_.push({
+               "d":int(param1[5 + _loc4_ * 2]),
+               "i":int(param1[6 + _loc4_ * 2])
+            });
+            _loc4_++;
+         }
+         setLayerOrder(String(param1[2]),int(param1[3]),_loc5_);
+      }
+
+      // the player's own active animal: saves its order on the server, which
+      // tells everyone else in the room (an empty one: the game's own order)
+      public static function sendLayerOrder(param1:int, param2:Array) : void
+      {
+         var _loc4_:Array = [param2 == null ? 0 : param2.length];
+         for each(var _loc3_:Object in param2)
+         {
+            _loc4_.push(int(_loc3_.d),int(_loc3_.i));
+         }
+         setLayerOrder(gMainFrame.userInfo.myUserName,param1,param2);
+         gMainFrame.server.setXtObject_Str("xlo",_loc4_);
+      }
+
+      // the pieces of clothing in `param1` (anything with "d", "i" and "s":
+      // layer entries, or the panel's rows) in the order `param2` gives,
+      // the bottom first. a piece the order names (by item, or failing that
+      // by the same def: a player card's items have no inventory ids) keeps
+      // its place there; one it does not name goes in by its slot, over
+      // the pieces of its own slot and under those of the slots above.
+      // null when there is no order: the game's own, by slot.
+      public static function resolveLayerOrder(param1:Array, param2:Array) : Array
+      {
+         var _loc3_:Object = null;
+         var _loc4_:int = 0;
+         var _loc5_:int = 0;
+         var _loc8_:Object = null;
+         if(param2 == null || param2.length == 0)
+         {
+            return null;
+         }
+         var _loc6_:Array = [];
+         for each(_loc3_ in param1)
+         {
+            if(int(_loc3_.s) > 3)
+            {
+               _loc6_.push(_loc3_);
+            }
+         }
+         var _loc7_:Array = [];
+         for each(_loc8_ in param2)
+         {
+            _loc5_ = -1;
+            _loc4_ = 0;
+            while(_loc4_ < _loc6_.length)
+            {
+               if(int(_loc6_[_loc4_].d) == int(_loc8_.d) && int(_loc6_[_loc4_].i) == int(_loc8_.i))
+               {
+                  _loc5_ = _loc4_;
+                  break;
+               }
+               _loc4_++;
+            }
+            if(_loc5_ < 0)
+            {
+               _loc4_ = 0;
+               while(_loc4_ < _loc6_.length)
+               {
+                  if(int(_loc6_[_loc4_].d) == int(_loc8_.d))
+                  {
+                     _loc5_ = _loc4_;
+                     break;
+                  }
+                  _loc4_++;
+               }
+            }
+            if(_loc5_ >= 0)
+            {
+               _loc7_.push(_loc6_.splice(_loc5_,1)[0]);
+            }
+         }
+         _loc6_.sort(function(param1:Object, param2:Object):int
+         {
+            if(int(param1.s) != int(param2.s))
+            {
+               return int(param1.s) - int(param2.s);
+            }
+            return int(param1.i) - int(param2.i);
+         });
+         for each(_loc3_ in _loc6_)
+         {
+            _loc5_ = _loc7_.length;
+            _loc4_ = 0;
+            while(_loc4_ < _loc7_.length)
+            {
+               if(int(_loc7_[_loc4_].s) > int(_loc3_.s))
+               {
+                  _loc5_ = _loc4_;
+                  break;
+               }
+               _loc4_++;
+            }
+            _loc7_.splice(_loc5_,0,_loc3_);
+         }
+         return _loc7_;
+      }
+
+      // LayerAnim's layers with the clothes ranked ("z") in the order
+      // `param2` gives (resolveLayerOrder); as they were without one
+      public static function orderLayers(param1:Array, param2:Array) : Array
+      {
+         var _loc3_:Array = resolveLayerOrder(param1,param2);
+         if(_loc3_ == null)
+         {
+            return param1;
+         }
+         var _loc4_:int = 0;
+         while(_loc4_ < _loc3_.length)
+         {
+            _loc3_[_loc4_].z = _loc4_;
+            _loc4_++;
+         }
+         return param1;
       }
       
       public static function getAvatarByIndex(param1:int) : Avatar

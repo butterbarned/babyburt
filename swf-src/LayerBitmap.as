@@ -14,7 +14,16 @@ package com.sbi.graphics
    {
       
       public static const BACKGROUND_COLOR:uint = 0;
-      
+
+      // an animal whose player put its clothes in an order of their own (the
+      // avatar editor's layers panel, AvatarUtility.orderLayers): each worn
+      // piece has a place ORDER_BASE + its rank, bottom first, painted after
+      // every body slot (paint). an animal without one is painted by slot,
+      // exactly as before.
+      public static const ORDER_BASE:int = 300;
+
+      public static const ORDER_MAX:int = 64;
+
       private var _anchorPoint:Point;
       
       private var _activeLayerGroup:LayerGroup;
@@ -143,7 +152,9 @@ package com.sbi.graphics
                   continue;
                }
             }
-            for each(var _loc1_:int in String(_loc4_).split(","))
+            // the image ids come before any "|" (LayerAnim.requestAnim adds
+            // custom pictures and the player's own clothes order after it)
+            for each(var _loc1_:int in String(_loc4_).split("|")[0].split(","))
             {
                _loc2_.add(_loc1_);
             }
@@ -163,12 +174,23 @@ package com.sbi.graphics
          }
          return 100 + param1 * 16 + Math.min(param2,15);
       }
+
+      // a layer's place: its rank in the player's own order (`param3`, -1
+      // when there is none), else its slot's (slotFor)
+      public static function keyFor(param1:int, param2:int, param3:int) : int
+      {
+         if(param3 >= 0 && param1 > 3)
+         {
+            return ORDER_BASE + Math.min(param3,ORDER_MAX - 1);
+         }
+         return slotFor(param1,param2);
+      }
       
       // `param5`: the item this layer is (a custom one may be worn as its own
       // picture: paintLayer), 0 for one of the game's or none known
       public function setLayer(param1:int, param2:Object, param3:uint, param4:String = null, param5:int = 0) : void
       {
-         if(param1 < 0 || param1 > 10 && param1 < 117 || param1 > 275)
+         if(param1 < 0 || param1 > 10 && param1 < 117 || param1 > 275 && param1 < ORDER_BASE || param1 >= ORDER_BASE + ORDER_MAX)
          {
             return;
          }
@@ -491,6 +513,20 @@ package com.sbi.graphics
                         }
                      }
                      _loc8_++;
+                  }
+                  _loc5_++;
+               }
+               // the player's own order of their clothes (ORDER_BASE), over the body
+               _loc5_ = ORDER_BASE;
+               while(_loc5_ < ORDER_BASE + ORDER_MAX)
+               {
+                  _loc6_ = _activeLayerGroup.layers[_loc5_];
+                  if(_loc6_ != null && _loc6_.o != null && _loc6_.pal != null)
+                  {
+                     if(paintLayer(_loc6_,param1,param2))
+                     {
+                        _loc4_ = true;
+                     }
                   }
                   _loc5_++;
                }

@@ -32,15 +32,15 @@ For each class: the methods changed and added against the untouched original (co
 
 ### XtReplyDemuxer
 
-- `swf-src/XtReplyDemuxer.as`, 289 lines
+- `swf-src/XtReplyDemuxer.as`, 304 lines
 - original: `tools/decompiled/XtReplyDemuxer.as`
 - **changed:** `xtReplyHandler`
 
-> the player's chat filter (AJClient.filterText), on what other players wrote, before any of the game sees it. A chat line ([.., room, who, text, type, ..], typed chat being types 0 and 9) that is to be left out is simply not passed on.
+> the order a player put an animal's clothes in (avatar.AvatarUtility): it comes before that animal's list of what it wears ("il") the player's saved outfits, for the avatar editor's outfits window the player's chat filter (AJClient.filterText), on what other
 
 ### loader.MediaHelper
 
-- `swf-src/MediaHelper.as`, 224 lines
+- `swf-src/MediaHelper.as`, 225 lines
 - original: `tools/decompiled/loader/MediaHelper.as`
 - **changed:** `init`, `handleMediaData`, `onBytesLoaded`, `onFrame`
 - **added:** `onBytesFailed`, `refetch`, `onRefetched`
@@ -126,7 +126,7 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.ChatHistory
 
-- `swf-src/ChatHistory.as`, 1008 lines
+- `swf-src/ChatHistory.as`, 1016 lines
 - original: `tools/decompiled/gui/ChatHistory.as`
 - **changed:** `resetChatPrivs`, `addMessage`, `addPrivateMessage`, `clearChat`, `enableFreeChat`, `resetTreeSearch`, `setFocusOnMsgText`, `toggleInGameHud`, `setupInitialItems`, `onChatLink`, `onTextFieldChanged`, `keyDownListener`
 - **added:** `plain`, `withMentions`, `addLine`, `showLines`, `drawMentionBacks`, `showEmojiInInput`
@@ -143,12 +143,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### avatar.UserCommXtCommManager
 
-- `swf-src/UserCommXtCommManager.as`, 928 lines
+- `swf-src/UserCommXtCommManager.as`, 943 lines
 - original: `tools/decompiled/avatar/UserCommXtCommManager.as`
 - **changed:** `sendAvatarAction`, `sendChatMessage`, `adjustSpecialWords`, `adjustCamelCase`, `fixMispellings`, `onSendMessage`, `userCommChatResponse`, `userCommAdminMessageResponse`
 - **added:** `sendPetPlayerMode`, `pageAnnouncement`
 
-> m0/m1 is deliberately a new marker: old clients sent the animation number here. New clients use it to mirror every action consistently on every screen. ":fire:" and the like as the emoji (AJClient's emoji)
+> m0/m1 is deliberately a new marker: old clients sent the animation number here. New clients use it to mirror every action consistently on every screen. "!outfit" on its own opens the avatar editor's outfits window here
 
 ### buddy.BuddyCard
 
@@ -257,12 +257,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.AvatarEditor
 
-- `swf-src/AvatarEditor.as`, 3646 lines
+- `swf-src/AvatarEditor.as`, 4047 lines
 - original: `tools/decompiled/gui/AvatarEditor.as`
-- **changed:** `destroy`, `setInitAssetVisibility`, `openColorTablePatternEyesTab`, `createPatternsAndEyesArrays`, `createItemWindows`, `onTradeItemSelectClose`, `sortByHandler`, `onSearchTextInput`
-- **added:** `showSortMenu`, `onSortWord`, `sortByName`, `sortByType`, `isOutfitCode`, `outfitRequest`, `askOutfitImport`, `itemsText`, `onOutfitChecked`, `onOutfitConfirm`, `onOutfitImported`, `onOutfitWait`, `onOutfitFailed`
+- **changed:** `init`, `destroy`, `onMediaItemLoaded`, `setInitAssetVisibility`, `positionAndDrawAvatarView`, `sendChangesRequest`, `openColorTablePatternEyesTab`, `createPatternsAndEyesArrays`, `createItemWindows`, `onTradeItemSelectClose`, `sortByHandler`, `onSearchTextInput`
+- **added:** `copyLayerOrder`, `setupLayers`, `sidePanelRect`, `drawOutfitsIcon`, `onOutfitsBtnOver`, `onOutfitsBtn`, `openOutfitsWindow`, `wearOutfit`, `drawLayersIcon`, `onLayersBtnOver`, `onLayersBtn`, `onLayerOrderChanged`, `sendLayerOrder`, `orderedClothing`, `destroyLayers`, `showSortMenu`, `onSortWord`, `sortByName`, `sortByType`, `isOutfitCode`, `outfitRequest`, `askOutfitImport`, `itemsText`, `onOutfitChecked`, `onOutfitConfirm`, `onOutfitImported`, `onOutfitWait`, `onOutfitFailed`
 
-> the editor can be destroyed (leaving the room) before its artwork came, or after setting it up threw halfway (#1009, #2025 below) room for an outfit code pasted in (onSearchTextInput) special animals get the pattern colour table too, in place of
+> the layers panel (gui.AvatarLayersPanel, this server): the button on the animal's box that opens it, the panel (over the colour tables), and the order it gives the clothes (AvatarUtility.resolveLayerOrder, null: the game's own), saved on closing when it changed
 
 ### gui.PetInventory
 
@@ -298,11 +298,21 @@ For each class: the methods changed and added against the untouched original (co
 
 ### avatar.AvatarView
 
-- `swf-src/AvatarView.as`, 381 lines
+- `swf-src/AvatarView.as`, 412 lines
 - original: `tools/decompiled/avatar/AvatarView.as`
 - **changed:** `setLayerHelper`, `playAnim`
+- **added:** `setLayerOrder`, `get currentLayers`, `refreshLayers`, `ordered`
 
-> "d": the item, as AvatarUtility.layerArrayForItemsAndColors gives it: a custom one's own picture goes by it (LayerAnim, LayerBitmap). without it every new animation (walking) was painted as the item's base.
+> the order its clothes are painted in (AvatarUtility.orderLayers): its player's (AvatarUtility.layerOrderOf), unless one is set here, as the avatar editor does for the animal it shows (null: the game's) the layers it was last given, as LayerAnim has them (for the avatar
+
+### avatar.MannequinData
+
+- `swf-src/MannequinData.as`, 958 lines
+- original: `tools/decompiled/avatar/MannequinData.as`
+- **changed:** `init`, `clone`, `hasThisInvIdOnAndRemove`, `setupMannequinAvatarView`, `updateLayer`, `removeItems`, `compare`, `copyFromOther`, `setupDataInvIdsOnly`, `setupDataFull`, `recreateAvatarForView`, `generateBodModsAndClothingList`, `setupMannequinInventory`
+- **added:** `get layerOrder`, `setPieces`, `readPieces`, `get headField`, `hasPiece`, `pieceIndex`, `copyPieces`, `placeOf`, `layerOfDef`, `syncSlots`, `piecesFromSlots`, `samePieces`, `keysOf`
+
+> everything it wears, as an animal may (three to a layer, not one to each of the five places the game had): {i: inventory id, d: def, c: colour}, the bottom first when `ordered`. the five *InvId/ *DefId/*Color above are kept to the first piece in each place, for
 
 ### avatar.AvatarWorldView
 
@@ -457,20 +467,21 @@ For each class: the methods changed and added against the untouched original (co
 
 ### com.sbi.graphics.LayerAnim
 
-- `swf-src/LayerAnim.as`, 846 lines
+- `swf-src/LayerAnim.as`, 875 lines
 - original: `tools/decompiled/com/sbi/graphics/LayerAnim.as`
 - **changed:** `set layers`, `requestAnim`, `buildRequestArray`, `onReceiveData`
+- **added:** `rankOf`
 
 > variables holding functions (the game sets them through isOnscreen and hasSequence), which the decompiler shows as functions: compiled as functions they cannot be assigned (#1037 at startup) each requested image's place in _layers: items worn in the same
 
 ### com.sbi.graphics.LayerBitmap
 
-- `swf-src/LayerBitmap.as`, 970 lines
+- `swf-src/LayerBitmap.as`, 1006 lines
 - original: `tools/decompiled/com/sbi/graphics/LayerBitmap.as`
-- **changed:** `setLayer`, `paint`
-- **added:** `artArrived`, `slotFor`, `paintLayer`
+- **changed:** `trimLayerGroups`, `setLayer`, `paint`
+- **added:** `artArrived`, `slotFor`, `keyFor`, `paintLayer`
 
-> a custom item's picture has loaded (AJClient.customArtBitmap). the frames painted while it loaded show the item it was made from, and are kept: each is painted again, or the picture shows only on the frames not painted yet (and comes and goes as the animation plays).
+> an animal whose player put its clothes in an order of their own (the avatar editor's layers panel, AvatarUtility.orderLayers): each worn piece has a place ORDER_BASE + its rank, bottom first, painted after every body slot (paint). an animal without one is painted by slot,
 
 ### ecard.ECard
 
@@ -515,12 +526,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### den.DenXtCommManager
 
-- `swf-src/DenXtCommManager.as`, 1683 lines
+- `swf-src/DenXtCommManager.as`, 1687 lines
 - original: `tools/decompiled/den/DenXtCommManager.as`
-- **changed:** `handleXtReply`, `denItemsResponse`, `denRoomCount`, `denRoomResponse`, `relocalizeDenRooms`, `denStateResponse`, `denPhantomResponse`, `denItemDefsResponse`, `relocalizeDenItems`, `enviroItems`
+- **changed:** `requestDenStateChange`, `handleXtReply`, `denItemsResponse`, `denRoomCount`, `denRoomResponse`, `relocalizeDenRooms`, `denStateResponse`, `denPhantomResponse`, `denItemDefsResponse`, `relocalizeDenItems`, `enviroItems`
 - **added:** `prefabText`, `requestContentCatalog`, `requestContentItems`, `requestContentBuy`, `requestPrefabList`, `requestPrefab`, `requestPrefabSave`, `requestPrefabRename`, `requestPrefabDelete`, `requestPrefabShare`, `requestPrefabImport`, `requestPrefabGive`, `requestPrefabDuplicate`, `requestItemsGive`, `requestItemColour`, `addDenItemDefs`, `addDenItemDef`
 
-> den prefabs and colours (this server): the answers go to prefabCallback (the whole message), see gui.DenPrefabs the content shop (this server: lib/contentshop.js): the answers go to contentCallback (the whole message), see gui.DenContentShop
+> the head carries every piece it wears (MannequinData.headField) den prefabs and colours (this server): the answers go to prefabCallback (the whole message), see gui.DenPrefabs the content shop (this server: lib/contentshop.js): the answers go
 
 ### gui.ActionManager
 
@@ -539,11 +550,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### avatar.AvatarUtility
 
-- `swf-src/AvatarUtility.as`, 2162 lines
+- `swf-src/AvatarUtility.as`, 2338 lines
 - original: `tools/decompiled/avatar/AvatarUtility.as`
 - **changed:** `layerArrayForItemsAndColors`
+- **added:** `layerEntry`, `orderKey`, `layerOrderOf`, `setLayerOrder`, `onLayerOrder`, `sendLayerOrder`, `resolveLayerOrder`, `orderLayers`
 
-> "d": the item, for a custom one's own picture (LayerAnim, LayerBitmap)
+> "d": the item, for a custom one's own picture (LayerAnim, LayerBitmap) ---- the player's own order of an animal's clothes (this server) ---- the avatar editor's layers panel (gui.AvatarLayersPanel) puts the pieces an animal wears in an order of the player's own, and every
 
 ### item.Item
 
@@ -555,9 +567,9 @@ For each class: the methods changed and added against the untouched original (co
 
 ### loader.DenItemHelper
 
-- `swf-src/DenItemHelper.as`, 1357 lines
+- `swf-src/DenItemHelper.as`, 1358 lines
 - original: `tools/decompiled/loader/DenItemHelper.as`
-- **changed:** `get sortOffset`, `init`, `initDS`, `initGeneric`, `destroy`, `loadUniqueImage`, `rebuildMannequinView`, `onBytesLoaded`
+- **changed:** `get sortOffset`, `init`, `initDS`, `initGeneric`, `destroy`, `loadUniqueImage`, `rebuildMannequinView`, `handleData`, `onBytesLoaded`
 - **added:** `loadCustomArt`, `fetchArtBytes`, `customArtBytesReceived`, `onCustomArtLoaded`, `onCustomArtFailed`, `loadBaseArt`, `finishLoad`, `onThemeTileBytes`, `onThemeTileFailed`, `onThemeTileLoaded`, `themeTexture`, `floorMatrix`, `wallMatrix`, `wallRuns`, `stackRuns`, `pieceRuns`, `footAt`, `grey`, `themeShade`
 
 > The low two flip bits are used by the original client.  Den editing also uses bits 2-3 as the item's player depth: 1 = always behind players and 2 = always in front (a very large offset wins over the normal y-position depth sort without visibly moving the item), and
@@ -594,9 +606,69 @@ For each class: the methods changed and added against the untouched original (co
 
 > the content shop (this server): its own den items (lib/contentpacks.js), opened from the den editor's top right. a game-styled frame laid out like a web shop: collections down the left, a search box, category chips, a page of item cards, a details box, and a cart that is bought
 
+### gui.AvatarLayersPanel
+
+- `swf-src/AvatarLayersPanel.as`, 704 lines
+
+> the avatar editor's layers panel (this server): the clothes the animal in the editor wears, the piece worn in front at the top, each with its icon, its name and where it goes (head, neck ...). a row is dragged up or down, or moved one place with its arrows, to wear it in front of
+
+### gui.AvatarOutfitsPanel
+
+- `swf-src/AvatarOutfitsPanel.as`, 546 lines
+
+> the avatar editor's outfits window (this server): the player's saved outfits ("!outfit save" or the button below), each with the icons of its pieces. "Wear" puts one on the animal in the editor (or the mannequin) as if its pieces were picked there, in the outfit's layer
+
+### it.gotoandplay.smartfoxserver.SmartFoxClient
+
+- `swf-src/SmartFoxClient.as`, 1558 lines
+- original: `tools/decompiled/it/gotoandplay/smartfoxserver/SmartFoxClient.as`
+- **changed:** `SmartFoxClient`, `set rawProtocolSeparator`, `isSecureSocketSupported`, `getConnectionUrl`, `handleSocketConnection`, `handleMessage`, `getSocketIpAddress`
+
+> Burrow: whether the socket is a SecureSocket, kept here. Ruffle (the game in a browser, /account/play) has no SecureSocket class, and "socketConnection is SecureSocket" threw #1065 there on every connect. the class is named only where it is made.
+
+### loadProgress.LoadProgress
+
+- `swf-src/LoadProgress.as`, 373 lines
+- original: `tools/decompiled/loadProgress/LoadProgress.as`
+- **changed:** `init`, `show`, `onLoadScreenComplete`, `startLoad`, `loadCompleteHandler`, `loadProgressHandler`
+- **added:** `loadScreenBytes`, `giveScreen`, `fetchScreen`, `screenBytes`
+
+> Burrow: on every player, as the Flash plugin had it by default Burrow: the screen's bytes (loadScreenBytes). in a browser their empty import of sharedFonts.swf is taken out first, or they never finish loading (com.sbi.loader.SwfImports). this
+
+### com.sbi.loader.SceneLoader
+
+- `swf-src/SceneLoader.as`, 369 lines
+- original: `tools/decompiled/com/sbi/loader/SceneLoader.as`
+- **changed:** `getOffset`, `newAsset`, `loadAsset`
+
+> Burrow: each asset's "complete" listener is added before its loadBytes, and in a browser its bytes go through SwfImports.strip (Ruffle never finished loading the world map's art that imports sharedFonts.swf). Burrow: an empty layer (one not loaded yet, as the world map's
+
+### com.sbi.loader.SwfImports
+
+- `swf-src/SwfImports.as`, 203 lines
+
+> Burrow: in a browser (Ruffle, /account/play), a SWF given to Loader.loadBytes that has an ImportAssets tag never finishes loading: no "init", no "complete", and whatever waits for it (the world map's scene) waits for good. the game's art imports "../sharedFonts.swf" with no names
+
+### game.GameBase
+
+- `swf-src/GameBase.as`, 744 lines
+- original: `tools/decompiled/game/GameBase.as`
+- **changed:** `gemMultiplierMediaHandler`
+
+> Burrow: in a browser each sound is known by the file it was asked for. Ruffle's Sound.url is not the address asked for, so handleAudioFilePreloaded found no names: every sound was null and the game stopped at its first (SoundManager.addSoundByName), on its
+
+### game.hedgeHog.HedgeHog
+
+- `swf-src/HedgeHog.as`, 1708 lines
+- original: `tools/decompiled/game/hedgeHog/HedgeHog.as`
+- **changed:** `setupLevel`
+- **added:** `drawMapOnce`
+
+> the level art's own drawMap calls each tile's block() nine times, with its neighbours added one by one; only the last call counts (block resets the tile first). Ruffle runs it too slowly and stops the script, so in a browser the maze is drawn here, one call per tile.
+
 ### room.DenItemHolder
 
-- `tools/decompiled/room/DenItemHolder.as`, 3128 lines
+- `tools/decompiled/room/DenItemHolder.as`, 3178 lines
 - original: `tools/decompiled/room/DenItemHolder.as`
 - no method changed
 

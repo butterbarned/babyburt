@@ -104,7 +104,10 @@ package room
       //              flipped or put away
       //   bit 5      its group's items are chosen one by one, not as one
       //   bits 6-7   its size: SIZES (1, 1.5, 2 or 3 times), from the
-      //              point it stands on (the middle of its bottom edge)
+      //              point it stands on (the middle of its bottom edge);
+      //              with bit 31 (SIZE_HIGH) the smaller ones (0.75, 0.5,
+      //              0.33, 0.25 times), so a value saved before means what
+      //              it did
       //   bits 8-15  the group (0 for none)
       //   bits 16-30 layer nudge, signed pixels: drawn so much further in
       //              front (more) or behind (less) than where it stands says;
@@ -121,9 +124,15 @@ package room
 
       public static const MAX_NUDGE:int = 16383;
 
-      public static const SIZES:Array = [1,1.5,2,3];
+      public static const SIZES:Array = [1,1.5,2,3,0.75,0.5,1 / 3,0.25];
 
-      public static const SIZE_LABELS:Array = ["Size 1x","Size 1.5x","Size 2x","Size 3x"];
+      public static const SIZE_LABELS:Array = ["1x","1.5x","2x","3x","0.75x","0.5x","0.33x","0.25x"];
+
+      // the sizes from the smallest to the biggest, as the size button's
+      // "-" and "+" step through them
+      private static const SIZE_STEPS:Array = [7,6,5,4,0,1,2,3];
+
+      private static const SIZE_HIGH:int = -2147483648;
 
       private static const SIZE_SHIFT:int = 6;
 
@@ -201,7 +210,7 @@ package room
          _ungroupBtn = makeGroupButton("Ungroup",onUngroupBtn);
          _duplicateBtn = makeGroupButton("Duplicate",onDuplicateBtn);
          _lockBtn = makeGroupButton("Lock",onLockBtn);
-         _sizeBtn = makeGroupButton(SIZE_LABELS[0],onSizeBtn);
+         _sizeBtn = makeGroupButton(sizeLabel(0),onSizeBtn);
          // a little tag in the look of the layers panel: wood around cream
          _pickHint = new Sprite();
          _pickHint.mouseEnabled = false;
@@ -1441,7 +1450,8 @@ package room
                _loc6_ += _loc5_.width;
             }
          }
-         else if(param4 > 0)
+         // the flips (bit 31, a smaller size, makes the value below 0)
+         else if((param4 & 3) != 0)
          {
             if(BitUtility.isBitSetForNumber(0,param4))
             {
@@ -1528,15 +1538,21 @@ package room
       // an item's size: its place in SIZES, and how many times
       public static function sizeIndexOf(param1:int) : int
       {
-         return param1 >> SIZE_SHIFT & 3;
+         return (param1 >> SIZE_SHIFT & 3) | ((param1 & SIZE_HIGH) != 0 ? 4 : 0);
       }
 
       public static function sizeOf(param1:int) : Number
       {
-         return SIZES[param1 >> SIZE_SHIFT & 3];
+         return SIZES[sizeIndexOf(param1)];
       }
 
-      // what can be made bigger: not wallpapers and floors (they fit the
+      // the size button's text: smaller on its left, bigger on its right
+      private static function sizeLabel(param1:int) : String
+      {
+         return "-   " + SIZE_LABELS[param1] + "   +";
+      }
+
+      // what can be made bigger or smaller: not wallpapers and floors (they fit the
       // den), nor items the game draws by labels of their own (flip frames,
       // paintings)
       private function sizable(param1:DenStateItem) : Boolean
@@ -1545,14 +1561,14 @@ package room
             && !param1.denItemHelper.bFlipLabel && !param1.denItemHelper.isUniqueImageItem;
       }
 
-      // the items' size made SIZES[param2], each from the point it stands on
+      // the items' size made SIZES[param2] (0-7), each from the point it stands on
       public function setSize(param1:Array, param2:int) : void
       {
          for each(var _loc3_:DenStateItem in param1)
          {
             if(sizable(_loc3_) && !isLocked(_loc3_))
             {
-               _loc3_.flipped = _loc3_.flipped & ~SIZE_MASK | (param2 & 3) << SIZE_SHIFT;
+               _loc3_.flipped = _loc3_.flipped & ~SIZE_MASK & ~SIZE_HIGH | (param2 & 3) << SIZE_SHIFT | ((param2 & 4) != 0 ? SIZE_HIGH : 0);
                setItemMatrix(_loc3_,_loc3_.x,_loc3_.y,_loc3_.flipped);
                resort(_loc3_);
             }
@@ -2001,7 +2017,7 @@ package room
             _layerManager.room_chat.addChild(_depthBtn);
             if(sizable(_dragItem))
             {
-               setGroupButtonText(_sizeBtn,SIZE_LABELS[sizeIndexOf(_dragItem.flipped)],sizeIndexOf(_dragItem.flipped) != 0);
+               setGroupButtonText(_sizeBtn,sizeLabel(sizeIndexOf(_dragItem.flipped)),sizeIndexOf(_dragItem.flipped) != 0);
                _layerManager.room_chat.addChild(_sizeBtn);
             }
          }
@@ -2061,7 +2077,8 @@ package room
          }
       }
 
-      // bigger: 1x, 1.5x, 2x, 3x, and round again
+      // its left end makes it a size smaller, its right end a size bigger
+      // (0.25x up to 3x), its middle the size it was made
       private function onSizeBtn(param1:MouseEvent) : void
       {
          param1.stopPropagation();
@@ -2069,7 +2086,21 @@ package room
          {
             return;
          }
-         setSize(moveSet(_dragItem),(sizeIndexOf(_dragItem.flipped) + 1) % SIZES.length);
+         var _loc2_:int = SIZE_STEPS.indexOf(sizeIndexOf(_dragItem.flipped));
+         var _loc3_:Number = _sizeBtn.mouseX;
+         if(_loc3_ < BTN_W * 0.33)
+         {
+            _loc2_ = Math.max(0,_loc2_ - 1);
+         }
+         else if(_loc3_ > BTN_W * 0.67)
+         {
+            _loc2_ = Math.min(SIZE_STEPS.length - 1,_loc2_ + 1);
+         }
+         else
+         {
+            _loc2_ = SIZE_STEPS.indexOf(0);
+         }
+         setSize(moveSet(_dragItem),SIZE_STEPS[_loc2_]);
          showGroupControls();
       }
 

@@ -136,7 +136,8 @@ const run = async () => {
   assert.strictEqual((await a.untilXt("db"))[2], "1");
   // the owner's list: eight fields, the ten of a mannequin (all 0 = bare, the animal's own colours), one more.
   const listed = await a.nextXt("di");
-  assert.deepStrictEqual(listed.slice(5), [listed[5], "3433", "0", "0", "true", "", "-1", "", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]);
+  // the last is all it wears (lib/dens.js mannequinTail), which an old client reads as int() = 0.
+  assert.deepStrictEqual(listed.slice(5), [listed[5], "3433", "0", "0", "true", "", "-1", "", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0~~"]);
   const mannequin = listed[5];
   a.xt("dj", roomId, "denAnn", 1, -1);
   const den = (await a.untilXt("rj"))[4];
@@ -145,13 +146,57 @@ const run = async () => {
   a.xt("ds", den, 1, 0, mannequin, 1, 300, 400, 0, "off", 111, 222, 0, 333, 0, hat, 0, 0, 0, hat);
   assert.deepStrictEqual((await a.nextXt("dss")).slice(2), [mannequin]);
   a.xt("di", den);
-  assert.deepStrictEqual((await a.nextXt("di")).slice(13, 24), ["111", "222", "0", "333", "0", "0", "0", "0", "0", hat, "0"]);
+  assert.deepStrictEqual((await a.nextXt("di")).slice(13, 24), ["111", "222", "0", "333", "0", "0", "0", "0", "0", hat, `0~~215_392491620_${hat}`]);
   // A visitor is told what the hat is: its def and colour, then its id.
   const {client: b, roomId: benRoom} = await arrive("Ben", "KettlePass01");
   b.xt("dj", benRoom, "denAnn", 1, -1);
   const seen = await b.untilXt("ds");
   assert.deepStrictEqual(seen.slice(5), [mannequin, "3433", "1", "300", "400", "0", "0", "", "", "-1", "",
-    "111", "222", "0", "333", "0", "0", "0", "0", "0", "215", "392491620", hat, "0"]);
+    "111", "222", "0", "333", "0", "0", "0", "0", "0", "215", "392491620", hat, `0~~215_392491620_${hat}`]);
+
+  // a mannequin wears as much as an animal may: three to a layer, in the owner's order.
+  const hats = [hat];
+  for (let i = 0; i < 3; i++) {
+    a.xt("ib", den, 666, 1, 215, 0, 0);
+    hats.push((await a.untilXt("il"))[9]);
+    await a.untilXt("ib");
+  }
+  const wears = async () => {
+    a.xt("di", den);
+    const fields = (await a.untilXt("di")).slice(13, 24);
+    return [fields[9], fields[10]];
+  };
+  const saveMannequin = (inv, head) => {
+    a.xt("ds", den, 1, 0, inv, 1, 300, 400, 0, "off", 111, 222, 0, 333, 0, 0, 0, 0, 0, head);
+    return a.untilXt("dss");
+  };
+  const piece = inv => `215_392491620_${inv}`;
+  // a fourth hat is one too many for the layer; the order is kept, bottom first.
+  await saveMannequin(mannequin, `${hats[2]}~o~${hats[2]}.${hats[0]}.${hats[3]}.${hats[1]}`);
+  assert.deepStrictEqual(await wears(), [hats[2], `0~o~${[hats[2], hats[0], hats[3]].map(piece).join(".")}`]);
+  // a client built before sends the five it was shown: that strips nothing...
+  await saveMannequin(mannequin, hats[2]);
+  assert.deepStrictEqual(await wears(), [hats[2], `0~o~${[hats[2], hats[0], hats[3]].map(piece).join(".")}`]);
+  // ...but a change there is what it wears now, in the game's own order.
+  await saveMannequin(mannequin, hats[1]);
+  assert.deepStrictEqual(await wears(), [hats[1], `0~~${piece(hats[1])}`]);
+  // a list that is not one is refused, and so the mannequin is as it was.
+  await saveMannequin(mannequin, `${hats[0]}~o~${hats[0]}.x`);
+  await saveMannequin(mannequin, `${hats[0]}~z~${hats[0]}`);
+  assert.deepStrictEqual(await wears(), [hats[1], `0~~${piece(hats[1])}`]);
+  // the same hat on a second mannequin comes off the first.
+  a.xt("db", den, 0, 12, 3433, 0, 0);
+  await a.untilXt("db");
+  const list = await a.untilXt("di"); // each mannequin is 19 fields here
+  const secondInv = list[5 + 19];
+  assert.strictEqual(list[5 + 20], "3433");
+  await saveMannequin(secondInv, `0~~${hats[1]}.${hats[3]}`);
+  a.xt("di", den);
+  const twoListed = await a.untilXt("di");
+  assert.deepStrictEqual([twoListed[23], twoListed[23 + 19]], ["0~~", `0~~${piece(hats[1])}.${piece(hats[3])}`]);
+  // the first mannequin has the first hat again, for what follows.
+  await saveMannequin(mannequin, hat);
+  assert.deepStrictEqual(await wears(), [hat, `0~~${piece(hat)}`]);
   // --- playing as an alpha: the client is told which character stands in for the animal
   const say = (client, room, text) => client.send(`<msg t='sys'><body action='pubMsg' r='${room}'><txt><![CDATA[${text}%0]]></txt></body></msg>`);
   a.xt("au", den, 1, 300, 300, 14, 1); // Ann has walked in: others see her

@@ -31,9 +31,13 @@ package gui
    import den.DenItem;
    import den.DenMannequinInventory;
    import den.DenXtCommManager;
+   import flash.display.Graphics;
+   import flash.display.DisplayObjectContainer;
+   import room.RoomXtCommManager;
    import flash.display.MovieClip;
    import flash.geom.Rectangle;
    import flash.display.Sprite;
+   import flash.text.TextField;
    import flash.events.Event;
    import flash.events.MouseEvent;
    import flash.geom.Matrix;
@@ -294,6 +298,31 @@ package gui
       private var _isForMannequin:Boolean;
       
       private var _mannequinDenItemHelper:DenItemHelper;
+
+      // the layers panel (gui.AvatarLayersPanel, this server): the button on
+      // the animal's box that opens it, the panel (over the colour tables),
+      // and the order it gives the clothes (AvatarUtility.resolveLayerOrder,
+      // null: the game's own), saved on closing when it changed
+      private var _layersBtn:Sprite;
+
+      private var _layersTip:TextField;
+
+      private var _layersPanel:AvatarLayersPanel;
+
+      private var _layerOrder:Array;
+
+      private var _layerOrderChanged:Boolean;
+
+      // the outfits window (gui.AvatarOutfitsPanel, this server) and its
+      // button, under the layers one
+      private var _outfitsBtn:Sprite;
+
+      private var _outfitsTip:TextField;
+
+      private var _outfitsPanel:AvatarOutfitsPanel;
+
+      // "!outfit" opens the editor at its outfits window (openOutfitsWindow)
+      private static var _openOutfitsNext:Boolean;
       
       public function AvatarEditor()
       {
@@ -310,6 +339,9 @@ package gui
          _openCheckListImmediately = param5;
          _mannequinDenItemHelper = param6;
          _isForMannequin = param6 != null;
+         // a mannequin's order is its own (MannequinData.layerOrder), not the owner's animal's
+         _layerOrder = copyLayerOrder(_isForMannequin ? param6.mannequin.layerOrder : AvatarUtility.layerOrderOf(param1.userName,param1.perUserAvId));
+         _layerOrderChanged = false;
          _avatarEditorView = new AvatarEditorView();
          _avatarEditorView.init(_worldAvatar);
          _gamePalette = PaletteHelper.gamePalette;
@@ -369,6 +401,13 @@ package gui
          var _loc1_:* = null;
          DarkenManager.showLoadingSpiral(false);
          KeepAlive.stopKATimer(avEditor);
+         try
+         {
+            destroyLayers();
+         }
+         catch(e:Error)
+         {
+         }
          // the editor can be destroyed (leaving the room) before its artwork
          // came, or after setting it up threw halfway (#1009, #2025 below)
          if(avEditor)
@@ -554,6 +593,7 @@ package gui
                createItemWindows(_currClothesArray,avEditor.itemBlock);
             }
             addListeners();
+            setupLayers();
             KeepAlive.startKATimer(avEditor);
             _loadingMediaHelper.destroy();
             _loadingMediaHelper = null;
@@ -826,7 +866,364 @@ package gui
             }
          }
          avEditor.charBox.addChild(_avatarEditorView);
+         _avatarEditorView.setLayerOrder(_layerOrder);
          _avatarEditorView.playAnim(13,false,1);
+      }
+
+      // ---- the layers panel (this server) ----
+
+      private static function copyLayerOrder(param1:Array) : Array
+      {
+         if(param1 == null || param1.length == 0)
+         {
+            return null;
+         }
+         var _loc2_:Array = [];
+         for each(var _loc3_:Object in param1)
+         {
+            _loc2_.push({
+               "d":int(_loc3_.d),
+               "i":int(_loc3_.i)
+            });
+         }
+         return _loc2_;
+      }
+
+      // a round button in the top left corner of the animal's box, where
+      // the broom (cleanUpBtn) is in the bottom right
+      private function setupLayers() : void
+      {
+         _layersBtn = DenUi.roundButton(16,drawLayersIcon,onLayersBtn);
+         _layersBtn.x = avEditor.charBox.x - 110.5;
+         _layersBtn.y = avEditor.charBox.y - 142.5;
+         _layersBtn.addEventListener("mouseOver",onLayersBtnOver,false,0,true);
+         _layersBtn.addEventListener("mouseOut",onLayersBtnOver,false,0,true);
+         _layersTip = DenUi.title("Layers",12);
+         _layersTip.mouseEnabled = false;
+         _layersTip.x = _layersBtn.x + 20;
+         _layersTip.y = _layersBtn.y - _layersTip.height * 0.5;
+         _layersTip.visible = false;
+         _layersPanel = new AvatarLayersPanel(function():AvatarEditorView
+         {
+            return _avatarEditorView;
+         },function():Array
+         {
+            return _layerOrder;
+         },onLayerOrderChanged,null);
+         // over the animal's box and the pets, under the editor's own popups
+         // (the name bar's, the trade help) and its blackout. a mannequin's
+         // editor (frame 2) has none of those.
+         var _loc1_:int = avEditor.namebarPopup ? avEditor.getChildIndex(avEditor.namebarPopup) : avEditor.numChildren;
+         avEditor.addChildAt(_layersPanel,_loc1_);
+         avEditor.addChildAt(_layersTip,_loc1_);
+         avEditor.addChildAt(_layersBtn,_loc1_);
+         _outfitsBtn = DenUi.roundButton(16,drawOutfitsIcon,onOutfitsBtn);
+         _outfitsBtn.x = _layersBtn.x;
+         _outfitsBtn.y = _layersBtn.y + 38;
+         _outfitsBtn.addEventListener("mouseOver",onOutfitsBtnOver,false,0,true);
+         _outfitsBtn.addEventListener("mouseOut",onOutfitsBtnOver,false,0,true);
+         _outfitsTip = DenUi.title("Outfits",12);
+         _outfitsTip.mouseEnabled = false;
+         _outfitsTip.x = _outfitsBtn.x + 20;
+         _outfitsTip.y = _outfitsBtn.y - _outfitsTip.height * 0.5;
+         _outfitsTip.visible = false;
+         _outfitsPanel = new AvatarOutfitsPanel(wearOutfit,function():Object
+         {
+            var _loc1_:Array = [];
+            for each(var _loc2_:Object in orderedClothing())
+            {
+               _loc1_.push({"i":int(_loc2_.i)});
+            }
+            return {
+               "pieces":_loc1_,
+               "ordered":_layerOrder != null
+            };
+         },function():DisplayObjectContainer
+         {
+            return _guiLayer;
+         },null);
+         _loc1_ = avEditor.getChildIndex(_layersPanel);
+         avEditor.addChildAt(_outfitsPanel,_loc1_);
+         avEditor.addChildAt(_outfitsTip,_loc1_);
+         avEditor.addChildAt(_outfitsBtn,_loc1_);
+         // "!outfit" opened this one (never a mannequin's)
+         if(_openOutfitsNext && !_isForMannequin)
+         {
+            _openOutfitsNext = false;
+            onOutfitsBtn();
+         }
+      }
+
+      // the place both windows take: over the colour tables (a mannequin's
+      // editor, frame 2, is shorter)
+      private function sidePanelRect() : Rectangle
+      {
+         var _loc1_:MovieClip = avEditor.colorTableBlock;
+         return new Rectangle(_loc1_.x - 138.5,_loc1_.y - 201,277,_isForMannequin ? 359 : 377);
+      }
+
+      // a coat hanger
+      private function drawOutfitsIcon(param1:Graphics, param2:Number) : void
+      {
+         param1.lineStyle(2,0x1C4F7A);
+         param1.moveTo(0,-3);
+         param1.curveTo(0,-8,3,-7.5);
+         param1.lineStyle(1.5,0x1C4F7A);
+         param1.beginFill(0xFFD36B);
+         param1.moveTo(0,-3);
+         param1.lineTo(9,5);
+         param1.lineTo(-9,5);
+         param1.lineTo(0,-3);
+         param1.endFill();
+         param1.lineStyle();
+      }
+
+      private function onOutfitsBtnOver(param1:MouseEvent) : void
+      {
+         if(_outfitsTip)
+         {
+            _outfitsTip.visible = param1.type == "mouseOver" && !(_outfitsPanel && _outfitsPanel.isOpen);
+         }
+      }
+
+      private function onOutfitsBtn() : void
+      {
+         if(_outfitsPanel.isOpen)
+         {
+            _outfitsPanel.close();
+            return;
+         }
+         _outfitsTip.visible = false;
+         if(_layersPanel && _layersPanel.isOpen)
+         {
+            _layersPanel.close();
+         }
+         _outfitsPanel.open(sidePanelRect());
+      }
+
+      // "!outfit" typed in the chat box (UserCommXtCommManager.sendChatMessage):
+      // the editor opens at its outfits window, when it could be opened from
+      // the HUD now. true when it was taken as that.
+      public static function openOutfitsWindow() : Boolean
+      {
+         if(GuiManager.avatarEditor != null || AvatarManager.playerAvatar == null || RoomXtCommManager.isSwitching || QuestManager.isInPrivateAdventureState || GuiManager.isBeYourPetRoom())
+         {
+            return false;
+         }
+         _openOutfitsNext = true;
+         GuiManager.openAvatarEditor();
+         return true;
+      }
+
+      // an outfit from the outfits window put on the animal in the editor (or
+      // the mannequin), as if its pieces were picked one by one: what it does
+      // not have comes off, and it takes the outfit's layer order. returns
+      // how many of its pieces could not be put on (not here, not for this
+      // animal, or on another mannequin).
+      private function wearOutfit(param1:Array, param2:Boolean) : int
+      {
+         var _loc3_:Object = {};
+         var _loc4_:Object = null;
+         var _loc5_:Item = null;
+         var _loc6_:int = 0;
+         var _loc7_:int = 0;
+         var _loc8_:Array = [];
+         for each(_loc4_ in param1)
+         {
+            _loc3_[int(_loc4_.i)] = true;
+         }
+         if(_avatarEditorView == null || _avatarEditorView.viewAvatar == null)
+         {
+            return param1.length;
+         }
+         for each(_loc5_ in _avatarEditorView.viewAvatar.accShownItemsWithoutBodMods.getCoreArray().concat())
+         {
+            if(!_loc3_[_loc5_.invIdx])
+            {
+               hideItem(_loc5_);
+            }
+         }
+         var _loc9_:AccItemCollection = _avatarEditorView.inventoryClothingItems;
+         for each(_loc4_ in param1)
+         {
+            _loc5_ = null;
+            _loc6_ = 0;
+            while(_loc6_ < _loc9_.length)
+            {
+               var _loc10_:Item = _loc9_.getAccItem(_loc6_) as Item;
+               if(_loc10_ != null && _loc10_.invIdx == int(_loc4_.i) && (_loc10_.enviroType == _worldAvatar.roomType || _loc10_.isLandAndOcean))
+               {
+                  _loc5_ = _loc10_;
+                  break;
+               }
+               _loc6_++;
+            }
+            if(_loc5_ == null || !ItemXtCommManager.canUseItem(_loc5_.defId,_worldAvatar,_worldAvatar.customAvId != -1) || _isForMannequin && !DenMannequinInventory.canUseItem(_loc5_.invIdx,_mannequinDenItemHelper.mannequin.invIdx))
+            {
+               _loc7_++;
+               continue;
+            }
+            if(!_loc5_.getInUse(_worldAvatar.avInvId))
+            {
+               showItem(_loc5_,hideItemWhenShowingItem);
+            }
+            _loc8_.push({
+               "d":_loc5_.defId,
+               "i":_loc5_.invIdx
+            });
+         }
+         // an animal never given an order is left without one
+         if(param2 && _loc8_.length > 0)
+         {
+            onLayerOrderChanged(_loc8_);
+         }
+         else if(_layerOrder != null)
+         {
+            onLayerOrderChanged(null);
+         }
+         if(_itemClothingWindows)
+         {
+            _itemClothingWindows.callUpdateInWindow();
+         }
+         updateCleanUpBtnVisibility();
+         return _loc7_;
+      }
+
+      // three sheets stacked, the top one gold
+      private function drawLayersIcon(param1:Graphics, param2:Number) : void
+      {
+         var _loc3_:Array = [[5,0xD7EEFF],[0.5,0xFFFFFF],[-4,0xFFD36B]];
+         for each(var _loc4_:Array in _loc3_)
+         {
+            param1.lineStyle(1.5,0x1C4F7A);
+            param1.beginFill(_loc4_[1]);
+            param1.moveTo(-8,_loc4_[0]);
+            param1.lineTo(0,_loc4_[0] - 4.5);
+            param1.lineTo(8,_loc4_[0]);
+            param1.lineTo(0,_loc4_[0] + 4.5);
+            param1.lineTo(-8,_loc4_[0]);
+            param1.endFill();
+         }
+         param1.lineStyle();
+      }
+
+      private function onLayersBtnOver(param1:MouseEvent) : void
+      {
+         if(_layersTip)
+         {
+            _layersTip.visible = param1.type == "mouseOver" && !(_layersPanel && _layersPanel.isOpen);
+         }
+      }
+
+      private function onLayersBtn() : void
+      {
+         if(_layersPanel.isOpen)
+         {
+            _layersPanel.close();
+            return;
+         }
+         _layersTip.visible = false;
+         if(_outfitsPanel && _outfitsPanel.isOpen)
+         {
+            _outfitsPanel.close();
+         }
+         _layersPanel.open(sidePanelRect());
+      }
+
+      private function onLayerOrderChanged(param1:Array) : void
+      {
+         _layerOrder = copyLayerOrder(param1);
+         _layerOrderChanged = true;
+         if(_avatarEditorView)
+         {
+            _avatarEditorView.setLayerOrder(_layerOrder);
+         }
+      }
+
+      // on closing (sendChangesRequest): the order as the editor's animal
+      // shows it, every piece it wears named, or none for the game's own.
+      // before the clothes put on or off ("iu"): the server keeps the order
+      // and tells the room, and the animal in the room is painted so.
+      private function sendLayerOrder() : void
+      {
+         if(!_layerOrderChanged || _isForMannequin)
+         {
+            return;
+         }
+         _layerOrderChanged = false;
+         var _loc1_:Array = [];
+         if(_layerOrder != null)
+         {
+            for each(var _loc4_:Object in orderedClothing())
+            {
+               _loc1_.push({
+                  "d":int(_loc4_.d),
+                  "i":int(_loc4_.i)
+               });
+            }
+         }
+         AvatarUtility.sendLayerOrder(_worldAvatar.perUserAvId,_loc1_);
+         if(AvatarManager.playerAvatarWorldView)
+         {
+            AvatarManager.playerAvatarWorldView.refreshLayers();
+         }
+      }
+
+      // the clothes the editor's animal wears, {d, i, s, c}, in the order
+      // it shows them: the bottom first with an order, otherwise as worn
+      private function orderedClothing() : Array
+      {
+         var _loc1_:Array = [];
+         if(_avatarEditorView && _avatarEditorView.viewAvatar)
+         {
+            for each(var _loc2_:Item in _avatarEditorView.viewAvatar.accShownItemsWithoutBodMods.getCoreArray())
+            {
+               _loc1_.push({
+                  "d":_loc2_.defId,
+                  "i":_loc2_.invIdx,
+                  "s":_loc2_.layerId,
+                  "c":_loc2_.color
+               });
+            }
+         }
+         var _loc3_:Array = _layerOrder != null && _loc1_.length > 0 ? AvatarUtility.resolveLayerOrder(_loc1_,_layerOrder) : null;
+         return _loc3_ != null ? _loc3_ : _loc1_;
+      }
+
+      private function destroyLayers() : void
+      {
+         if(_layersPanel)
+         {
+            _layersPanel.destroy();
+            _layersPanel = null;
+         }
+         if(_layersBtn && _layersBtn.parent)
+         {
+            _layersBtn.parent.removeChild(_layersBtn);
+         }
+         if(_layersTip && _layersTip.parent)
+         {
+            _layersTip.parent.removeChild(_layersTip);
+         }
+         _layersBtn = null;
+         _layersTip = null;
+         if(_outfitsPanel)
+         {
+            _outfitsPanel.destroy();
+            _outfitsPanel = null;
+         }
+         if(_outfitsBtn && _outfitsBtn.parent)
+         {
+            _outfitsBtn.parent.removeChild(_outfitsBtn);
+         }
+         if(_outfitsTip && _outfitsTip.parent)
+         {
+            _outfitsTip.parent.removeChild(_outfitsTip);
+         }
+         _outfitsBtn = null;
+         _outfitsTip = null;
+         // an editor closed before its art came in does not leave it pending
+         _openOutfitsNext = false;
       }
       
       private function colorCurrEyePattIcon() : void
@@ -982,6 +1379,7 @@ package gui
          wereItemsOnOriginally(_itemIdsOn,_itemIdsOff);
          if(!_isForMannequin)
          {
+            sendLayerOrder();
             if(_itemIdsOn.length > 0 || _itemIdsOff.length > 0)
             {
                ItemXtCommManager.requestItemUse(itemUseResponse,_itemIdsOn,_itemIdsOff);
@@ -1034,10 +1432,13 @@ package gui
                _worldAvatar.dispatchEvent(new AvatarEvent("OnAvatarChanged"));
             }
          }
-         else if(_itemIdsOn.length > 0 || _itemIdsOff.length > 0 || (_worldAvatar.colors[0] != _avatarEditorView.colors[0] || _worldAvatar.colors[1] != _avatarEditorView.colors[1] || _worldAvatar.colors[2] != _avatarEditorView.colors[2]))
+         else if(_layerOrderChanged || _itemIdsOn.length > 0 || _itemIdsOff.length > 0 || (_worldAvatar.colors[0] != _avatarEditorView.colors[0] || _worldAvatar.colors[1] != _avatarEditorView.colors[1] || _worldAvatar.colors[2] != _avatarEditorView.colors[2]))
          {
+            _layerOrderChanged = false;
             DenMannequinInventory.removeItemsFromUse(_itemIdsOff);
             DenMannequinInventory.setItemsInUse(_itemIdsOn,_mannequinDenItemHelper.mannequin.invIdx);
+            // all it wears as the editor shows it, in the order given (the den saves it: MannequinData.headField)
+            _mannequinDenItemHelper.mannequin.setPieces(orderedClothing(),_layerOrder != null);
             _mannequinDenItemHelper.mannequin.updateColors(_avatarEditorView.colors);
             _mannequinDenItemHelper.mannequin.mannequinAvatarView.avatarData.copyColors(_avatarEditorView.avatarData.colors);
             _mannequinDenItemHelper.mannequin.mannequinAvatarView.avatarData.cloneShownAccFromAvatar(_avatarEditorView.avatarData);

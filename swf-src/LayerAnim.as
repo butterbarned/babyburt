@@ -174,6 +174,11 @@ package com.sbi.graphics
       // each requested image's place in _layers: items worn in the same
       // slot are drawn in that order, the later over the earlier
       private var _order:Object;
+
+      // each requested image's rank in the player's own clothes order
+      // (rankOf), as it was when asked for: what comes back is painted so,
+      // whatever the order is by then (it goes with _requestedCacheKey)
+      private var _ranks:Object;
       
       private var _requestedIds:Set;
       
@@ -441,7 +446,8 @@ package com.sbi.graphics
             for(var _loc4_ in param1)
             {
                // (a custom item has its base's art: its own picture makes it another, AJClient.customArtKey)
-               if(!_layers[_loc4_] || _layers[_loc4_].l != param1[_loc4_].l || AJClient.customArtKey("clothing",int(_layers[_loc4_].d)) != AJClient.customArtKey("clothing",int(param1[_loc4_].d)))
+               // (and "z", a piece's rank in the player's own order: AvatarUtility.orderLayers)
+               if(!_layers[_loc4_] || _layers[_loc4_].l != param1[_loc4_].l || rankOf(_layers[_loc4_]) != rankOf(param1[_loc4_]) || AJClient.customArtKey("clothing",int(_layers[_loc4_].d)) != AJClient.customArtKey("clothing",int(param1[_loc4_].d)))
                {
                   _loc2_ = true;
                   break;
@@ -471,10 +477,16 @@ package com.sbi.graphics
                   var _loc7_:int = ImageServerURL.instance.getLayerIndex(_loc5_.l);
                   var _loc8_:int = int(_loc6_[_loc7_]);
                   _loc6_[_loc7_] = _loc8_ + 1;
-                  _bitmap.setLayerColor(LayerBitmap.slotFor(_loc7_,_loc8_),_loc5_.c);
+                  _bitmap.setLayerColor(LayerBitmap.keyFor(_loc7_,_loc8_,rankOf(_loc5_)),_loc5_.c);
                }
             }
          }
+      }
+
+      // a layer's rank in its player's own order of their clothes, -1 for none
+      private static function rankOf(param1:Object) : int
+      {
+         return param1 != null && param1.hasOwnProperty("z") ? int(param1.z) : -1;
       }
       
       public function get x() : int
@@ -700,11 +712,13 @@ package com.sbi.graphics
          var _loc4_:Array = [];
          var _loc2_:Array = [];
          _order = {};
+         _ranks = {};
          buildRequestArray(param1,_loc2_,_loc4_);
          _loc2_.sort();
          var _loc3_:String = _loc2_.join();
          // custom items with pictures of their own are painted otherwise than
          // their bases: their frames are kept apart
+         var _loc7_:Array = [];
          for each(var _loc5_:Object in _layers)
          {
             if(_loc5_.d)
@@ -715,6 +729,16 @@ package com.sbi.graphics
                   _loc3_ += "|" + _loc6_;
                }
             }
+            if(rankOf(_loc5_) >= 0)
+            {
+               _loc7_.push(_loc5_.l + "." + rankOf(_loc5_));
+            }
+         }
+         // the same clothes in another order are painted otherwise too
+         // (LayerBitmap.keyFor): kept apart from the slot order's
+         if(_loc7_.length > 0)
+         {
+            _loc3_ += "|o" + _loc7_.join(".");
          }
          _colors = _loc4_;
          _requestedCacheKey = _loc3_;
@@ -742,6 +766,10 @@ package com.sbi.graphics
                if(_order)
                {
                   _order[_loc4_] = _loc6_;
+                  if(_ranks)
+                  {
+                     _ranks[_loc4_] = rankOf(_loc5_);
+                  }
                }
             }
             _loc6_++;
@@ -788,7 +816,8 @@ package com.sbi.graphics
                   "l":_loc3_,
                   "d":param1.imageData,
                   "c":_loc2_,
-                  "p":(_order && _order.hasOwnProperty(param1.id) ? int(_order[param1.id]) : -1)
+                  "p":(_order && _order.hasOwnProperty(param1.id) ? int(_order[param1.id]) : -1),
+                  "r":(_ranks && _ranks.hasOwnProperty(param1.id) ? int(_ranks[param1.id]) : -1)
                });
             }
             if(_requestedIds.isEmpty())
@@ -806,7 +835,7 @@ package com.sbi.graphics
                {
                   var _loc7_:int = int(_loc6_[_loc4_.l]);
                   _loc6_[_loc4_.l] = _loc7_ + 1;
-                  _bitmap.setLayer(LayerBitmap.slotFor(_loc4_.l,_loc7_),_loc4_.d,_loc4_.c,_requestedCacheKey,
+                  _bitmap.setLayer(LayerBitmap.keyFor(_loc4_.l,_loc7_,int(_loc4_.r)),_loc4_.d,_loc4_.c,_requestedCacheKey,
                      _loc4_.p >= 0 && _layers != null && _layers[_loc4_.p] != null ? int(_layers[_loc4_.p].d) : 0);
                }
                finishAnimRequest();
