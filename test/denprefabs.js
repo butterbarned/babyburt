@@ -66,7 +66,8 @@ const run = async () => {
   assert.strictEqual((await a.untilXt("dps"))[2], "0");
 
   // --- saved: two chairs (one in colour 2) and a table, with a picture
-  a.xt("dps", roomId, "  Reading   nook ", PNG, 3, chair, 0, -40, 10, 1, chair, 2, 40, 10, 0, table, 0, 0, 0, 4 | 2 << 16);
+  // the first chair flipped and made small (bit 31, DenItemHolder SIZE_HIGH: a signed value)
+  a.xt("dps", roomId, "  Reading   nook ", PNG, 3, chair, 0, -40, 10, 1 | 1 << 31, chair, 2, 40, 10, 0, table, 0, 0, 0, 4 | 2 << 16);
   const saved = await a.untilXt("dps");
   assert.strictEqual(saved[2], "1");
   const id = saved[3];
@@ -76,7 +77,7 @@ const run = async () => {
   assert.deepStrictEqual((await a.untilXt("dpl")).slice(2), ["1", "1", id, "Reading nook", "3", "1", ""]);
   a.xt("dpo", roomId, id);
   assert.deepStrictEqual((await a.untilXt("dpo")).slice(2),
-    ["1", id, "Reading nook", "3", chair, "0", "-40", "10", "1", chair, "2", "40", "10", "0", table, "0", "0", "0", String(4 | 2 << 16)]);
+    ["1", id, "Reading nook", "3", chair, "0", "-40", "10", String(1 | 1 << 31), chair, "2", "40", "10", "0", table, "0", "0", "0", String(4 | 2 << 16)]);
 
   // the picture is there for the game to load; another id is not
   const picture = await fetch(`${BASE}/denprefab/${id}.png`);

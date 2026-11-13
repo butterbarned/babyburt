@@ -23,6 +23,9 @@ class GameClient {
     // the den button's count of people in the player's den ("drc"), sent
     // whenever somebody comes or goes: set aside, for a test to look at
     this.denCounts = [];
+    // the order an animal's clothes are painted in ("xlo", lib/player.js),
+    // sent before every list of what one wears: set aside unless asked for
+    this.layerOrders = [];
     this.blends = [];
     this.askedForGames = 0;
     this.unaskedGames = [];
@@ -130,6 +133,10 @@ class GameClient {
         this.varUpdates.push(fields);
         continue;
       }
+      if (fields[0] === "xlo" && cmd !== "xlo") {
+        this.layerOrders.push(fields);
+        continue;
+      }
       // the chat filter settings ("xfl", after every login), the one-time
       // question which filter to use ("xfa", on the first room) and the
       // buddy list with when each was last seen ("bl", "xls": at login) come unasked.
@@ -153,6 +160,9 @@ class GameClient {
       }
       if (fields[0] === cmd) {
         return fields;
+      }
+      if (fields[0] === "xlo") {
+        this.layerOrders.push(fields);
       }
     }
   }

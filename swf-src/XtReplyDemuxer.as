@@ -1,6 +1,8 @@
 package
 {
    import com.sbi.client.SFEvent;
+   import avatar.AvatarUtility;
+   import gui.AvatarOutfitsPanel;
    import avatar.NPCView;
    import buddy.BuddyCard;
    import com.sbi.graphics.PaletteHelper;
@@ -147,6 +149,19 @@ package
          if(param1.obj[0] == "xrn")
          {
             AJClient.onRenamed(param1.obj);
+            return;
+         }
+         // the order a player put an animal's clothes in (avatar.AvatarUtility):
+         // it comes before that animal's list of what it wears ("il")
+         if(param1.obj[0] == "xlo")
+         {
+            AvatarUtility.onLayerOrder(param1.obj);
+            return;
+         }
+         // the player's saved outfits, for the avatar editor's outfits window
+         if(param1.obj[0] == "xol")
+         {
+            AvatarOutfitsPanel.onList(param1.obj);
             return;
          }
          if(param1.obj[0] == "xls")

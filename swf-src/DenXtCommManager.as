@@ -131,7 +131,8 @@ package den
             _loc4_[_loc6_++] = _loc3_ == null ? 0 : _loc3_.legInvId;
             _loc4_[_loc6_++] = _loc3_ == null ? 0 : _loc3_.backInvId;
             _loc4_[_loc6_++] = _loc3_ == null ? 0 : _loc3_.neckInvId;
-            _loc4_[_loc6_++] = _loc3_ == null ? 0 : _loc3_.headInvId;
+            // the head carries every piece it wears (MannequinData.headField)
+            _loc4_[_loc6_++] = _loc3_ == null ? 0 : _loc3_.headField;
             _loc5_++;
          }
          _onDenSaveSetCallback = param2;
@@ -519,8 +520,10 @@ package den
                {
                   _loc4_ = new MannequinData();
                   _loc23_ = _loc4_.init(_loc22_,param1,_loc23_,true,_loc31_,true);
+                  // all it wears comes after the five places (lib/dens.js mannequinTail)
+                  _loc4_.readPieces(param1[_loc23_],true);
                }
-               _loc26_ = int(param1[_loc23_++]);
+               _loc26_ = int(String(param1[_loc23_++]).split("~")[0]);
                _loc18_.init(_loc28_,_loc31_,_loc32_,_loc24_,0,null,_loc14_,_loc33_,"",_loc17_,_loc30_,_loc4_,_loc26_);
                _loc6_.setDenItem(_loc21_,_loc18_);
                if(_loc18_.minigameDefId > 0 && !MinigameManager.minigameInfoCache.getMinigameInfo(_loc18_.minigameDefId))
@@ -995,8 +998,9 @@ package den
                {
                   _loc3_ = new MannequinData();
                   _loc20_ = _loc3_.init(_loc19_,param1,_loc20_,false,_loc38_,RoomManagerWorld.instance.isMyDen);
+                  _loc3_.readPieces(param1[_loc20_],RoomManagerWorld.instance.isMyDen);
                }
-               _loc4_ = int(param1[_loc20_++]);
+               _loc4_ = int(String(param1[_loc20_++]).split("~")[0]);
                _loc29_ = _loc19_.sortCat;
                if(_loc12_)
                {

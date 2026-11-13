@@ -1,0 +1,51 @@
+{
+  "_about": "LINE PLAY item-ID prefix (first 4 digits) -> the shop's category chip, where it goes (floor|wall|rug), a word for its name when it has no set, and an optional size. skip: true leaves the prefix out (with the reason). A prefix not listed is taken as floor decor, with a warning.",
+  "categories": {
+    "seating": "Seating", "tables": "Tables", "beds": "Beds", "storage": "Storage", "lighting": "Lighting",
+    "plants": "Plants", "decor": "Decor", "wall-decor": "Wall Decor", "windows": "Windows", "doors": "Doors",
+    "rugs": "Rugs & Paths", "bathroom": "Bathroom", "kitchen": "Kitchen", "electronics": "Electronics",
+    "food": "Food & Drink", "fun": "Fun & Games", "floors": "Floor Tiles", "building": "Building"
+  },
+  "_sizes": "allScale (every item), groupScale (Interior / Garden), categoryScale (by chip id) and collectionScale (by collection id) multiply each other and any prefix scale; the preview's 'copy sizes' button writes allScale, categoryScale and collectionScale. Set from the Resortopia pack's own sizes by calibrate.py.",
+  "allScale": 0.88,
+  "groupScale": {"Interior": 1.0, "Garden": 1.0},
+  "categoryScale": {},
+  "collectionScale": {},
+  "prefixes": {
+    "1203": {"category": "tables", "placement": "floor", "noun": "Table"},
+    "1204": {"category": "seating", "placement": "floor", "noun": "Seat"},
+    "1205": {"category": "storage", "placement": "floor", "noun": "Cabinet"},
+    "1206": {"category": "storage", "placement": "floor", "noun": "Wardrobe"},
+    "1207": {"category": "beds", "placement": "floor", "noun": "Bed"},
+    "1208": {"category": "kitchen", "placement": "floor", "noun": "Kitchen Piece"},
+    "1209": {"category": "bathroom", "placement": "floor", "noun": "Bathtub"},
+    "1210": {"category": "bathroom", "placement": "floor", "noun": "Vanity"},
+    "1211": {"category": "electronics", "placement": "floor", "noun": "Appliance"},
+    "1212": {"category": "lighting", "placement": "floor", "noun": "Lamp"},
+    "1214": {"skip": "wallpaper (a whole wall's pattern, not a den item)"},
+    "1215": {"category": "floors", "placement": "rug", "noun": "Floor Tile"},
+    "1216": {"category": "wall-decor", "placement": "wall", "noun": "Wall Decoration"},
+    "1217": {"category": "rugs", "placement": "rug", "noun": "Rug"},
+    "1218": {"category": "doors", "placement": "wall", "noun": "Door"},
+    "1219": {"category": "windows", "placement": "wall", "noun": "Window"},
+    "1220": {"category": "decor", "placement": "floor", "noun": "Decoration"},
+    "1221": {"category": "plants", "placement": "floor", "noun": "Plant"},
+    "1222": {"category": "food", "placement": "floor", "noun": "Food"},
+    "1223": {"skip": "room layout (a whole room, not one item)"},
+    "1224": {"category": "decor", "placement": "floor", "noun": "Tabletop Item"},
+    "1225": {"category": "fun", "placement": "floor", "noun": "Gacha Machine"},
+    "1228": {"category": "decor", "placement": "floor", "noun": "Decoration"},
+    "1229": {"category": "decor", "placement": "floor", "noun": "Collectible"},
+    "1230": {"category": "decor", "placement": "floor", "noun": "Decoration"},
+    "1233": {"skip": "room layout (a whole room, not one item)"},
+    "1234": {"category": "decor", "placement": "floor", "noun": "Figure"},
+    "1235": {"category": "decor", "placement": "floor", "noun": "Figure"},
+    "4282": {"category": "plants", "placement": "floor", "noun": "Garden Plant", "noAnimation": true},
+    "4283": {"category": "building", "placement": "floor", "noun": "Garden Building"},
+    "4294": {"category": "plants", "placement": "floor", "noun": "Garden Tree"}
+  },
+  "gardenDefault": {"category": "decor", "placement": "floor", "noun": "Garden Piece"},
+  "items": {
+    "_about": "per item (LINE PLAY id) overrides: any of name, category, placement (floor|wall|rug), scale, so, skip. e.g. \"120300122\": {\"scale\": 0.9}"
+  }
+}

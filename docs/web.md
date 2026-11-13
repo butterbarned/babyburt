@@ -146,6 +146,7 @@ Calls `/account/api/<route>` (through `/dashboard/api/...` for the dashboards), 
 | `POST /account/api/login` | lib/manage.js |
 | `POST /account/api/logout` | lib/manage.js |
 | `GET /account/api/me` | lib/manage.js |
+| `POST /account/api/play` | lib/manage.js |
 | `POST /account/api/recover/check` | lib/manage.js |
 | `POST /account/api/recover/complete` | lib/manage.js |
 | `POST /account/api/recover/request` | lib/manage.js |

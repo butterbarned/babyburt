@@ -439,6 +439,101 @@ const run = async () => {
   await a.nextXt("uc");
   assert.deepStrictEqual((await b.nextXt("il")).slice(8, 10), ["1", shop[9]]); // and back on
 
+  // --- the order an animal's clothes are painted in (the avatar editor's
+  // layers panel, "xlo"): a second of the same hat, put under the first.
+  // Ben is told before what she wears, and with her player card.
+  a.xt("ib", own[4], 5, 1, shop[9], 0, 0, -1, "");
+  const hat2 = (await a.nextXt("il"))[9];
+  await a.nextXt("ib");
+  a.xt("iu", own[4], 1, 0, hat2);
+  await a.nextXt("iu");
+  await a.nextXt("il");
+  await b.untilXt("il");
+  assert.deepStrictEqual(b.layerOrders, []); // never given an order: nothing told
+  a.xt("xlo", own[4], 3, shop[9], hat2, shop[9], hat, shop[9], 999999); // the last is not hers
+  await b.untilXt("il");
+  const layerOrder = b.layerOrders.pop();
+  assert.deepStrictEqual([layerOrder[2], ...layerOrder.slice(4)], ["Ann", "2", shop[9], hat2, shop[9], hat]);
+  b.xt("ag", own[4], "Ann");
+  await b.untilXt("ag");
+  assert.deepStrictEqual(b.layerOrders.pop().slice(4), ["2", shop[9], hat2, shop[9], hat]);
+  a.xt("iu", own[4], 0, 1, hat2); // what she no longer wears is not told
+  await a.nextXt("iu");
+  await a.nextXt("il");
+  await b.untilXt("il");
+  assert.deepStrictEqual(b.layerOrders.pop().slice(4), ["1", shop[9], hat]);
+  a.xt("xlo", own[4], 0); // the game's own order again
+  await b.untilXt("il");
+  assert.deepStrictEqual(b.layerOrders.pop().slice(4), ["0"]);
+  a.xt("xlo", own[4], 2, shop[9], "x", shop[9], hat); // not numbers: nothing changes
+  b.xt("ag", own[4], "Ann");
+  await b.untilXt("ag");
+  assert.deepStrictEqual(b.layerOrders.pop().slice(4), ["0"]);
+
+  // --- outfits keep the order too, and the avatar editor's outfits window
+  // ("xol", "xos", "xod") lists, saves and deletes them.
+  a.xt("iu", own[4], 1, 0, hat2);
+  await a.nextXt("iu");
+  await a.nextXt("il");
+  a.xt("xlo", own[4], 2, shop[9], hat2, shop[9], hat); // hat2 under hat
+  await b.untilXt("il");
+  a.layerOrders.length = 0;
+  say(a, own[4], "!outfit save stack");
+  assert.strictEqual((await a.untilXt("xtl"))[2], "Outfit stack saved (2 items).");
+  a.xt("xol", own[4]);
+  const listed = await a.untilXt("xol");
+  const hatColour = listed[7];
+  assert.deepStrictEqual(listed.slice(2), ["2", "hat", "0", "1", shop[9], hatColour, hat,
+    "stack", "1", "2", shop[9], hatColour, hat2, shop[9], hatColour, hat]);
+  // an outfit saved in no order is worn in the game's own: Ann's order is told as none
+  say(a, own[4], "!outfit wear hat");
+  await a.untilXt("il");
+  assert.deepStrictEqual(a.layerOrders.pop().slice(4), ["0"]);
+  await a.untilXt("xtl");
+  // the ordered one brings its order, which is told before what she wears
+  say(a, own[4], "!outfit wear stack");
+  await a.untilXt("il");
+  assert.deepStrictEqual(a.layerOrders.pop().slice(4), ["2", shop[9], hat2, shop[9], hat]);
+  await a.untilXt("xtl");
+  await b.untilXt("il");
+  assert.deepStrictEqual(b.layerOrders.pop().slice(4), ["2", shop[9], hat2, shop[9], hat]);
+  // and undo goes back to the outfit before, in its order (none)
+  say(a, own[4], "!outfit undo");
+  await a.untilXt("il");
+  assert.deepStrictEqual(a.layerOrders.pop().slice(4), ["0"]);
+  await a.untilXt("xtl");
+  // the editor saves a new order ("xlo") and then the clothes ("iu"): undo
+  // brings back the clothes and the order from before both
+  say(a, own[4], "!outfit wear stack");
+  await a.untilXt("xtl");
+  await b.untilXt("il");
+  a.xt("xlo", own[4], 2, shop[9], hat, shop[9], hat2);
+  await b.untilXt("il");
+  a.xt("iu", own[4], 0, 1, hat2);
+  await a.untilXt("iu");
+  await a.untilXt("il");
+  a.layerOrders.length = 0;
+  say(a, own[4], "!outfit undo");
+  const undone = await a.untilXt("il");
+  assert.deepStrictEqual([undone[7], undone[8]], ["2", "0"]);
+  assert.deepStrictEqual(a.layerOrders.pop().slice(4), ["2", shop[9], hat2, shop[9], hat]);
+  await a.untilXt("xtl");
+  // the window: what the editor shows, kept under a name; a piece not hers is left out
+  a.xt("xos", own[4], "Top", 1, 3, hat, hat2, 999999);
+  const saved = await a.untilXt("xol");
+  assert.deepStrictEqual(saved.slice(2, 3).concat(saved.slice(18)), ["3", "top", "1", "2", shop[9], hatColour, hat, shop[9], hatColour, hat2]);
+  a.xt("xos", own[4], "no way", 0, 0); // not a name the chat box can type
+  assert.match((await a.untilXt("xtl"))[2], /letters and digits/);
+  await a.untilXt("xol");
+  a.xt("xod", own[4], "top");
+  assert.strictEqual((await a.untilXt("xol"))[2], "2");
+  a.xt("xod", own[4], "stack");
+  await a.untilXt("xol");
+  a.xt("iu", own[4], 0, 1, hat2);
+  await a.untilXt("iu");
+  await a.untilXt("il");
+  await b.untilXt("il");
+
   // --- Jam-A-Grams: a card, a stamp, typed words and the hat as a gift
   a.xt("gl", own[4], 10);
   const cards = await a.nextXt("gl");

@@ -14,6 +14,7 @@ package avatar
    import game.MinigameInfo;
    import game.MinigameManager;
    import gui.ActionManager;
+   import gui.AvatarEditor;
    import gui.ChatHistory;
    import gui.EmoticonManager;
    import gui.EmoticonUtility;
@@ -265,6 +266,20 @@ package avatar
       
       public static function sendChatMessage(param1:int, param2:String) : void
       {
+         // "!outfit" on its own opens the avatar editor's outfits window here
+         // (gui.AvatarOutfitsPanel); with words after it, it goes to the
+         // server as ever (lib/commands.js)
+         var _loc4_:String = StringUtil.trim(param2).toLowerCase();
+         if((_loc4_ == "!outfit" || _loc4_ == "!outfits") && AvatarEditor.openOutfitsWindow())
+         {
+            if(_chatHist.enableFreeChatValue)
+            {
+               _chatHist.resetTreeSearch();
+               _chatHist.chatMsgText.text = "";
+               _chatHist.showEmojiInInput();
+            }
+            return;
+         }
          if(gMainFrame.clientInfo.invisMode || !Utility.canChat())
          {
             return;

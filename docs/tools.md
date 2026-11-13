@@ -100,11 +100,46 @@ starts with a build number.
 the same as cachePath in lib/cdn.js
 ```
 
+## tools/fetch-ruffle.js
+
+```
+fetches Ruffle, the Flash player for browsers, into config.ruffleDir
+(cache/ruffle), for playing in a browser (/account/play). one release,
+checked against its hash: the server hands these files to every player.
+
+  node tools/fetch-ruffle.js
+
+to move to another release, change RELEASE and SHA256 together (the hash is
+the zip's: `sha256sum ruffle-*-web-selfhosted.zip`), run this, and try the
+game in a browser before putting it on a server.
+the entries of a zip, read from its central directory: {name: Buffer}.
+```
+
 ## tools/find-art.py
 
 ```
 ZWS: "ZWS", version, uncompressed length, compressed length, LZMA
 properties, data. the .lzma format wants properties, length, data.
+```
+
+## tools/game-fonts.js
+
+```
+makes the font files a browser player needs (/account/play, Ruffle): the
+game's text asks for its fonts by name ("CCDigitalDeliveryBold",
+"TikiIsland"...), as the desktop client has them, and Ruffle finds a font
+only by the name inside its file. so each font is written again under each
+name the game uses for it, into public/fonts/game/, with a list
+(fonts.json) that public/game.html hands to Ruffle.
+
+  node tools/game-fonts.js
+
+CCDigitalDelivery comes from public/fonts (the whole font); the others are
+taken out of swf/sharedFonts.swf by JPEXS (tools/ffdec, needs Java).
+[file it comes from, name the game asks for, bold]
+the fonts in sharedFonts.swf, as TTF files, by their class name
+JPEXS names them "<id>_<class>_<font name>.ttf"
+the tables of an OpenType/TrueType file: {tag: Buffer}, and its version
 ```
 
 ## tools/hud/dump.py

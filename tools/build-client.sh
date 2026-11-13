@@ -64,6 +64,7 @@ set -- \
   gui.DenEditor DenEditor.as \
   gui.TradeManager TradeManager.as \
   avatar.AvatarView AvatarView.as \
+  avatar.MannequinData MannequinData.as \
   avatar.AvatarWorldView AvatarWorldView.as \
   localization.LocalizationManager LocalizationManager.as \
   room.RoomManagerWorld RoomManagerWorld.as \
@@ -100,6 +101,8 @@ set -- \
   gui.DenLayersPanel DenLayersPanel.as \
   gui.DenPrefabs DenPrefabs.as \
   gui.DenContentShop DenContentShop.as \
+  gui.AvatarLayersPanel AvatarLayersPanel.as \
+  gui.AvatarOutfitsPanel AvatarOutfitsPanel.as \
   it.gotoandplay.smartfoxserver.SmartFoxClient SmartFoxClient.as \
   loadProgress.LoadProgress LoadProgress.as \
   com.sbi.loader.SceneLoader SceneLoader.as \
@@ -112,8 +115,10 @@ set -- \
 # action of sitting facing forward; gui.DenUi, gui.DenLayersPanel and
 # gui.DenPrefabs are the den editor's layers panel and prefab tab;
 # gui.DenContentShop is the content shop the den editor opens;
+# gui.AvatarLayersPanel and gui.AvatarOutfitsPanel are the avatar editor's
+# layers panel and outfits window;
 # com.sbi.loader.SwfImports takes out what Ruffle cannot load, in a browser)
-NEW_CLASSES="game.ArtStudioKit gui.SitForwardAction gui.DenUi gui.DenLayersPanel gui.DenPrefabs gui.DenContentShop com.sbi.loader.SwfImports"
+NEW_CLASSES="game.ArtStudioKit gui.SitForwardAction gui.DenUi gui.DenLayersPanel gui.DenPrefabs gui.DenContentShop gui.AvatarLayersPanel gui.AvatarOutfitsPanel com.sbi.loader.SwfImports"
 args=""
 while [ $# -gt 0 ]; do
   args="$args $1 swf-src/$2"
