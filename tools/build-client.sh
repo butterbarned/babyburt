@@ -36,6 +36,7 @@ set -- \
   gui.ColorTable ColorTable.as \
   gui.MySettings MySettings.as \
   gui.itemWindows.ItemWindowToggle ItemWindowToggle.as \
+  gui.itemWindows.ItemWindowAdventure ItemWindowAdventure.as \
   gui.ReportAPlayer ReportAPlayer.as \
   gui.ECardCreation ECardCreation.as \
   gui.GuiManager GuiManager.as \
