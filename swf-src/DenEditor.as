@@ -162,6 +162,12 @@ package gui
 
       private var _shopContentBtn:Sprite;
 
+      // the whole den: a picture of it, its layout shared and loaded; its
+      // buttons go to the left of the Shop button
+      private var _share:DenShare;
+
+      private var _shareBtns:Sprite;
+
       private var _contentTabDn:MovieClip;
 
       private var _contentTabUp:MovieClip;
@@ -259,12 +265,18 @@ package gui
             {
                _shopContentBtn.parent.removeChild(_shopContentBtn);
             }
+            if(_shareBtns && _shareBtns.parent)
+            {
+               _shareBtns.parent.removeChild(_shareBtns);
+            }
          }
          catch(e:Error)
          {
          }
          _contentShop = null;
          _shopContentBtn = null;
+         _share = null;
+         _shareBtns = null;
          removeListeners();
          _guiLayer.removeChild(_denEditor);
          if(_denLockPopup)
@@ -1558,6 +1570,18 @@ package gui
          _shopContentBtn.addEventListener("mouseOut",onShopContentBtnOut,false,0,true);
          _shopContentBtn.visible = false;
          _guiLayer.addChild(_shopContentBtn);
+         try
+         {
+            _share = new DenShare(_guiLayer,_denItemHolder);
+            _shareBtns = _share.makeButtons();
+            _shareBtns.visible = false;
+            _guiLayer.addChild(_shareBtns);
+         }
+         catch(e:Error)
+         {
+            _share = null;
+            _shareBtns = null;
+         }
       }
 
       private function showShopContentBtn() : void
@@ -1567,6 +1591,10 @@ package gui
             return;
          }
          _shopContentBtn.visible = _denEditor != null && _denEditor.bottomHud.visible;
+         if(_shareBtns)
+         {
+            _shareBtns.visible = _shopContentBtn.visible;
+         }
          if(!_shopContentBtn.visible)
          {
             if(_contentShop)
@@ -1579,12 +1607,22 @@ package gui
          // parts that are there
          _shopContentBtn.x = 900 - _shopContentBtn.width - 10;
          _shopContentBtn.y = 10;
+         // the den's own buttons (gui.DenShare) to its left, moved with it
+         if(_shareBtns)
+         {
+            _shareBtns.x = _shopContentBtn.x - _shareBtns.width - 6;
+            _shareBtns.y = _shopContentBtn.y;
+         }
          var _loc1_:Boolean = true;
          var _loc2_:int = 0;
          while(_loc1_ && _loc2_ < 10)
          {
             _loc1_ = false;
             var _loc3_:Rectangle = _shopContentBtn.getBounds(gMainFrame.stage);
+            if(_shareBtns)
+            {
+               _loc3_ = _loc3_.union(_shareBtns.getBounds(gMainFrame.stage));
+            }
             var _loc4_:int = 0;
             while(_loc4_ < _denEditor.numChildren)
             {
@@ -1595,6 +1633,10 @@ package gui
                   if(_loc6_.intersects(_loc3_) && _loc6_.bottom < 300)
                   {
                      _shopContentBtn.y = _loc6_.bottom + 6;
+                     if(_shareBtns)
+                     {
+                        _shareBtns.y = _shopContentBtn.y;
+                     }
                      _loc1_ = true;
                   }
                }
@@ -1603,6 +1645,10 @@ package gui
             _loc2_++;
          }
          _guiLayer.setChildIndex(_shopContentBtn,_guiLayer.numChildren - 1);
+         if(_shareBtns)
+         {
+            _guiLayer.setChildIndex(_shareBtns,_guiLayer.numChildren - 1);
+         }
       }
 
       private function onShopContentBtn(param1:MouseEvent) : void
@@ -1739,6 +1785,14 @@ package gui
       // the server's answers about prefabs and colours (DenXtCommManager)
       private function onPrefabReply(param1:Object) : void
       {
+         if(String(param1[0]).substr(0,2) == "dl")
+         {
+            if(_share)
+            {
+               _share.onReply(param1);
+            }
+            return;
+         }
          if(String(param1[0]) != "dvc")
          {
             if(_prefabs)

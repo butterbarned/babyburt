@@ -32,9 +32,14 @@ const accounts = require("../lib/accounts.js");
 const defpacks = require("../lib/defpacks.js");
 
 // every value or key in the database (but the move table) that is one of
-// `numbers`, as a json path
+// `numbers`, as a json path: a number, or a whole number in a string ("den:
+// 55000", not the digits inside a hash). only where, never what, is printed:
+// the tables hold password hashes and such.
+const SKIPPED_TABLES = ["content_id_moves", "chat_log", "mod_log", "stats_online", "stats_logins", "stats_sessions", "tokens", "invites"];
+const SKIPPED_COLUMNS = ["password_hash", "password_salt", "token", "code_hash"];
 const findAnywhere = (db, numbers) => {
   const wanted = new Set(numbers.map(String));
+  const holds = text => [...String(text).matchAll(/(?<![0-9A-Za-z])\d+(?![0-9A-Za-z])/g)].some(match => wanted.has(match[0]));
   const found = [];
   const walk = (value, where) => {
     if (Array.isArray(value)) {
@@ -42,20 +47,24 @@ const findAnywhere = (db, numbers) => {
     }
     else if (value && typeof value === "object") {
       for (const [key, one] of Object.entries(value)) {
-        if (wanted.has(key) || [...key.matchAll(/\d+/g)].some(match => wanted.has(match[0]))) {
-          found.push(`${where} key ${key}`);
+        if (holds(key)) {
+          found.push(/^[a-z]+:\d+$/.test(key) ? `${where} key ${key}` : `${where} (a key)`);
         }
-        walk(one, `${where}.${key}`);
+        walk(one, `${where}.${/^\d+$/.test(key) || key.length > 40 ? "<key>" : key}`);
       }
     }
-    else if (wanted.has(String(value)) || (typeof value === "string" && [...value.matchAll(/\d+/g)].some(match => wanted.has(match[0])))) {
-      found.push(`${where} = ${String(value).slice(0, 80)}`);
+    else if ((typeof value === "number" || typeof value === "string") && holds(value)) {
+      found.push(where);
     }
   };
-  for (const {name} of db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT IN ('content_id_moves', 'chat_log', 'mod_log', 'stats_online', 'stats_logins', 'stats_sessions')").all()) {
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(row => row.name).filter(name => !SKIPPED_TABLES.includes(name));
+  for (const name of tables) {
     for (const row of db.prepare(`SELECT * FROM "${name}"`).all()) {
       const id = row.username || row.id || row.key || "";
       for (const [column, value] of Object.entries(row)) {
+        if (SKIPPED_COLUMNS.includes(column)) {
+          continue;
+        }
         let parsed = value;
         if (typeof value === "string" && /^[[{]/.test(value)) {
           try {

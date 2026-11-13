@@ -134,7 +134,7 @@ def main():
         shutil.rmtree(images_dir)
     os.makedirs(images_dir)
 
-    items, by_picture, cols_seen = [], {}, {}
+    items, by_picture, cols_seen, keys = [], {}, {}, set()
 
     def collection(cid, name, group, kind, order):
         cols_seen.setdefault(cid, {'id': cid, 'name': name, 'group': group, 'kind': kind, 'order': order})
@@ -157,23 +157,31 @@ def main():
             if not ent or not ent.get('info'):
                 warn('no layout record (no picture can be drawn)', iid)
                 continue
-            imgs = {f: Image.open(io.BytesIO(base64.b64decode(v.split(',', 1)[1]))).convert('RGBA')
-                    for f, v in ent['files'].items() if isinstance(v, str) and v.startswith('data:image')}
+            try:
+                imgs = {f: Image.open(io.BytesIO(base64.b64decode(v.split(',', 1)[1]))).convert('RGBA')
+                        for f, v in ent['files'].items() if isinstance(v, str) and v.startswith('data:image')}
+            except Exception:  # a broken picture in the cache (e.g. 123400191)
+                warn('a picture file can\'t be read', iid)
+                continue
             sizes = {f: im.size for f, im in imgs.items()}
             flags = []
             im = None
-            for d in ('fl', 'fr'):
-                ani = None if pre.get('noAnimation') else ent.get('ani')
-                ops = lprender.frame_ops(ent['info'], ani, set(ent['files']), sizes, d, 0)
-                im = lprender.render_ops(ops, imgs) if ops else None
-                if im is not None and max(im.size) > 1600 and ani:
-                    # a huge effect animation around the item (some garden pieces): the item alone
-                    im = lprender.render_ops(lprender.frame_ops(ent['info'], None, set(ent['files']), sizes, d, 0), imgs)
-                    flags.append('animation-left-out')
-                if im is not None and im.getbbox():
-                    if d == 'fr':
-                        flags.append('front-right-picture')
-                    break
+            try:
+                for d in ('fl', 'fr'):
+                    ani = None if pre.get('noAnimation') else ent.get('ani')
+                    ops = lprender.frame_ops(ent['info'], ani, set(ent['files']), sizes, d, 0)
+                    im = lprender.render_ops(ops, imgs) if ops else None
+                    if im is not None and max(im.size) > 1600 and ani:
+                        # a huge effect animation around the item (some garden pieces): the item alone
+                        im = lprender.render_ops(lprender.frame_ops(ent['info'], None, set(ent['files']), sizes, d, 0), imgs)
+                        flags.append('animation-left-out')
+                    if im is not None and im.getbbox():
+                        if d == 'fr':
+                            flags.append('front-right-picture')
+                        break
+            except Exception as e:
+                warn('drawing failed', f'{iid}: {e!r}'[:120])
+                continue
             if im is None or not im.getbbox():
                 warn('nothing to draw', iid)
                 continue
@@ -235,8 +243,9 @@ def main():
                 same['tags'] = sorted(set(same['tags']) | set(tags))
                 continue
             key = re.sub(r'[^A-Za-z0-9_\-]', '_', code or iid)
-            while any(i['key'] == key for i in items):
+            while key in keys:
                 key += '_'
+            keys.add(key)
             with open(os.path.join(images_dir, key + '.png'), 'wb') as f:
                 f.write(buf.getvalue())
             item = {

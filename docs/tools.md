@@ -75,7 +75,9 @@ is deleted. the database named is only read, so the server can be running.
 run it from the folder of the new server code (it needs that code and its
 asset cache). exits 1 if anything is left on an old id.
 every value or key in the database (but the move table) that is one of
-`numbers`, as a json path
+`numbers`, as a json path: a number, or a whole number in a string ("den:
+55000", not the digits inside a hash). only where, never what, is printed:
+the tables hold password hashes and such.
 ```
 
 ## tools/extract-swfs.sh

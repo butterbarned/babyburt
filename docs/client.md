@@ -281,7 +281,7 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.DenEditor
 
-- `swf-src/DenEditor.as`, 2594 lines
+- `swf-src/DenEditor.as`, 2648 lines
 - original: `tools/decompiled/gui/DenEditor.as`
 - **changed:** `init`, `destroy`, `showDenEditor`, `setupPlayerItems`, `setupTabsVisibilityAndPosition`, `resetWindowsAndTabsToNormal`, `drawItemWindows`, `scrollBtnHandler`, `toggleBottomHudVisibility`, `toggleEditorHud`, `setupTabs`, `tabBtnHandler`, `onSearchTextInput`
 - **added:** `placePrefabTab`, `isContentItem`, `splitContentItems`, `makeContentTabs`, `shopTabIcon`, `onContentTab`, `showContentTab`, `leaveContentTab`, `onContentTabOver`, `makeShopContentBtn`, `showShopContentBtn`, `onShopContentBtn`, `onShopContentBtnOver`, `onShopContentBtnOut`, `onContentBought`, `onPrefabTab`, `onPrefabTabOver`, `hudTop`, `markPlaced`, `placePrefabItems`, `onPrefabReply`
@@ -526,10 +526,10 @@ For each class: the methods changed and added against the untouched original (co
 
 ### den.DenXtCommManager
 
-- `swf-src/DenXtCommManager.as`, 1687 lines
+- `swf-src/DenXtCommManager.as`, 1724 lines
 - original: `tools/decompiled/den/DenXtCommManager.as`
 - **changed:** `requestDenStateChange`, `handleXtReply`, `denItemsResponse`, `denRoomCount`, `denRoomResponse`, `relocalizeDenRooms`, `denStateResponse`, `denPhantomResponse`, `denItemDefsResponse`, `relocalizeDenItems`, `enviroItems`
-- **added:** `prefabText`, `requestContentCatalog`, `requestContentItems`, `requestContentBuy`, `requestPrefabList`, `requestPrefab`, `requestPrefabSave`, `requestPrefabRename`, `requestPrefabDelete`, `requestPrefabShare`, `requestPrefabImport`, `requestPrefabGive`, `requestPrefabDuplicate`, `requestItemsGive`, `requestItemColour`, `addDenItemDefs`, `addDenItemDef`
+- **added:** `prefabText`, `requestContentCatalog`, `requestContentItems`, `requestContentBuy`, `requestPrefabList`, `requestPrefab`, `requestPrefabSave`, `requestPrefabRename`, `requestPrefabDelete`, `requestPrefabShare`, `requestPrefabImport`, `requestPrefabGive`, `requestPrefabDuplicate`, `requestLayoutExport`, `requestLayoutShare`, `requestLayoutCode`, `requestLayoutFile`, `requestLayoutApply`, `requestItemsGive`, `requestItemColour`, `addDenItemDefs`, `addDenItemDef`
 
 > the head carries every piece it wears (MannequinData.headField) den prefabs and colours (this server): the answers go to prefabCallback (the whole message), see gui.DenPrefabs the content shop (this server: lib/contentshop.js): the answers go
 
@@ -565,14 +565,20 @@ For each class: the methods changed and added against the untouched original (co
 
 > a custom item's own picture (AJClient.customArtUrl), in a box the size of the game's icons
 
+### loader.ContentAnim
+
+- `swf-src/ContentAnim.as`, 476 lines
+
+> a LINE PLAY content shop item's animation and music (this server: lib/contentpacks.js gives them as "lpa" in the item's file, made by tools/content/lineplay/animate.py). the item's file is its still picture, which is the animation's first frame; the frames are one
+
 ### loader.DenItemHelper
 
-- `swf-src/DenItemHelper.as`, 1358 lines
+- `swf-src/DenItemHelper.as`, 1412 lines
 - original: `tools/decompiled/loader/DenItemHelper.as`
-- **changed:** `get sortOffset`, `init`, `initDS`, `initGeneric`, `destroy`, `loadUniqueImage`, `rebuildMannequinView`, `handleData`, `onBytesLoaded`
-- **added:** `loadCustomArt`, `fetchArtBytes`, `customArtBytesReceived`, `onCustomArtLoaded`, `onCustomArtFailed`, `loadBaseArt`, `finishLoad`, `onThemeTileBytes`, `onThemeTileFailed`, `onThemeTileLoaded`, `themeTexture`, `floorMatrix`, `wallMatrix`, `wallRuns`, `stackRuns`, `pieceRuns`, `footAt`, `grey`, `themeShade`
+- **changed:** `get sortOffset`, `init`, `initDS`, `initGeneric`, `destroy`, `loadUniqueImage`, `setVersion`, `rebuildMannequinView`, `handleData`, `onBytesLoaded`
+- **added:** `get contentAnim`, `addContentListeners`, `onContentMouse`, `loadCustomArt`, `fetchArtBytes`, `customArtBytesReceived`, `onCustomArtLoaded`, `onCustomArtFailed`, `loadBaseArt`, `finishLoad`, `onThemeTileBytes`, `onThemeTileFailed`, `onThemeTileLoaded`, `themeTexture`, `floorMatrix`, `wallMatrix`, `wallRuns`, `stackRuns`, `pieceRuns`, `footAt`, `grey`, `themeShade`
 
-> The low two flip bits are used by the original client.  Den editing also uses bits 2-3 as the item's player depth: 1 = always behind players and 2 = always in front (a very large offset wins over the normal y-position depth sort without visibly moving the item), and
+> a LINE PLAY content item's animation and music (loader.ContentAnim), The low two flip bits are used by the original client.  Den editing also uses bits 2-3 as the item's player depth: 1 = always behind players and 2 = always in front (a very large offset wins over the
 
 ### den.DenItem
 
@@ -590,7 +596,7 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.DenLayersPanel
 
-- `swf-src/DenLayersPanel.as`, 1684 lines
+- `swf-src/DenLayersPanel.as`, 1718 lines
 
 > the den editor's layers panel (this server): every item in the den, front first, in four bands (above players, by position, below players, on the floor), groups as rows that open to their items. a row is clicked to choose its item (even one that is locked, hidden or
 
@@ -599,6 +605,12 @@ For each class: the methods changed and added against the untouched original (co
 - `swf-src/DenPrefabs.as`, 1357 lines
 
 > the den editor's prefab tab (this server): items laid out together, saved from the den (the pick bar's "Save prefab", or this tab's first tile), and put down again as one group in the middle of the screen. what the player has none of free is added to their den items first, free,
+
+### gui.DenShare
+
+- `swf-src/DenShare.as`, 550 lines
+
+> the whole den, from buttons by the den editor's Shop button (this server): a picture of it saved to a file, and its layout shared as a file or a code and laid out again from one. the server's side is lib/denlayouts.js and the "dl*" messages in lib/dens.js.
 
 ### gui.DenContentShop
 
@@ -668,7 +680,7 @@ For each class: the methods changed and added against the untouched original (co
 
 ### room.DenItemHolder
 
-- `tools/decompiled/room/DenItemHolder.as`, 3178 lines
+- `tools/decompiled/room/DenItemHolder.as`, 3202 lines
 - original: `tools/decompiled/room/DenItemHolder.as`
 - no method changed
 

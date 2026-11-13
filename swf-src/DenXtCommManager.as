@@ -225,6 +225,39 @@ package den
          gMainFrame.server.setXtObject_Str("dpc",[param1]);
       }
 
+      // the whole den's layout (this server: lib/denlayouts.js), the answers
+      // to prefabCallback too, see gui.DenShare
+      public static function requestLayoutExport() : void
+      {
+         gMainFrame.server.setXtObject_Str("dlx",[]);
+      }
+
+      public static function requestLayoutShare(param1:String) : void
+      {
+         gMainFrame.server.setXtObject_Str("dlc",[prefabText(param1)]);
+      }
+
+      public static function requestLayoutCode(param1:String) : void
+      {
+         gMainFrame.server.setXtObject_Str("dli",["c",prefabText(param1)]);
+      }
+
+      // param3: [[def, version, x, y, flip, cat]...]
+      public static function requestLayoutFile(param1:int, param2:String, param3:Array) : void
+      {
+         var _loc4_:Array = ["f",param1,prefabText(param2),param3.length];
+         for each(var _loc5_:Array in param3)
+         {
+            _loc4_.push(_loc5_[0],_loc5_[1],_loc5_[2],_loc5_[3],_loc5_[4],_loc5_[5]);
+         }
+         gMainFrame.server.setXtObject_Str("dli",_loc4_);
+      }
+
+      public static function requestLayoutApply() : void
+      {
+         gMainFrame.server.setXtObject_Str("dla",[]);
+      }
+
       // den items being duplicated: those of [[def, version, ...]...] not
       // had free are given
       public static function requestItemsGive(param1:Array) : void
@@ -449,6 +482,10 @@ package den
             case "ddg":
             case "dpc":
             case "dvc":
+            case "dlx":
+            case "dlc":
+            case "dli":
+            case "dla":
                if(prefabCallback != null)
                {
                   prefabCallback(_loc2_);
