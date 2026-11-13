@@ -21,6 +21,7 @@ package gui
    import flash.text.TextField;
    import flash.utils.Dictionary;
    import flash.utils.Timer;
+   import loader.ContentAnim;
    import pet.PetItem;
    import room.DenItemHolder;
    import room.DenItemHolderEvent;
@@ -942,6 +943,39 @@ package gui
             _foot.addChild(_loc12_);
             DenUi.setEnabled(_loc10_,!_colourPending);
             DenUi.setEnabled(_loc12_,!_colourPending);
+         }
+         else if(!_loc4_ && _loc2_.denItemHelper != null && _loc2_.denItemHelper.contentAnim != null)
+         {
+            // a LINE PLAY item's animation and music (loader.ContentAnim):
+            // how it plays, and whether its music does. kept in its version
+            // ("dvc", as a colour is), which these items have no other use for
+            var _loc21_:ContentAnim = _loc2_.denItemHelper.contentAnim;
+            var _loc22_:int = ContentAnim.modeOf(_loc2_.version);
+            var _loc23_:Boolean = ContentAnim.mutedOf(_loc2_.version);
+            var _loc24_:Number = _loc21_.hasMusic ? (_loc1_ - 8) * 0.55 : _loc1_ - 4;
+            var _loc25_:Sprite = DenUi.greenPill(ContentAnim.MODE_LABELS[_loc22_],_loc24_,function():void
+            {
+               recolour(_loc2_,ContentAnim.versionWith(_loc2_.version,(_loc22_ + 1) % 3,_loc23_));
+            },24);
+            if(_loc22_ == ContentAnim.OFF)
+            {
+               DenUi.drawPill(_loc25_.graphics,_loc24_,24,0xD8C79A,0xB59E6A,0x7A6640);
+            }
+            _loc25_.x = 2;
+            _loc25_.y = _loc8_ - 1;
+            DenUi.setEnabled(_loc25_,!_colourPending);
+            _foot.addChild(_loc25_);
+            if(_loc21_.hasMusic)
+            {
+               var _loc26_:Sprite = DenUi.goldPill(_loc23_ ? "Music: off" : "Music: on",_loc1_ - 8 - _loc24_,function():void
+               {
+                  recolour(_loc2_,ContentAnim.versionWith(_loc2_.version,_loc22_,!_loc23_));
+               },24);
+               _loc26_.x = _loc25_.x + _loc24_ + 4;
+               _loc26_.y = _loc8_ - 1;
+               DenUi.setEnabled(_loc26_,!_colourPending && _loc22_ != ContentAnim.OFF);
+               _foot.addChild(_loc26_);
+            }
          }
          else
          {

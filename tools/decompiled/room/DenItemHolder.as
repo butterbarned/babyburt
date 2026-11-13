@@ -848,6 +848,17 @@ package room
             changed();
          }
          _roomMode = param1;
+         if(_roomMode == 1)
+         {
+            // into den editing: LINE PLAY items stop playing (loader.ContentAnim)
+            for each(var _loc9_:DenStateItem in _currItems.getCoreArray())
+            {
+               if(_loc9_.denItemHelper && _loc9_.denItemHelper.contentAnim)
+               {
+                  _loc9_.denItemHelper.contentAnim.stop();
+               }
+            }
+         }
          stopListenersOnPets(_roomMode == 1);
          stopMouseOnNonMouseItems(_roomMode == 1);
       }
@@ -984,6 +995,12 @@ package room
          _lastItemInvId = -1;
       }
       
+      // the den is being played in, not edited (for loader.ContentAnim)
+      private function inPlayMode() : Boolean
+      {
+         return _roomMode == 0;
+      }
+
       private function isTheme(param1:int) : Boolean
       {
          return param1 > 1 && param1 < 4;
@@ -1076,6 +1093,13 @@ package room
          else if(param1.specialType == 5)
          {
             addListenersToItem(_loc3_,param1);
+         }
+         else if(param1.defId >= 10000 && param1.defId <= 49999)
+         {
+            // a content shop item (lib/itemids.js CONTENT_DEN): its LINE PLAY
+            // animation and music, when it has them (loader.ContentAnim), in
+            // anybody's den
+            _loc3_.addContentListeners(param1,inPlayMode);
          }
          else if(RoomManagerWorld.instance.isMyDen)
          {

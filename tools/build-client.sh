@@ -95,11 +95,13 @@ set -- \
   gui.SitForwardAction SitForwardAction.as \
   avatar.AvatarUtility AvatarUtility.as \
   item.Item Item.as \
+  loader.ContentAnim ContentAnim.as \
   loader.DenItemHelper DenItemHelper.as \
   den.DenItem DenItem.as \
   gui.DenUi DenUi.as \
   gui.DenLayersPanel DenLayersPanel.as \
   gui.DenPrefabs DenPrefabs.as \
+  gui.DenShare DenShare.as \
   gui.DenContentShop DenContentShop.as \
   gui.AvatarLayersPanel AvatarLayersPanel.as \
   gui.AvatarOutfitsPanel AvatarOutfitsPanel.as \
@@ -114,11 +116,13 @@ set -- \
 # Jam's, shared by its two art studio painters; gui.SitForwardAction is the
 # action of sitting facing forward; gui.DenUi, gui.DenLayersPanel and
 # gui.DenPrefabs are the den editor's layers panel and prefab tab;
+# gui.DenShare is the den editor's den picture and shared den layouts;
 # gui.DenContentShop is the content shop the den editor opens;
 # gui.AvatarLayersPanel and gui.AvatarOutfitsPanel are the avatar editor's
 # layers panel and outfits window;
-# com.sbi.loader.SwfImports takes out what Ruffle cannot load, in a browser)
-NEW_CLASSES="game.ArtStudioKit gui.SitForwardAction gui.DenUi gui.DenLayersPanel gui.DenPrefabs gui.DenContentShop gui.AvatarLayersPanel gui.AvatarOutfitsPanel com.sbi.loader.SwfImports"
+# com.sbi.loader.SwfImports takes out what Ruffle cannot load, in a browser;
+# loader.ContentAnim plays LINE PLAY content items' animations and music)
+NEW_CLASSES="game.ArtStudioKit gui.SitForwardAction gui.DenUi gui.DenLayersPanel gui.DenPrefabs gui.DenShare gui.DenContentShop gui.AvatarLayersPanel gui.AvatarOutfitsPanel com.sbi.loader.SwfImports loader.ContentAnim"
 args=""
 while [ $# -gt 0 ]; do
   args="$args $1 swf-src/$2"

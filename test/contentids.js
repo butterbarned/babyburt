@@ -24,6 +24,7 @@ const contentPacks = require("../lib/contentpacks.js");
 const customItems = require("../lib/customitems.js");
 const defpacks = require("../lib/defpacks.js");
 const denPrefabs = require("../lib/denprefabs.js");
+const denLayouts = require("../lib/denlayouts.js");
 const itemIds = require("../lib/itemids.js");
 
 // a 1x1 transparent PNG
@@ -103,6 +104,7 @@ const run = async () => {
   await defpacks.init();
   accounts.load();
   denPrefabs.load();
+  denLayouts.load();
   db().exec(`CREATE TABLE IF NOT EXISTS content_items (
     pack TEXT NOT NULL, key TEXT NOT NULL, id INTEGER NOT NULL UNIQUE, name TEXT NOT NULL, placement TEXT NOT NULL,
     so INTEGER NOT NULL, image TEXT NOT NULL, retired INTEGER NOT NULL, PRIMARY KEY (pack, key))`);
@@ -126,6 +128,8 @@ const run = async () => {
   db().prepare("INSERT INTO den_prefabs (id, owner, name, items, thumb, code, created_at) VALUES ('p1', ?, 'Set', ?, NULL, NULL, 1)")
     .run(account.id, JSON.stringify([[55000, 0, 1, 2, 0], [158, 0, 3, 4, 0]]));
   accounts.setSetting("finderLocks", JSON.stringify(["den:55001", "clothing:55000"]));
+  db().prepare("INSERT INTO den_layout_shares (code, owner, name, den, items, created_at) VALUES ('ABCD2345', ?, 'Den', 1, ?, 1)")
+    .run(account.id, JSON.stringify([[55001, 0, 10, 20, 0, 1], [158, 0, 30, 40, 0, 1]]));
 
   writePack(["A", "B", "C"]);
   contentPacks.load();
@@ -141,6 +145,7 @@ const run = async () => {
   assert.deepStrictEqual(account.finderGiven, {"den:10001": {count: 2, at: 1}, "clothing:55000": {count: 1, at: 1}});
   assert.deepStrictEqual(JSON.parse(db().prepare("SELECT items FROM den_prefabs WHERE id = 'p1'").get().items), [[10000, 0, 1, 2, 0], [158, 0, 3, 4, 0]]);
   assert.deepStrictEqual(JSON.parse(accounts.setting("finderLocks")), ["den:10001", "clothing:55000"]);
+  assert.deepStrictEqual(JSON.parse(db().prepare("SELECT items FROM den_layout_shares WHERE code = 'ABCD2345'").get().items), [[10001, 0, 10, 20, 0, 1], [158, 0, 30, 40, 0, 1]]);
   // saved: the account as stored has them too
   const stored = JSON.parse(db().prepare("SELECT state FROM accounts WHERE id = ?").get(account.id).state);
   assert.deepStrictEqual(stored.denItems.map(item => item.def), [10000, 10001, 10002, 158]);

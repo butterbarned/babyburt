@@ -92,7 +92,13 @@ package loader
       private var _onMouseOutCallback:Function;
       
       private var _uniqueImage:Sprite;
-      
+
+      // a LINE PLAY content item's animation and music (loader.ContentAnim),
+      // or null
+      private var _anim:ContentAnim;
+
+      private var _inPlayMode:Function;
+
       public function DenItemHelper()
       {
          super();
@@ -203,6 +209,39 @@ package loader
       public function get denStateItem() : DenStateItem
       {
          return _denStateItem;
+      }
+
+      public function get contentAnim() : ContentAnim
+      {
+         return _anim;
+      }
+
+      // a content shop item placed in a den (room.DenItemHolder.setItem): its
+      // animation plays when clicked or pointed at, as its owner chose, while
+      // `param2` says the den is being played in (not edited)
+      public function addContentListeners(param1:DenStateItem, param2:Function) : void
+      {
+         _denStateItem = param1;
+         _inPlayMode = param2;
+         _sprite.addEventListener("mouseDown",onContentMouse,false,0,true);
+         _sprite.addEventListener("mouseOver",onContentMouse,false,0,true);
+         _sprite.addEventListener("mouseOut",onContentMouse,false,0,true);
+      }
+
+      private function onContentMouse(param1:MouseEvent) : void
+      {
+         if(_anim == null || _denStateItem == null)
+         {
+            return;
+         }
+         if(param1.type != "mouseOut" && (_inPlayMode == null || !_inPlayMode()))
+         {
+            return;
+         }
+         if(_anim.mouse(param1,_denStateItem.version))
+         {
+            param1.stopPropagation();
+         }
       }
       
       public function get defId() : int
@@ -366,6 +405,11 @@ package loader
       public function destroy() : void
       {
          DenItemServer.instance.removeEventListener("OnNewData",handleData);
+         if(_anim != null)
+         {
+            _anim.destroy();
+            _anim = null;
+         }
          if(_loader)
          {
             if(_loader.parent)
@@ -483,6 +527,10 @@ package loader
          var _loc5_:MovieClip = null;
          var _loc4_:int = 0;
          _version = param1;
+         if(_anim != null)
+         {
+            _anim.settingsChanged(param1);
+         }
          if(param2 > 0)
          {
             _version2 = param2;
@@ -709,6 +757,8 @@ package loader
             param1.data.position = 0;
             _loc2_ = param1.data.readObject();
             _sortOffset = _loc2_.so;
+            // a LINE PLAY content item's animation and music (this server)
+            _anim = _loc2_.hasOwnProperty("lpa") ? ContentAnim.parse(String(_loc2_.lpa),_defId) : null;
             _loader.loadBytes(SwfImports.strip(_loc2_.ba));
          }
       }
@@ -843,6 +893,10 @@ package loader
       private function finishLoad() : void
       {
          _sprite.addChild(_loader);
+         if(_anim != null)
+         {
+            _anim.attach(_sprite,_loader);
+         }
          if(_themeBitmap != null)
          {
             _loader.visible = false;
