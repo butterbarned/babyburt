@@ -195,6 +195,9 @@ module.exports = {
   clientSwf: env.AJ_CLIENT_SWF || path.join(__dirname, "swf", "ajclient.swf"),
   sharedFontsSwf: path.join(__dirname, "swf", "sharedFonts.swf"),
   loadScreenSwf: path.join(__dirname, "swf", "loadScreen.swf"),
+  // the older loading screen art, which players may pick in Settings
+  // (swf-src/LoadProgress.as)
+  loadScreenOldSwf: path.join(__dirname, "swf", "loadScreenOld.swf"),
   // the HUD artwork (assets/HUDAssets.swf on the CDN), served from here
   // because it is changed: see "Rebuild" in the README.
   hudAssetsSwf: path.join(__dirname, "swf", "HUDAssets.swf"),

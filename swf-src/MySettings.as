@@ -230,6 +230,12 @@ package gui
             "frame":"customArt",
             "iconFrame":"redeemCode"
          },{
+            // the older loading screen art, or the game's
+            // (LoadProgress.oldScreenOn)
+            "type":TOGGLE_TYPE_JOIN,
+            "frame":"loadScreen",
+            "iconFrame":"world"
+         },{
             "type":TOGGLE_TYPE_JOIN,
             "frame":"redeemCode",
             "labelTxt":24819,

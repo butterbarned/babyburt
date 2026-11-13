@@ -167,6 +167,12 @@ const run = async () => {
   assert.match(staffBox, /Mira \(Moderator\)/);
   assert.match(staffBox, /Hal \(Helper\)/);
 
+  // the adventure commands are a moderator's: a helper's are plain chat
+  say(hal.client, hal.roomId, "!tutorial");
+  await untilChat(hal.client, "!tutorial");
+  say(mira.client, mira.roomId, "!adv start");
+  assert.match(await nextBox(mira.client), /^!adv start DEF \[hard\]: .*15 Training Grounds/);
+
   // summon: Pip is brought from Sarepia to Mira in the township
   say(mira.client, mira.roomId, "!summon Pip");
   // ... onto the spot where Mira stands, when the room has loaded ("xgt")

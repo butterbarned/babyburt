@@ -63,21 +63,30 @@ For each class: the methods changed and added against the untouched original (co
 
 ### gui.MySettings
 
-- `swf-src/MySettings.as`, 546 lines
+- `swf-src/MySettings.as`, 552 lines
 - original: `tools/decompiled/gui/MySettings.as`
 - **changed:** `setupContent`
 - **added:** `showThemeList`, `buildThemeList`, `buildSubList`, `showSavedList`, `onSavedFailed`, `onSavedList`
 
-> a player's own items (AJClient's Item Maker) the pictures players give their items (AJClient.customArtOn) the world picker (gui.ServerSelector): the server's worlds, config.shards, listed by the server's answer to "rm"
+> a player's own items (AJClient's Item Maker) the pictures players give their items (AJClient.customArtOn) the older loading screen art, or the game's (LoadProgress.oldScreenOn)
 
 ### gui.itemWindows.ItemWindowToggle
 
-- `swf-src/ItemWindowToggle.as`, 967 lines
+- `swf-src/ItemWindowToggle.as`, 982 lines
 - original: `tools/decompiled/gui/itemWindows/ItemWindowToggle.as`
 - **changed:** `ItemWindowToggle`, `setChildrenAndInitialConditions`, `handleMouseDown`, `handleMouseMove`, `handleStopScrubbing`
-- **added:** `showHouseIcon`, `showWasd`, `showChoice`, `setChoice`, `showGraphics`, `showPerformance`, `nextPerformance`, `showFrameRate`, `nextFrameRate`, `showCamera`, `setWasd`, `blockedAreHidden`, `showHideBlocked`, `setHideBlocked`, `showCustomArt`, `setCustomArt`
+- **added:** `showHouseIcon`, `showWasd`, `showChoice`, `setChoice`, `showGraphics`, `showPerformance`, `nextPerformance`, `showFrameRate`, `nextFrameRate`, `showCamera`, `setWasd`, `blockedAreHidden`, `showHideBlocked`, `setHideBlocked`, `showCustomArt`, `showLoadScreen`, `setCustomArt`
 
 > music or sound effects (AJClient's sound settings) the settings artwork has no house among its icons, so the rows for den layouts borrow the picture of the den button on the game's bar. if that cannot be drawn, the row keeps the icon it has.
+
+### gui.itemWindows.ItemWindowAdventure
+
+- `swf-src/ItemWindowAdventure.as`, 195 lines
+- original: `tools/decompiled/gui/itemWindows/ItemWindowAdventure.as`
+- **changed:** `setChildrenAndInitialConditions`, `performContinueChecks`
+- **added:** `playable`
+
+> this server: see playable() below this server: whether the adventure may be picked. the game hides the row's "tag" when it may not; the banners of the event adventures (Bitter Sweets 46, Twists and Turns 62) have no tag at all, and
 
 ### gui.ReportAPlayer
 
@@ -640,12 +649,12 @@ For each class: the methods changed and added against the untouched original (co
 
 ### loadProgress.LoadProgress
 
-- `swf-src/LoadProgress.as`, 373 lines
+- `swf-src/LoadProgress.as`, 449 lines
 - original: `tools/decompiled/loadProgress/LoadProgress.as`
 - **changed:** `init`, `show`, `onLoadScreenComplete`, `startLoad`, `loadCompleteHandler`, `loadProgressHandler`
-- **added:** `loadScreenBytes`, `giveScreen`, `fetchScreen`, `screenBytes`
+- **added:** `loadScreenBytes`, `oldScreenOn`, `setOldScreen`, `giveScreen`, `fetchScreen`, `screenBytes`
 
-> Burrow: on every player, as the Flash plugin had it by default Burrow: the screen's bytes (loadScreenBytes). in a browser their empty import of sharedFonts.swf is taken out first, or they never finish loading (com.sbi.loader.SwfImports). this
+> which loading screen was last asked for: a fetch that comes back after another was asked for is dropped Burrow: on every player, as the Flash plugin had it by default Burrow: the screen's bytes (loadScreenBytes). in a browser
 
 ### com.sbi.loader.SceneLoader
 

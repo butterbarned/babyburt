@@ -9,6 +9,7 @@ package loadProgress
    import flash.events.Event;
    import flash.net.URLLoader;
    import flash.net.URLRequest;
+   import flash.net.SharedObject;
    import flash.system.Capabilities;
    import flash.system.ApplicationDomain;
    import flash.system.LoaderContext;
@@ -56,6 +57,10 @@ package loadProgress
       private static var _screenGiven:Boolean = false;
 
       private static var _screenFetching:Boolean = false;
+
+      // which loading screen was last asked for: a fetch that comes back
+      // after another was asked for is dropped
+      private static var _screenAsk:int = 0;
       
       private static var _loadLayer:DisplayObjectContainer;
       
@@ -139,13 +144,63 @@ package loadProgress
       // is next shown and is not there yet (show).
       private static function loadScreenBytes() : void
       {
+         _screenAsk++;
+         // the older art, picked in Settings: only the server has it
+         if(oldScreenOn())
+         {
+            fetchScreen("loadScreenOld.swf",true);
+            return;
+         }
          var _loc1_:ByteArray = screenBytes();
          if(_loc1_ == null)
          {
-            fetchScreen();
+            fetchScreen("loadScreen.swf",false);
             return;
          }
          giveScreen(_loc1_);
+      }
+
+      // the older loading screen (Settings, "Loading screen"), kept on this
+      // computer: it is up before anyone has logged in
+      public static function oldScreenOn() : Boolean
+      {
+         try
+         {
+            return SharedObject.getLocal("loadScreen","/").data.old == true;
+         }
+         catch(e:Error)
+         {
+         }
+         return false;
+      }
+
+      // ... picked or not: kept, and the screen swapped at once when it is not
+      // up (else from the next start)
+      public static function setOldScreen(param1:Boolean) : void
+      {
+         try
+         {
+            var _loc2_:SharedObject = SharedObject.getLocal("loadScreen","/");
+            _loc2_.data.old = param1;
+            _loc2_.flush();
+         }
+         catch(e:Error)
+         {
+         }
+         if(_loadScreen == null || _visible)
+         {
+            return;
+         }
+         _loadScreenContent = null;
+         _bChangeLoadingScreen = true;
+         try
+         {
+            _loadScreen.unloadAndStop();
+         }
+         catch(e:Error)
+         {
+         }
+         loadScreenBytes();
       }
 
       private static function giveScreen(param1:ByteArray) : void
@@ -166,37 +221,58 @@ package loadProgress
       // file is fetched from the server the client itself came from
       // (lib/http.js, /gameClient/loadScreen.swf), once. failing, there is
       // no loading screen; the game loads all the same.
-      private static function fetchScreen() : void
+      // param1: the file under /gameClient/. param2: failing, the usual
+      // screen is given instead (the older one, when the server has none).
+      private static function fetchScreen(param1:String, param2:Boolean) : void
       {
          var _loc1_:URLLoader = null;
          var _loc2_:String = null;
          var _loc3_:int = 0;
-         if(_screenFetching)
+         var _loc4_:int = _screenAsk;
+         var failed:Function = null;
+         if(_screenFetching && !param2)
          {
             return;
          }
          _screenFetching = true;
+         failed = function(param1:Event = null):void
+         {
+            _screenFetching = false;
+            if(param2 && _loc4_ == _screenAsk)
+            {
+               var _loc5_:ByteArray = screenBytes();
+               if(_loc5_ != null)
+               {
+                  giveScreen(_loc5_);
+               }
+               else
+               {
+                  fetchScreen("loadScreen.swf",false);
+               }
+            }
+         };
          try
          {
             _loc2_ = _loadLayer.stage.getChildAt(0).loaderInfo.url;
             _loc3_ = _loc2_.indexOf("/",_loc2_.indexOf("//") + 2);
-            _loc2_ = (_loc3_ > 0 ? _loc2_.substring(0,_loc3_) : _loc2_) + "/gameClient/loadScreen.swf";
+            _loc2_ = (_loc3_ > 0 ? _loc2_.substring(0,_loc3_) : _loc2_) + "/gameClient/" + param1;
             _loc1_ = new URLLoader();
             _loc1_.dataFormat = "binary";
             _loc1_.addEventListener("complete",function(param1:Event):void
             {
-               giveScreen(ByteArray(_loc1_.data));
+               _screenFetching = false;
+               if(_loc4_ == _screenAsk)
+               {
+                  giveScreen(ByteArray(_loc1_.data));
+               }
             });
-            _loc1_.addEventListener("ioError",function(param1:Event):void
-            {
-            });
-            _loc1_.addEventListener("securityError",function(param1:Event):void
-            {
-            });
+            _loc1_.addEventListener("ioError",failed);
+            _loc1_.addEventListener("securityError",failed);
             _loc1_.load(new URLRequest(_loc2_));
          }
          catch(e:Error)
          {
+            failed();
          }
       }
 
